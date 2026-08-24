@@ -130,13 +130,17 @@ several times per page, on every page.
 
 1. In the project, go to **Settings → Functions**.
 2. Find **Function Region**.
-3. Choose **Frankfurt, Germany (fra1)**.
-4. **Save**.
-5. Go to **Deployments**, open the most recent one, click the **⋯** menu and
-   choose **Redeploy**. The region only applies to builds made after the change.
+3. Expand **Europe** and tick **Frankfurt, Germany (eu-central-1) — fra1**.
+4. Expand **North America** and **untick Washington, D.C. (iad1)**.
 
-If the region selector is greyed out on your plan, skip this part. It costs
-speed, not correctness — the app works either way.
+   The Hobby plan allows exactly one region, so the old one has to come off
+   before the new one can be saved. Each group header carries a badge naming the
+   region selected inside it — when only `fra1` remains, the selection is right.
+
+5. **Save**.
+6. Go to **Deployments**, open the most recent one, click the **⋯** menu and
+   choose **Redeploy**. The region only applies to builds made after the change,
+   which is what the panel means by "a new Deployment is required".
 
 **You should see** the region shown as `fra1` once the redeploy finishes.
 
