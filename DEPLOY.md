@@ -148,11 +148,15 @@ several times per page, on every page.
 
 ## Part 5 — Attach the domain
 
-1. **Settings → Domains**.
-2. Type `app.gidlist.com` and click **Add**.
-3. Choose **Add** on the plain option, not the redirect option.
-4. Vercel now shows a DNS record to create — a **CNAME** with a name and a
-   value. Leave this page open.
+1. In the project's left sidebar, click **Domains**. It is a page of its own,
+   alongside Deployments and Logs — **not** inside Settings.
+2. Click **Add Existing**. (**Buy** is for purchasing a new domain, which you
+   already did elsewhere.)
+3. Type `app.gidlist.com`, leave **Connect to an environment → Production**
+   selected, and click **Add Domain**.
+4. The domain joins the list marked **Invalid Configuration**, and Vercel shows
+   a **CNAME** record with a name and a value. Invalid is expected until the DNS
+   record exists. Leave this page open.
 5. In a second tab, sign in to whoever you bought `gidlist.com` from and find
    its **DNS** or **DNS records** page.
 6. Add a new record, copying **exactly** what Vercel showed:
@@ -182,9 +186,12 @@ Signing in will **not work yet**. That is Part 6, and is expected.
 Right now `gidlist.com` with no `app.` leads nowhere, which looks broken to
 anyone who types it. Until there is a marketing site:
 
-10. **Settings → Domains → Add**, enter `gidlist.com`.
-11. Choose the option to **redirect** it to `app.gidlist.com`.
-12. Add the DNS record Vercel shows — for a bare domain this is an **A** record,
+10. **Domains → Add Existing**, enter `gidlist.com`.
+11. Choose **Redirect to Another Domain**, and pick `app.gidlist.com`.
+12. Leave it as **307 Temporary Redirect**. Browsers cache permanent redirects
+    more or less forever, which would fight you the day a marketing site goes on
+    `gidlist.com`. Temporary is also the truthful description.
+13. Add the DNS record Vercel shows — for a bare domain this is an **A** record,
     not a CNAME.
 
 Undo this the day a marketing site exists. It is a placeholder, not a decision.
