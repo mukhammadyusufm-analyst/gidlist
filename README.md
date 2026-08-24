@@ -93,10 +93,10 @@ hand-written role comparison.
 **The app's address is configuration, not code.** It appears in exactly one
 place — `NEXT_PUBLIC_APP_URL` — plus three external settings: the Vercel custom
 domain, Supabase's redirect URLs, and the verified sending domain in Resend.
-Moving the app between `unumis.com`, a subdomain, or its own domain is those
-four settings and nothing else.
+The live address is `app.gidlist.com`; moving it anywhere else is those four
+settings and nothing else.
 
-Do **not** host the app on a subfolder (`unumis.com/checklists/`). That needs a
+Do **not** host the app on a subfolder (`gidlist.com/app/`). That needs a
 reverse proxy plus a Next.js `basePath`, which puts a permanent failure point
 between users and the app — and buys nothing, since everything behind the login
 is unindexed anyway. The subfolder-for-SEO reasoning applies to marketing pages,
@@ -120,8 +120,8 @@ remembering a conversation.
 
 | # | Item | Note |
 | - | ---- | ---- |
-| 1 | **Deployment** | Instructions written — see [DEPLOY.md](DEPLOY.md). Not yet carried out: nothing is deployed, and the app has never run on a phone despite being built mobile-first. |
-| 1a | **One database for everything** | Local development and the live site share a single Supabase project, so a migration run by hand affects real data immediately. Split into separate projects before the first paying customer. |
+| 1 | **Deployment** | Instructions written — see [DEPLOY.md](DEPLOY.md). Not yet carried out: nothing is deployed, and the app has never run on a phone despite being built mobile-first. Live address will be `app.gidlist.com`. |
+| 1a | **Split development from production** | **Queued: do this before announcing the project.** One Supabase project serves both this machine and the live site, so a migration applied by hand in the SQL Editor reaches real customer data the moment it runs, with no staging step and nothing to roll back to. The fix is a second Supabase project for development, `.env.local` pointing at it, and migrations applied there first. Doing it later means moving live data, so the cost only grows. |
 | 2 | **Supabase auth email (SMTP)** | Sign-up and password-reset mail still uses Supabase's built-in sender, rate-limited to a handful per hour and not for production. Set custom SMTP before real customers arrive — see SETUP.md Part 8B. |
 | 3 | **Audit log** | Action, timestamp, actor. Write it from database triggers, not app code, so an action cannot happen without being recorded. |
 | 4 | **Void a submission, with a reason** | Today a missed record can only be deleted, which is silent. Voiding is recorded, and is what a compliance tool should offer instead. |
