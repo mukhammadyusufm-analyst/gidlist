@@ -3,7 +3,8 @@
 A SaaS app for building, scheduling and tracking operational checklists.
 
 **New here? Read [SETUP.md](SETUP.md) first** — it walks through creating the
-Supabase project and getting the app running.
+Supabase project and getting the app running. [DEPLOY.md](DEPLOY.md) takes it
+from there: GitHub, Vercel, your own domain, and email.
 
 ---
 
@@ -119,7 +120,8 @@ remembering a conversation.
 
 | # | Item | Note |
 | - | ---- | ---- |
-| 1 | **Deployment** | Nothing is deployed. The app has never run on a phone, despite being built mobile-first. Pin Vercel functions to Frankfurt to match the database. |
+| 1 | **Deployment** | Instructions written — see [DEPLOY.md](DEPLOY.md). Not yet carried out: nothing is deployed, and the app has never run on a phone despite being built mobile-first. |
+| 1a | **One database for everything** | Local development and the live site share a single Supabase project, so a migration run by hand affects real data immediately. Split into separate projects before the first paying customer. |
 | 2 | **Supabase auth email (SMTP)** | Sign-up and password-reset mail still uses Supabase's built-in sender, rate-limited to a handful per hour and not for production. Set custom SMTP before real customers arrive — see SETUP.md Part 8B. |
 | 3 | **Audit log** | Action, timestamp, actor. Write it from database triggers, not app code, so an action cannot happen without being recorded. |
 | 4 | **Void a submission, with a reason** | Today a missed record can only be deleted, which is silent. Voiding is recorded, and is what a compliance tool should offer instead. |
