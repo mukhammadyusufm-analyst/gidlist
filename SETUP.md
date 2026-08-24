@@ -119,7 +119,9 @@ notepad "C:\Users\Mukhammadyusuf\Desktop\Website\checklist-saas\apps\web\.env.lo
 **You should see** your URL listed under Redirect URLs.
 
 > Without this, the confirmation email link will refuse to sign you in.
-> We add the real unumis.com address here later, when we deploy.
+> The live address, `https://app.gidlist.com`, is added here at deployment —
+> see DEPLOY.md Part 6. Keep the localhost entry when you do, or signing in
+> stops working on this machine.
 
 ---
 
@@ -266,17 +268,20 @@ places. This part covers the first.
 
 ### A. Invitation emails (sent by the app)
 
+This turns invitation emails on **for the app running on this machine**. For the
+live site the same key goes into Vercel instead — DEPLOY.md Part 7. Doing it
+here first is optional; you can skip straight to deploying.
+
 1. Open https://resend.com and create a free account.
 2. Click **Domains** -> **Add Domain**.
-3. Enter the domain you will send mail from.
+3. Enter `gidlist.com` — the bare domain, not `app.gidlist.com`.
 
-   > This must be the domain the product itself uses. If the app lives at
-   > `app.example.com`, verify `example.com` here — not `unumis.com`. Sending
-   > reputation attaches to the sending domain, so mail from the product should
-   > not be able to affect the domain you send client work from.
+   > Verify the product's own domain, not a domain you use for anything else.
+   > Sending reputation attaches to the sending domain, so mail from the product
+   > should not be able to affect other mail you send.
 
-4. Resend shows several DNS records. Add each one at whoever hosts that domain's
-   DNS — Cloudflare, if it is set up the way unumis.com is.
+4. Resend shows several DNS records. Add each one at whoever hosts DNS for
+   `gidlist.com`.
 5. Back in Resend, click **Verify**. This can take a few minutes.
 
 **You should see** the domain marked **Verified**.
@@ -294,7 +299,7 @@ notepad "C:\Users\Mukhammadyusuf\Desktop\Website\checklist-saas\apps\web\.env.lo
     like this — the display name matters, plain addresses look like spam:
 
 ```
-Checklists <hello@yourdomain.com>
+Gidlist <noreply@gidlist.com>
 ```
 
 11. Save, then restart the app (`Ctrl` + `C`, then `pnpm.cmd dev`). Environment
