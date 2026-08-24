@@ -1,0 +1,23 @@
+{
+  "name": "checklist-saas",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.13.1",
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json,css}\"",
+    "db:types": "supabase gen types typescript --linked --schema public > apps/web/src/lib/supabase/database.types.ts"
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2",
+    "supabase": "^2.34.3",
+    "turbo": "^2.10.8",
+    "typescript": "^5.9.3"
+  }
+}
