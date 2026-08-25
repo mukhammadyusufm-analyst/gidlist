@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getUser } from '@/lib/supabase/server';
 import type { BoardRole } from '@/lib/supabase/database.types';
 
 export type PendingInvitation = {
@@ -21,9 +21,7 @@ export type PendingInvitation = {
  */
 export async function listPendingInvitations(): Promise<PendingInvitation[]> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
   if (!user) return [];
 
   const { data } = await supabase

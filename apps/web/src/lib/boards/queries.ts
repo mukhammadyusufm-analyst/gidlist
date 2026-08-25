@@ -1,5 +1,7 @@
 import 'server-only';
 
+import { cache } from 'react';
+
 import { createClient } from '@/lib/supabase/server';
 import type { Board, BoardMember } from '@/lib/supabase/database.types';
 
@@ -86,20 +88,15 @@ export async function listBoardMembers(boardId: string): Promise<MemberWithProfi
  * Used to decide what the UI offers. It is not a security boundary — the
  * database enforces the same rules regardless of what the interface shows.
  */
-export async function getMyRole(boardId: string): Promise<BoardMember['role'] | null> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
+export const getMyRole = cache(
+  async (boardId: string): Promise<BoardMember['role'] | null> => {
+    const supabase = await createClient();
 
-  const { data } = await supabase
-    .from('board_members')
-    .select('role')
-    .eq('board_id', boardId)
-    .eq('user_id', user.id)
-    .eq('status', 'active')
-    .maybeSingle();
+    // One round trip, not two. `my_role` reads auth.uid() from the request's
+    // JWT inside the database, so there is no need to verify the token over the
+    // network first and then query with the id it returns.
+    const { data } = await supabase.rpc('my_role', { p_board_id: boardId });
 
-  return data?.role ?? null;
-}
+    return (data as BoardMember['role'] | null) ?? null;
+  },
+);

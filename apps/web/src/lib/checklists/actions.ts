@@ -10,7 +10,7 @@ import {
   updateItemSchema,
 } from '@app/core';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getUser } from '@/lib/supabase/server';
 
 export type ActionState = {
   formError?: string;
@@ -73,9 +73,7 @@ export async function createChecklist(
 
   const slug = String(formData.get('slug') ?? '');
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
   if (!user) redirect('/login');
 
   const { data, error } = await supabase

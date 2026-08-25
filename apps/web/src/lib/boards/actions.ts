@@ -10,7 +10,7 @@ import {
   updateMemberRoleSchema,
 } from '@app/core';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getUser } from '@/lib/supabase/server';
 import { isEmailConfigured } from '@/lib/email/send';
 import { sendInvitationEmail } from '@/lib/email/invitation';
 import { getTranslations } from '@/lib/i18n/server';
@@ -36,9 +36,7 @@ export async function createBoard(_prev: ActionState, formData: FormData): Promi
   }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
   if (!user) redirect('/login');
 
   const { data, error } = await supabase
@@ -105,9 +103,7 @@ export async function inviteMember(_prev: ActionState, formData: FormData): Prom
 
   const { boardId, email, role } = parsed.data;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
   if (!user) redirect('/login');
 
   const { error } = await supabase.from('board_members').insert({
@@ -157,9 +153,7 @@ async function notifyInvitee(input: {
 
   try {
     const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getUser();
 
     const [{ data: board }, { data: profile }, { locale }] = await Promise.all([
       supabase.from('boards').select('name').eq('id', input.boardId).maybeSingle(),

@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { isLocaleCode } from '@app/core';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getUser } from '@/lib/supabase/server';
 import { LOCALE_COOKIE, getAvailableLocales } from './server';
 
 /**
@@ -34,9 +34,7 @@ export async function setLocale(value: string): Promise<{ error?: string }> {
   });
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
 
   if (user) {
     await supabase.from('profiles').update({ locale: value }).eq('id', user.id);

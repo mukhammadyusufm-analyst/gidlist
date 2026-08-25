@@ -1,13 +1,27 @@
 /**
- * Database types.
+ * Database types. **Hand-written. Do not overwrite this file with the
+ * generator's output.**
  *
- * Hand-written to match the applied migrations. Once the Supabase CLI is linked
- * to the project this file is regenerated from the live schema and should not
- * be edited by hand again:
+ * An earlier version of this comment said the opposite — that once the CLI was
+ * linked, `pnpm db:types` should replace this file. Following that instruction
+ * loses real type safety, which is why it now says the reverse.
  *
- *   pnpm db:types
+ * The reason: this schema has no Postgres enums. Roles, statuses and schedule
+ * kinds are `text` columns with CHECK constraints, so the generator can only
+ * see `string`. This file narrows them to unions — `role: BoardRole`,
+ * `status: SubmissionStatus` — and that narrowing is what makes `canGovern()`,
+ * the status filters and the schedule config discriminators typecheck at all.
+ * Regenerating widens every one of them back to `string`, and nothing fails
+ * loudly when it happens.
  *
- * The shape mirrors the generator's output so that switch is a drop-in swap.
+ *   pnpm db:types      writes lib/supabase/database.generated.ts
+ *
+ * That output is a **reference to diff against**, never a replacement. After a
+ * migration, run it, compare, and hand-apply what changed — keeping the unions.
+ *
+ * Converting the CHECK constraints to real Postgres enums would let the
+ * generator produce this file properly and retire the whole arrangement. That
+ * is the actual fix, and it is README open item 12.
  */
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
@@ -338,6 +352,8 @@ export type Database = {
     Views: Record<never, never>;
     Functions: {
       is_platform_admin: { Args: Record<string, never>; Returns: boolean };
+      // Returns null when the caller is not an active member of the board.
+      my_role: { Args: { p_board_id: string }; Returns: BoardRole | null };
       compliance_counts: {
         Args: {
           p_board_id: string;

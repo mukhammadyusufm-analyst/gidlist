@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 
@@ -51,11 +52,24 @@ export async function createClient() {
  * `getSession()` decodes whatever JWT the cookie contains without verifying
  * it, so a crafted cookie can make it return any user you like. `getUser()`
  * verifies the token against Supabase's auth server before answering.
+ *
+ * That verification is a network round trip, not a local decode — which is why
+ * this is wrapped in React's `cache`. Rendering one page used to reach for the
+ * user three to five times over (the layout, the locale, the role lookup, then
+ * whatever action ran), paying for a separate round trip each time. Memoised,
+ * they collapse to one per render.
+ *
+ * Always call this rather than `supabase.auth.getUser()` directly. A direct
+ * call bypasses the memo and silently reintroduces the round trip.
+ *
+ * `proxy.ts` is the deliberate exception: it runs before rendering, in its own
+ * invocation with its own client, and its call is what refreshes the session
+ * cookie as a side effect. It cannot share this memo, and must not try.
  */
-export async function getUser() {
+export const getUser = cache(async () => {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   return user;
-}
+});

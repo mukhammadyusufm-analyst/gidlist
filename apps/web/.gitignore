@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Reference output of pnpm db:types. Diff it against database.types.ts;
+# never let it replace that file. See its header for why.
+src/lib/supabase/database.generated.ts

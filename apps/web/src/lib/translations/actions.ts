@@ -3,7 +3,7 @@
 import { revalidatePath, updateTag } from 'next/cache';
 import { LOCALE_CODE_PATTERN } from '@app/core';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getUser } from '@/lib/supabase/server';
 import { I18N_CACHE_TAG } from '@/lib/i18n/cache-tags';
 import { en } from '@/messages/en';
 
@@ -49,9 +49,7 @@ export async function saveTranslation(input: {
 
   const value = input.value.trim();
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
 
   // An empty value means "use the original", so the override is removed rather
   // than stored as an empty string — which would render as a blank label.

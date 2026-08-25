@@ -12,7 +12,7 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "format": "prettier --write \"**/*.{ts,tsx,md,json,css}\"",
-    "db:types": "supabase gen types typescript --linked --schema public > apps/web/src/lib/supabase/database.types.ts"
+    "db:types": "supabase gen types typescript --linked --schema public > apps/web/src/lib/supabase/database.generated.ts"
   },
   "devDependencies": {
     "prettier": "^3.6.2",

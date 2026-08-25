@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { emailSchema, passwordSchema } from '@app/core';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getUser } from '@/lib/supabase/server';
 
 export type AccountState = {
   formError?: string;
@@ -28,9 +28,7 @@ export async function updateProfileName(
   if (!parsed.success) return { fieldErrors: parsed.error.flatten().fieldErrors };
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
   if (!user) return { formError: 'Your session has expired. Sign in again.' };
 
   const { error } = await supabase
@@ -60,9 +58,7 @@ export async function updateEmail(
   if (!parsed.success) return { fieldErrors: parsed.error.flatten().fieldErrors };
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
   if (!user) return { formError: 'Your session has expired. Sign in again.' };
 
   if (user.email?.toLowerCase() === parsed.data.email.toLowerCase()) {
@@ -115,9 +111,7 @@ export async function updatePassword(
 /** Record a newly uploaded avatar. The file goes browser → Storage directly. */
 export async function saveAvatar(path: string): Promise<{ error?: string }> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
   if (!user) return { error: 'Your session has expired. Sign in again.' };
 
   // The storage policy already restricts writes to the caller's own folder;
@@ -144,9 +138,7 @@ export async function saveAvatar(path: string): Promise<{ error?: string }> {
 
 export async function removeAvatar(): Promise<{ error?: string }> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
   if (!user) return { error: 'Your session has expired. Sign in again.' };
 
   const { error } = await supabase.from('profiles').update({ avatar_url: null }).eq('id', user.id);

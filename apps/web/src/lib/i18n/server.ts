@@ -12,7 +12,7 @@ import {
   type Messages,
 } from '@app/core';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getUser } from '@/lib/supabase/server';
 import { createPublicClient } from '@/lib/supabase/public-client';
 import { CATALOGUE } from './catalogue';
 import { I18N_CACHE_TAG } from './cache-tags';
@@ -99,9 +99,7 @@ export const getLocale = cache(async (): Promise<Locale> => {
   if (fromCookie && codes.has(fromCookie)) return fromCookie;
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
   if (!user) return DEFAULT_LOCALE;
 
   const { data } = await supabase.from('profiles').select('locale').eq('id', user.id).maybeSingle();

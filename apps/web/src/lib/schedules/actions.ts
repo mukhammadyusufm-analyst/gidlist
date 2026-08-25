@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { addAssigneeSchema, createScheduleSchema } from '@app/core';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getUser } from '@/lib/supabase/server';
 import { isEmailConfigured } from '@/lib/email/send';
 import { sendInvitationEmail } from '@/lib/email/invitation';
 import { getTranslations } from '@/lib/i18n/server';
@@ -80,9 +80,7 @@ export async function createSchedule(_prev: ActionState, formData: FormData): Pr
   }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
   if (!user) redirect('/login');
 
   const { data, error } = await supabase
@@ -175,9 +173,7 @@ export async function inviteAndAssign(
   const email = parsed.data.email.toLowerCase().trim();
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
   if (!user) redirect('/login');
 
   const { error: inviteError } = await supabase.from('board_members').insert({
@@ -226,9 +222,7 @@ async function notifyNewMember(boardId: string, email: string): Promise<boolean>
 
   try {
     const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getUser();
 
     const [{ data: board }, { data: profile }, { locale }, { data: membership }] =
       await Promise.all([

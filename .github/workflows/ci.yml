@@ -1,0 +1,53 @@
+# Runs on every push and pull request.
+#
+# Deliberately only the checks that need nothing but the source: no database,
+# no secrets, no deployment. That keeps it fast enough that nobody is tempted
+# to skip it, and means a fork or a pull request can run it unchanged.
+#
+# These two commands have already caught real breakage in this repo by hand —
+# a renamed parameter that would have broken every image upload, and a fetched
+# variable that was never rendered. Running them automatically is the point.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A second push to the same branch cancels the first: the older result is about
+# to be irrelevant, and waiting for it wastes minutes.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Must come before setup-node: the pnpm cache needs pnpm to exist.
+      # No version pinned here — it is read from "packageManager" in
+      # package.json, so there is one place to change it.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # Matches the "engines" field. Anything older cannot build this.
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # Both run even if the first fails, so one push shows every problem
+      # rather than one at a time.
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        if: '!cancelled()'
+        run: pnpm lint

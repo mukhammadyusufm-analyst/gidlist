@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { CircleCheckBig, LogOut, Languages } from 'lucide-react';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getUser } from '@/lib/supabase/server';
 import { signOut } from '@/lib/auth/actions';
 import { getAvailableLocales, getTranslations, isPlatformAdmin } from '@/lib/i18n/server';
 import { getTheme } from '@/lib/theme/server';
@@ -23,9 +23,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   ]);
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
 
   // proxy.ts already redirects signed-out visitors away from /dashboard. This
   // repeats the check on purpose: the proxy protects by URL pattern, and a

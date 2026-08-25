@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getUser } from '@/lib/supabase/server';
 
 export type ActionState = {
   formError?: string;
@@ -44,9 +44,7 @@ export async function setItemChecked(
   checked: boolean,
 ): Promise<{ error?: string }> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
   if (!user) return { error: 'Your session has expired. Sign in again.' };
 
   const { error } = await supabase

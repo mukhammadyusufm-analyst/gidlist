@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import { Check, KeyRound, Mail } from 'lucide-react';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getUser } from '@/lib/supabase/server';
 import { getTranslations } from '@/lib/i18n/server';
 import { AvatarUpload } from '@/components/account/avatar-upload';
 import { EmailForm, NameForm, PasswordForm } from '@/components/account/account-forms';
@@ -11,9 +11,7 @@ export const metadata: Metadata = { title: 'Account' };
 
 export default async function AccountPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
   if (!user) redirect('/login?next=/dashboard/account');
 
   const [{ data: profile }, { t }] = await Promise.all([

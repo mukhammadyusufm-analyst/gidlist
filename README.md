@@ -125,6 +125,22 @@ Writes call `updateTag`, not `revalidateTag`: the latter now serves stale
 content while it refetches, so an administrator would save a translation and
 still be looking at the old one.
 
+**Ask for the user through `getUser()`, never `supabase.auth.getUser()`.**
+That call verifies the token against Supabase's auth server — a network round
+trip, not a local decode. Rendering one page used to make it three to five
+times over. The helper in `lib/supabase/server.ts` is memoised with React's
+`cache`; calling the client directly bypasses the memo and quietly restores the
+round trip. `proxy.ts` is the one exception: it runs before rendering, in its
+own invocation, and its call is what refreshes the session cookie.
+
+**`database.types.ts` is hand-written, and `pnpm db:types` must not overwrite
+it.** This schema has no Postgres enums — roles and statuses are `text` with
+CHECK constraints — so the generator can only produce `string` where this file
+has `BoardRole` and `SubmissionStatus`. That narrowing is what makes
+`canGovern()` and the status filters typecheck. The script therefore writes
+`database.generated.ts`, which is a reference to diff against. Converting the
+constraints to real enums would retire the arrangement; that is open item 12.
+
 **Platform admin is not space owner.** Interface wording is shared by every
 customer, so only a platform administrator may edit translations. There is no
 way to grant it from inside the app — it is set with SQL, deliberately, so
@@ -141,7 +157,7 @@ remembering a conversation.
 | 1a | **Split development from production** | **Queued: do this before announcing the project.** One Supabase project serves both this machine and the live site, so a migration applied by hand in the SQL Editor reaches real customer data the moment it runs, with no staging step and nothing to roll back to. The fix is a second Supabase project for development, `.env.local` pointing at it, and migrations applied there first. Doing it later means moving live data, so the cost only grows. |
 | 2 | **Supabase auth email (SMTP)** | Sign-up and password-reset mail still uses Supabase's built-in sender, rate-limited to a handful per hour and explicitly not for production — so sign-ups will start failing silently once more than a few people arrive at once. Now cheap to fix: `gidlist.com` is already verified in Resend, so this is Resend's SMTP credentials pasted into Supabase. See SETUP.md Part 8B. |
 | 2c | **Nothing is served statically** | Measured from Tashkent against production, best of 8: a CDN asset 190ms, the proxy redirect 231ms, `/` 452ms, `/login` 463ms. So ~190ms is network, ~41ms the proxy, **~221ms server rendering, and 11ms all database work**. Every page is rendered on demand because `proxy.ts` and the Supabase client read cookies on every request, so even the login form costs a function invocation. This is the largest remaining lever and it is what item 2b would fix. Note the network leg is inflated by requests entering Vercel at its **Hong Kong** edge before reaching Frankfurt. |
-| 2a | **Remaining per-request round trips** | Caching the language list and overrides removed two. An authenticated page still pays: the proxy's `auth.getUser()`, a second `getUser()` plus a `profiles` read in `getLocale()` when no locale cookie is set, and `is_platform_admin()` on every dashboard render. These are per-user, so the cache above deliberately does not cover them. Measure before changing anything — Supabase's free tier was a larger share of the original slowness than any of these. |
+| 2a | **Remaining per-request round trips** | Largely addressed: `getUser()` is memoised, and `my_role()` collapsed the role lookup from two round trips to one. What is left per authenticated page: the proxy's own `auth.getUser()` (cannot share the memo — separate invocation), a `profiles` read in `getLocale()` when no locale cookie is set, and `is_platform_admin()` on every dashboard render. Measure before touching these — free-tier cold starts remain the larger share. |
 | 2b | **Migrate to Cache Components** | `unstable_cache` is superseded by the `use cache` directive, which needs `cacheComponents: true` and a pass over the app wrapping runtime data access in `<Suspense>`. Worth doing for the static shell and instant navigation, but it is a refactor, not a patch — hence not done alongside a performance fix. |
 | 3 | **Audit log** | Action, timestamp, actor. Write it from database triggers, not app code, so an action cannot happen without being recorded. |
 | 4 | **Void a submission, with a reason** | Today a missed record can only be deleted, which is silent. Voiding is recorded, and is what a compliance tool should offer instead. |
@@ -151,6 +167,12 @@ remembering a conversation.
 | 8 | **Banner cropping** | A non-3:1 image is silently centre-cropped today. Needs fit/fill plus a draggable focal point. |
 | 9 | **Cross-section drag** | Items reorder among siblings only. Moving between sections, or changing nesting depth, is not draggable. |
 | 10 | **Browser tab titles** | Still English — they are static `metadata` exports and need `generateMetadata` to translate. |
+| 12 | **Real Postgres enums** | Roles, member statuses, version statuses, schedule kinds and submission statuses are `text` + CHECK. Converting them to enum types would let `pnpm db:types` generate `database.types.ts` correctly instead of it being hand-maintained, removing a standing chance of someone widening every union back to `string` by running one command. Needs a migration per type and a types regeneration. |
+| 13 | **Enforce the CSP** | It ships as `Content-Security-Policy-Report-Only`. Two blockers: `style-src` cannot drop `'unsafe-inline'` while seven components set `style={{…}}` (the builder's drag transforms change every frame), and the strict `script-src` Next recommends needs a per-request nonce, which forces dynamic rendering — directly against item 2b. Decide 2b first, then enforce. Dev shows only `unsafe-eval` violations, which React does not use in production. |
+| 14 | **Rate limiting** | Server actions have none. `inviteMember` can send unbounded mail through the Resend account and the domain's reputation; `materialise_schedule` does real database work on demand. RLS governs whose rows may be touched, not how often. Enforce in the database so it cannot be bypassed. |
+| 15 | **Error tracking and alerting** | `console.error` goes to Vercel logs where nobody looks. No alerting on the nightly `cron.schedule` job either — if it stops, obligations silently stop appearing and a customer finds out first. |
+| 16 | **RLS test suite** | There are no tests, and RLS is the entire security model. One slightly wrong policy in a migration opens data between customers and nothing would say so. The valuable suite is not UI tests: sign in as two users in different spaces and assert each cannot see the other's rows. |
+| 17 | **`submissions` retention** | The nightly job materialises occurrences forever and nothing archives. Indexes are right and it is fine at current size, but the compliance dashboard reads this table and it only grows. Decide retention or monthly partitioning before a customer has two years of daily checklists. |
 | 11 | **Member hierarchy within a space** | Reporting lines between members, so a supervisor can see and act on their own team rather than the whole space. Needed for planned functionality. Note this cuts across the current visibility model, which is flat: today a member sees only themselves and an editor sees everything. A hierarchy introduces a third case — "mine and my reports'" — which every submission and compliance policy would need to express. Design it before building it. |
 
 ## Build order
