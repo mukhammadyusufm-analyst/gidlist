@@ -242,15 +242,25 @@ Invitation emails currently do not send at all. This turns them on.
 
 8. Go to **API Keys → Create API Key**. Give it **Sending access** only.
 9. Copy the key. Resend shows it once and never again.
-10. In Vercel: **Settings → Environment Variables**, and add:
+10. In Vercel: **Settings → Environment Variables → Add Environment Variable**.
+    Add these as **two separate dialogs** — the Type selector applies to the
+    whole dialog, and these two want different types.
 
-| Name | Value |
-| ---- | ----- |
-| `RESEND_API_KEY` | the `re_…` key you just copied |
-| `EMAIL_FROM` | `Gidlist <noreply@gidlist.com>` |
+| Name | Type | Value |
+| ---- | ---- | ----- |
+| `RESEND_API_KEY` | **Secret** | the `re_…` key you just copied |
+| `EMAIL_FROM` | **Config** | `Gidlist <noreply@gidlist.com>` |
 
-11. Redeploy, as in Part 4 step 5. Environment variables only reach the app at
-    build time.
+11. Set **Environments** to **Production** for both. Not Preview.
+
+    Preview deployments are builds from unfinished branches. With the key
+    present they can send real mail from your domain to real people; without it
+    the app degrades exactly as designed — invitations are still recorded, they
+    are simply not emailed. That is the safer failure.
+
+12. Redeploy, as in Part 4 step 6. Vercel injects environment variables into the
+    running functions at deploy time, so the deployment currently serving the
+    site keeps saying "No email was sent" until a new build replaces it.
 
 > The Resend key must **not** be given a `NEXT_PUBLIC_` prefix. Anything with
 > that prefix is sent to every visitor's browser, and this key can send mail as
