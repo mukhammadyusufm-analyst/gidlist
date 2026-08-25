@@ -108,6 +108,23 @@ and can never fail an invitation. `lib/email/send.ts` is a thin wrapper over the
 provider's HTTP API rather than their SDK — swapping provider means editing one
 file. It degrades to a no-op when unconfigured, and the UI says which happened.
 
+**App-wide settings are cached across requests; anything personal is not.** The
+language list and the translation overrides are read on every page render, and
+they change a few times a month — so they go through `unstable_cache` with an
+hour's life and a shared tag, cutting two sequential database round trips from
+every request in the app. They are read with `createPublicClient()`, a Supabase
+client with no session, because a cached function may not touch cookies.
+
+The rule that makes this safe is narrow: **only data whose SELECT policy is
+`to public using (true)` may be cached this way.** Those rows are identical for
+every visitor, so there is nothing personal to leak between them. Cache anything
+user-scoped like this and Row Level Security has no one to identify — one
+person's rows would be stored and served to the next. When in doubt, don't.
+
+Writes call `updateTag`, not `revalidateTag`: the latter now serves stale
+content while it refetches, so an administrator would save a translation and
+still be looking at the old one.
+
 **Platform admin is not space owner.** Interface wording is shared by every
 customer, so only a platform administrator may edit translations. There is no
 way to grant it from inside the app — it is set with SQL, deliberately, so
@@ -123,6 +140,8 @@ remembering a conversation.
 | 1 | ~~**Deployment**~~ | **Done.** Live at `app.gidlist.com` — Vercel project `gidlist-web`, functions pinned to `fra1` to match the database, invitation email sending from `noreply@gidlist.com` via Resend. [DEPLOY.md](DEPLOY.md) records the steps and the four places the address is configured. Remaining: the app has still never been used on a phone, despite being built mobile-first, and bare `gidlist.com` still shows the registrar's parking page with no valid certificate. |
 | 1a | **Split development from production** | **Queued: do this before announcing the project.** One Supabase project serves both this machine and the live site, so a migration applied by hand in the SQL Editor reaches real customer data the moment it runs, with no staging step and nothing to roll back to. The fix is a second Supabase project for development, `.env.local` pointing at it, and migrations applied there first. Doing it later means moving live data, so the cost only grows. |
 | 2 | **Supabase auth email (SMTP)** | Sign-up and password-reset mail still uses Supabase's built-in sender, rate-limited to a handful per hour and explicitly not for production — so sign-ups will start failing silently once more than a few people arrive at once. Now cheap to fix: `gidlist.com` is already verified in Resend, so this is Resend's SMTP credentials pasted into Supabase. See SETUP.md Part 8B. |
+| 2a | **Remaining per-request round trips** | Caching the language list and overrides removed two. An authenticated page still pays: the proxy's `auth.getUser()`, a second `getUser()` plus a `profiles` read in `getLocale()` when no locale cookie is set, and `is_platform_admin()` on every dashboard render. These are per-user, so the cache above deliberately does not cover them. Measure before changing anything — Supabase's free tier was a larger share of the original slowness than any of these. |
+| 2b | **Migrate to Cache Components** | `unstable_cache` is superseded by the `use cache` directive, which needs `cacheComponents: true` and a pass over the app wrapping runtime data access in `<Suspense>`. Worth doing for the static shell and instant navigation, but it is a refactor, not a patch — hence not done alongside a performance fix. |
 | 3 | **Audit log** | Action, timestamp, actor. Write it from database triggers, not app code, so an action cannot happen without being recorded. |
 | 4 | **Void a submission, with a reason** | Today a missed record can only be deleted, which is silent. Voiding is recorded, and is what a compliance tool should offer instead. |
 | 5 | **Checklist preview** | A read-only rendering on the Details tab showing the checklist as it appears when filled in, without creating a submission. |
