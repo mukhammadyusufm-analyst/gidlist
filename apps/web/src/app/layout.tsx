@@ -30,8 +30,8 @@ const mono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Checklists',
-    template: '%s · Checklists',
+    default: 'Gidlist',
+    template: '%s · Gidlist',
   },
   description: 'Create, schedule and track operational checklists across your organisation.',
 };

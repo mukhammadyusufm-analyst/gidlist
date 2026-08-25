@@ -95,11 +95,11 @@ export const uz = {
   'members.emailPlaceholder': 'hamkasb@kompaniya.com',
   'email.inviteSubject': '{inviter} sizni {space} maydoniga taklif qildi',
   'email.inviteBody':
-    '{inviter} sizni Checklists ilovasidagi {space} maydoniga {role} sifatida taklif qildi.',
+    '{inviter} sizni Gidlist ilovasidagi {space} maydoniga {role} sifatida taklif qildi.',
   'email.inviteNoAccount':
     'Shu elektron pochta manzili bilan hisob yarating — taklif sizni kutib turadi.',
   'email.inviteHasAccount': 'Tizimga kiring, taklifni "Maydonlar" sahifasida koʻrasiz.',
-  'email.inviteCta': 'Checklists ni ochish',
+  'email.inviteCta': 'Gidlistni ochish',
   'email.inviteFooter': 'Agar bu xatni kutmagan boʻlsangiz, eʼtiborsiz qoldirishingiz mumkin.',
 
   'invite.pending': 'Takliflar',

@@ -10,7 +10,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
     <div className="flex min-h-dvh flex-col items-center justify-center px-4 py-10">
       <div className="w-full max-w-sm">
         <Link href="/" className="mb-8 block text-center text-lg font-semibold tracking-tight">
-          Checklists
+          Gidlist
         </Link>
 
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] p-6 shadow-sm">

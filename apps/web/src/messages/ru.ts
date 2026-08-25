@@ -91,11 +91,11 @@ export const ru = {
   'members.emailPlaceholder': 'kollega@kompaniya.com',
   'email.inviteSubject': '{inviter} приглашает вас в «{space}»',
   'email.inviteBody':
-    '{inviter} приглашает вас в пространство «{space}» в Checklists — как {role}.',
+    '{inviter} приглашает вас в пространство «{space}» в Gidlist — как {role}.',
   'email.inviteNoAccount':
     'Создайте аккаунт с этим адресом почты, и приглашение будет вас ждать.',
   'email.inviteHasAccount': 'Войдите — приглашение появится на странице «Пространства».',
-  'email.inviteCta': 'Открыть Checklists',
+  'email.inviteCta': 'Открыть Gidlist',
   'email.inviteFooter': 'Если вы не ожидали это письмо, его можно просто проигнорировать.',
 
   'invite.pending': 'Приглашения',

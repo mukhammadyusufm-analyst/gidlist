@@ -57,7 +57,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <span className="flex size-7 items-center justify-center rounded-md bg-[var(--color-primary)] text-[var(--color-primary-foreground)]">
               <CircleCheckBig className="size-4" aria-hidden="true" />
             </span>
-            <span className="hidden sm:inline">Checklists</span>
+            <span className="hidden sm:inline">Gidlist</span>
           </Link>
 
           <div className="flex items-center gap-1.5">

@@ -96,11 +96,11 @@ export const en = {
   'members.emailPlaceholder': 'colleague@company.com',
   // --- email --------------------------------------------------------------
   'email.inviteSubject': '{inviter} invited you to {space}',
-  'email.inviteBody': '{inviter} has invited you to join {space} on Checklists, as {role}.',
+  'email.inviteBody': '{inviter} has invited you to join {space} on Gidlist, as {role}.',
   'email.inviteNoAccount':
     'Create an account with this email address, and the invitation will be waiting for you.',
   'email.inviteHasAccount': 'Sign in and you will find the invitation on your Spaces page.',
-  'email.inviteCta': 'Open Checklists',
+  'email.inviteCta': 'Open Gidlist',
   'email.inviteFooter': 'If you were not expecting this, you can safely ignore this email.',
 
   'invite.pending': 'Invitations',
