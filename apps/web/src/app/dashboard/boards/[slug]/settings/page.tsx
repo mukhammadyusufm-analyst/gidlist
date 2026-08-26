@@ -18,10 +18,13 @@ export const metadata: Metadata = { title: 'Space settings' };
 
 export default async function BoardSettingsPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ q?: string; action?: string; offset?: string }>;
 }) {
   const { slug } = await params;
+  const { q, action: auditAction, offset: offsetParam } = await searchParams;
   const board = await getBoardBySlug(slug);
   if (!board) notFound();
 
@@ -101,7 +104,13 @@ export default async function BoardSettingsPage({
       {/* Admins, not only owners: "who removed that person" is a question
           whoever runs the space day to day needs answered. The database agrees
           — board_audit_log checks for admin, not ownership. */}
-      <SpaceHistory boardId={board.id} />
+      <SpaceHistory
+        boardId={board.id}
+        slug={board.slug}
+        search={q?.trim() ?? ''}
+        action={auditAction}
+        offset={Math.max(Number(offsetParam ?? 0) || 0, 0)}
+      />
 
       {/* Owner only. An admin runs the space day to day; removing it from view
           entirely is the owner's decision, and the database agrees. */}

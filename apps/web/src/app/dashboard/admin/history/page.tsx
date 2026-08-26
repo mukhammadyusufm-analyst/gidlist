@@ -5,42 +5,86 @@ import { hasCapability } from '@/lib/platform/access';
 import { createClient } from '@/lib/supabase/server';
 import { getTranslations } from '@/lib/i18n/server';
 import { AuditList, type AuditEntry } from '@/components/audit/audit-list';
+import { ListFilter, Pagination } from '@/components/ui/list-controls';
 
 export const metadata: Metadata = { title: 'History' };
 
+const PAGE_SIZE = 25;
+
 /**
- * Platform history: capability grants and billing.
+ * Platform history: capability grants, billing, translations.
  *
- * Gated on `grants`, the same capability that can change access. Whoever hands
- * out power should be the one who can see it handed out — and nobody else
- * should read a list of who administers what.
+ * Gated on `grants`, the same capability that can change access — whoever hands
+ * out power should see it handed out, and nobody else should read a list of who
+ * administers what.
  *
- * English, like the rest of the admin area. These pages have one audience.
+ * Filters live in the URL rather than in component state, so a filtered view
+ * can be bookmarked or sent to somebody. English, like the rest of the admin
+ * area: these pages have one audience.
  */
-export default async function PlatformHistoryPage() {
+export default async function PlatformHistoryPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; action?: string; offset?: string }>;
+}) {
   if (!(await hasCapability('grants'))) notFound();
 
+  const { q, action, offset: offsetParam } = await searchParams;
+  const search = q?.trim() ?? '';
+  const offset = Math.max(Number(offsetParam ?? 0) || 0, 0);
+
   const supabase = await createClient();
-  const [{ data }, { locale }] = await Promise.all([
-    supabase.rpc('platform_audit_log', { p_limit: 200 }),
+  const [{ data }, { data: actions }, { locale }] = await Promise.all([
+    supabase.rpc('platform_audit_log', {
+      p_search: search || undefined,
+      p_action: action || undefined,
+      p_limit: PAGE_SIZE,
+      p_offset: offset,
+    }),
+    supabase.rpc('audit_actions', { p_board_id: undefined }),
     getTranslations(),
   ]);
 
+  const entries = (data ?? []) as AuditEntry[];
+  // Every row carries the same window-function total; with no rows there is
+  // nothing to total.
+  const total = entries[0]?.total_count ?? 0;
+
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="max-w-3xl space-y-5">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Platform history</h1>
         <p className="mt-1 text-sm text-[var(--color-muted-foreground)]">
-          Access changes and billing, newest first. Written by the database, so nothing that
-          happened is missing from it.
+          Access changes, billing and translations, newest first. Written by the database, so
+          nothing that happened is missing from it.
         </p>
       </div>
 
+      <ListFilter
+        action="/dashboard/admin/history"
+        search={search}
+        searchLabel="Search name, email, action or detail"
+        actions={actions ?? []}
+        selectedAction={action}
+        actionLabel="Action"
+        allLabel="All actions"
+        submitLabel="Search"
+      />
+
       <AuditList
-        entries={(data ?? []) as AuditEntry[]}
-        emptyLabel="Nothing recorded yet."
+        entries={entries}
+        emptyLabel={search || action ? 'Nothing matches that.' : 'Nothing recorded yet.'}
         locale={locale}
         phrase={platformPhrase}
+      />
+
+      <Pagination
+        basePath="/dashboard/admin/history"
+        params={{ q: search, action }}
+        offset={offset}
+        limit={PAGE_SIZE}
+        total={total}
+        label={`Showing ${total === 0 ? 0 : offset + 1}–${Math.min(offset + PAGE_SIZE, total)} of ${total}`}
       />
     </div>
   );

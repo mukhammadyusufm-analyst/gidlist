@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { getTranslations } from '@/lib/i18n/server';
 import { AuditList, type AuditEntry } from '@/components/audit/audit-list';
+import { ListFilter, Pagination } from '@/components/ui/list-controls';
 
 /**
  * What has happened in this space.
@@ -11,12 +12,38 @@ import { AuditList, type AuditEntry } from '@/components/audit/audit-list';
  *
  * Translated, unlike the platform history: this one is read by customers.
  */
-export async function SpaceHistory({ boardId }: { boardId: string }) {
+const PAGE_SIZE = 25;
+
+export async function SpaceHistory({
+  boardId,
+  slug,
+  search,
+  action,
+  offset,
+}: {
+  boardId: string;
+  slug: string;
+  search: string;
+  action?: string;
+  offset: number;
+}) {
   const supabase = await createClient();
-  const [{ data }, { t, locale }] = await Promise.all([
-    supabase.rpc('board_audit_log', { p_board_id: boardId, p_limit: 50 }),
+  const [{ data }, { data: actions }, { t, locale }] = await Promise.all([
+    supabase.rpc('board_audit_log', {
+      p_board_id: boardId,
+      p_search: search || undefined,
+      p_action: action || undefined,
+      p_limit: PAGE_SIZE,
+      p_offset: offset,
+    }),
+    supabase.rpc('audit_actions', { p_board_id: boardId }),
     getTranslations(),
   ]);
+
+  const entries = (data ?? []) as AuditEntry[];
+  // Every row carries the same window-function total; no rows, nothing to total.
+  const total = entries[0]?.total_count ?? 0;
+  const basePath = `/dashboard/boards/${slug}/settings`;
 
   const phrase = (entry: AuditEntry): string => {
     const who = entry.actor_name;
@@ -81,15 +108,45 @@ export async function SpaceHistory({ boardId }: { boardId: string }) {
   };
 
   return (
-    <section>
-      <h2 className="text-lg font-semibold tracking-tight">{t('audit.title')}</h2>
-      <p className="mt-1 mb-4 text-sm text-[var(--color-muted-foreground)]">{t('audit.intro')}</p>
+    <section className="space-y-4">
+      <div>
+        <h2 className="text-lg font-semibold tracking-tight">{t('audit.title')}</h2>
+        <p className="mt-1 text-sm text-[var(--color-muted-foreground)]">{t('audit.intro')}</p>
+      </div>
+
+      {/* The filter is offered only once there is enough history for it to be
+          useful. A search box above four rows is furniture. */}
+      {total > PAGE_SIZE || search || action ? (
+        <ListFilter
+          action={basePath}
+          search={search}
+          searchLabel={t('audit.searchLabel')}
+          actions={actions ?? []}
+          selectedAction={action}
+          actionLabel={t('audit.actionLabel')}
+          allLabel={t('audit.allActions')}
+          submitLabel={t('audit.search')}
+        />
+      ) : null}
 
       <AuditList
-        entries={(data ?? []) as AuditEntry[]}
-        emptyLabel={t('audit.empty')}
+        entries={entries}
+        emptyLabel={search || action ? t('audit.noMatches') : t('audit.empty')}
         locale={locale}
         phrase={phrase}
+      />
+
+      <Pagination
+        basePath={basePath}
+        params={{ q: search, action }}
+        offset={offset}
+        limit={PAGE_SIZE}
+        total={total}
+        label={t('audit.showing', {
+          from: total === 0 ? 0 : offset + 1,
+          to: Math.min(offset + PAGE_SIZE, total),
+          total,
+        })}
       />
     </section>
   );

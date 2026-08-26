@@ -53,6 +53,24 @@ export type PlanCode = 'free' | 'starter' | 'team' | 'business';
  */
 export type FeatureKey = 'checklists' | 'compliance' | 'okr';
 
+/**
+ * One audit row, as both log functions return it.
+ *
+ * `actor_id` and `actor_email` alongside the name because a display name is not
+ * an identity: two people can share one, and it is editable after the fact —
+ * so the name alone cannot answer "which account did this".
+ */
+export type AuditRow = {
+  id: number;
+  action: string;
+  actor_id: string | null;
+  actor_name: string;
+  actor_email: string | null;
+  detail: Record<string, string | null>;
+  created_at: string;
+  total_count: number;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -534,33 +552,35 @@ export type Database = {
       // Functions rather than direct table reads: auth.users is not readable
       // through the API, so a raw query would return actor uuids nobody can
       // read. These resolve the name.
+      // `total_count` repeats on every row — it is a window function over the
+      // filtered set, so paging can report "1–25 of 340" without a second query.
       board_audit_log: {
-        Args: { p_board_id: string; p_limit?: number };
-        Returns: {
-          id: number;
-          action: string;
-          actor_name: string;
-          detail: Record<string, string | null>;
-          created_at: string;
-        }[];
+        Args: {
+          p_board_id: string;
+          p_search?: string;
+          p_action?: string;
+          p_limit?: number;
+          p_offset?: number;
+        };
+        Returns: AuditRow[];
       };
       platform_audit_log: {
-        Args: { p_limit?: number };
-        Returns: {
-          id: number;
-          action: string;
-          actor_name: string;
-          detail: Record<string, string | null>;
-          created_at: string;
-        }[];
+        Args: { p_search?: string; p_action?: string; p_limit?: number; p_offset?: number };
+        Returns: AuditRow[];
+      };
+      /** Which actions actually occur, so a filter offers only real choices. */
+      audit_actions: {
+        Args: { p_board_id?: string };
+        Returns: { action: string; uses: number }[];
       };
       platform_people: {
-        Args: Record<string, never>;
+        Args: { p_search?: string; p_limit?: number; p_offset?: number };
         Returns: {
           user_id: string;
           email: string;
           full_name: string | null;
           capabilities: string[];
+          total_count: number;
         }[];
       };
       // Returns null when the caller is not an active member of the board.

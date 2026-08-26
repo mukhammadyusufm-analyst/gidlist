@@ -3,9 +3,13 @@ import { History } from 'lucide-react';
 export type AuditEntry = {
   id: number;
   action: string;
+  /** The only value that actually distinguishes one person from another. */
+  actor_id: string | null;
   actor_name: string;
+  actor_email: string | null;
   detail: Record<string, string | null>;
   created_at: string;
+  total_count: number;
 };
 
 /**
@@ -54,14 +58,27 @@ export function AuditList({
           />
           <div className="min-w-0 flex-1">
             <p className="text-sm">{phrase(entry)}</p>
+
             {/* The timestamp is a <time> element so a screen reader announces a
-                date rather than reading the formatted string as prose. */}
-            <time
-              dateTime={entry.created_at}
-              className="text-xs text-[var(--color-muted-foreground)]"
-            >
-              {when.format(new Date(entry.created_at))}
-            </time>
+                date rather than reading the formatted string as prose.
+
+                The email sits beside it because a display name is not an
+                identity: two colleagues can share one, and a name is editable
+                after the fact — the address is what lets somebody say which
+                account this was. The account id is on the title attribute
+                rather than on screen, since it is what you need only when the
+                email is not enough, and it would be noise the rest of the time. */}
+            <p className="flex flex-wrap items-center gap-x-2 text-xs text-[var(--color-muted-foreground)]">
+              <time dateTime={entry.created_at}>{when.format(new Date(entry.created_at))}</time>
+              {entry.actor_email ? (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <span title={entry.actor_id ?? undefined}>{entry.actor_email}</span>
+                </>
+              ) : null}
+              <span aria-hidden="true">·</span>
+              <code className="text-[0.7rem] opacity-70">{entry.action}</code>
+            </p>
           </div>
         </li>
       ))}
