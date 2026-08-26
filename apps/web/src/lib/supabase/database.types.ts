@@ -41,7 +41,7 @@ export type SubmissionStatus = 'upcoming' | 'draft' | 'done' | 'missed';
  */
 export type SubscriptionStatus = 'active' | 'trialing' | 'past_due' | 'canceled';
 export type PaymentProvider = 'payme' | 'click' | 'paddle';
-export type PlanCode = 'free' | 'standard';
+export type PlanCode = 'free' | 'starter' | 'team' | 'business';
 
 /**
  * Capability keys, matched against `plan_features`.
@@ -51,7 +51,7 @@ export type PlanCode = 'free' | 'standard';
  * grants nothing, which is indistinguishable from "not on your plan" at runtime.
  * Adding a module means adding its key here and inserting its rows.
  */
-export type FeatureKey = 'checklists' | 'spaces' | 'members' | 'compliance';
+export type FeatureKey = 'checklists' | 'compliance' | 'okr';
 
 export type Database = {
   public: {
@@ -370,17 +370,24 @@ export type Database = {
         Relationships: [];
       };
       // ---- billing (phase 7) -------------------------------------------------
-      // All four are read-only to the app. Subscriptions change because a
-      // payment provider says so, through a webhook using the service role;
+      // All read-only to the app. Subscriptions change because a payment
+      // provider says money moved, through a webhook using the service role;
       // there are deliberately no write policies, so `never` here matches what
       // the database would do anyway.
+      //
+      // Capacity lives in columns on `plans`; capability lives in rows of
+      // plan_features and addon_features. Keeping numbers and sets apart is
+      // what stops a future module needing its own member limit.
       plans: {
         Row: {
-          code: string;
+          code: PlanCode;
           name: string;
-          price_per_seat_minor: number;
+          /** Flat monthly price in minor units — not per seat. */
+          price_minor: number;
           currency: string;
-          min_seats: number;
+          /** Distinct people pooled across every space. Null = unlimited. */
+          max_members: number | null;
+          max_spaces: number | null;
           is_free: boolean;
           is_offerable: boolean;
           sort_order: number;
@@ -391,18 +398,37 @@ export type Database = {
         Relationships: [];
       };
       plan_features: {
-        // `limit_value` null means unlimited; a missing row means denied.
-        Row: { plan_code: string; feature_key: string; limit_value: number | null };
+        // No row means not granted. Absence is the denial.
+        Row: { plan_code: PlanCode; feature_key: FeatureKey };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      addons: {
+        Row: { code: string; name: string; is_offerable: boolean; sort_order: number; created_at: string };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      addon_prices: {
+        Row: { addon_code: string; plan_code: PlanCode; price_minor: number; currency: string };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      addon_features: {
+        Row: { addon_code: string; feature_key: FeatureKey };
         Insert: never;
         Update: never;
         Relationships: [];
       };
       subscriptions: {
         Row: {
-          board_id: string;
-          plan_code: string;
+          owner_id: string;
+          plan_code: PlanCode;
           status: SubscriptionStatus;
           current_period_start: string;
+          /** Prepaid: a genuine paid-through date, not a usage window. */
           current_period_end: string | null;
           provider: PaymentProvider | null;
           provider_ref: string | null;
@@ -414,8 +440,14 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
-      board_seat_days: {
-        Row: { board_id: string; day: string; active_seats: number };
+      subscription_addons: {
+        Row: {
+          owner_id: string;
+          addon_code: string;
+          status: SubscriptionStatus;
+          current_period_end: string | null;
+          created_at: string;
+        };
         Insert: never;
         Update: never;
         Relationships: [];
@@ -427,23 +459,34 @@ export type Database = {
       // Returns null when the caller is not an active member of the board.
       my_role: { Args: { p_board_id: string }; Returns: BoardRole | null };
       // ---- billing (phase 7) -------------------------------------------------
-      // `board_active_seats` and `snapshot_seat_days` are absent on purpose:
-      // both are revoked from every API role, so listing them here would invite
-      // a call that the database refuses.
-      board_plan: { Args: { p_board_id: string }; Returns: PlanCode };
+      // account_member_count, account_space_count and account_plan are absent on
+      // purpose: all three are revoked from every API role, because each takes
+      // an id and would otherwise report how large any account is to anyone
+      // holding it. Listing them here would invite a call the database refuses.
+      account_has_feature: {
+        Args: { p_owner_id: string; p_feature_key: FeatureKey };
+        Returns: boolean;
+      };
+      /** Resolves a space to whoever pays for it. Safe inside RLS policies. */
       board_has_feature: {
         Args: { p_board_id: string; p_feature_key: FeatureKey };
         Returns: boolean;
       };
-      // Null means unlimited, which is why this is not simply a number.
-      board_feature_limit: {
-        Args: { p_board_id: string; p_feature_key: FeatureKey };
-        Returns: number | null;
-      };
-      // Null when the caller is not an admin of the space.
-      board_billable_seats: {
-        Args: { p_board_id: string; p_from: string; p_to: string };
-        Returns: number | null;
+      /** Everything the billing page needs, about the caller's own account only. */
+      my_account_usage: {
+        Args: Record<string, never>;
+        Returns: {
+          plan_code: PlanCode;
+          plan_name: string;
+          price_minor: number;
+          currency: string;
+          max_members: number | null;
+          max_spaces: number | null;
+          used_members: number;
+          used_spaces: number;
+          period_end: string | null;
+          status: SubscriptionStatus;
+        }[];
       };
       compliance_counts: {
         Args: {
@@ -517,5 +560,7 @@ export type Submission = Database['public']['Tables']['submissions']['Row'];
 export type SubmissionItem = Database['public']['Tables']['submission_items']['Row'];
 export type Plan = Database['public']['Tables']['plans']['Row'];
 export type PlanFeature = Database['public']['Tables']['plan_features']['Row'];
+export type Addon = Database['public']['Tables']['addons']['Row'];
+export type AddonPrice = Database['public']['Tables']['addon_prices']['Row'];
 export type Subscription = Database['public']['Tables']['subscriptions']['Row'];
-export type BoardSeatDay = Database['public']['Tables']['board_seat_days']['Row'];
+export type AccountUsage = Database['public']['Functions']['my_account_usage']['Returns'][number];

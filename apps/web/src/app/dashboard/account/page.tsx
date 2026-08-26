@@ -1,6 +1,7 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
-import { Check, KeyRound, Mail } from 'lucide-react';
+import { Check, ChevronRight, CreditCard, KeyRound, Mail } from 'lucide-react';
 
 import { createClient, getUser } from '@/lib/supabase/server';
 import { getTranslations } from '@/lib/i18n/server';
@@ -42,6 +43,25 @@ export default async function AccountPage() {
         <h1 className="text-2xl font-semibold tracking-tight">{t('account.title')}</h1>
         <p className="mt-1 text-sm text-[var(--color-muted-foreground)]">{t('account.intro')}</p>
       </div>
+
+      {/* First, and a link rather than a section. Billing covers every space
+          this person owns, so it does not belong under any one of them — and
+          it is the thing an owner comes here looking for. */}
+      <section>
+        <Link
+          href="/dashboard/account/billing"
+          className="flex items-center justify-between gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] p-4 transition-colors hover:bg-[var(--color-accent)]"
+        >
+          <span className="flex items-center gap-3">
+            <CreditCard className="size-4 text-[var(--color-muted-foreground)]" aria-hidden="true" />
+            <span className="text-sm font-medium">{t('billing.title')}</span>
+          </span>
+          <ChevronRight
+            className="size-4 shrink-0 text-[var(--color-muted-foreground)]"
+            aria-hidden="true"
+          />
+        </Link>
+      </section>
 
       <section>
         <h2 className="text-lg font-semibold">{t('account.photo')}</h2>
