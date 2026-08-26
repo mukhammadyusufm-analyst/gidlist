@@ -64,6 +64,8 @@ export const uz = {
   'space.nameLabel': 'Maydon nomi',
   'space.nameHint': 'U qamrab oladigan kompaniya yoki boʻlim nomini bering.',
   'space.settings': 'Sozlamalar',
+  'archive.listTitle': 'Arxivlangan maydonlar ({count})',
+  'archive.archivedOn': '{date} dan arxivda',
   'archive.title': 'Maydonni arxivlash',
   'archive.intro':
     'Maydon yashiriladi va yangi vazifalar yaratmay qoʻyadi. Yozib olingan hamma narsa saqlanadi va «Muvofiqlik» boʻlimida koʻrinib turadi. Istalgan vaqtda qaytarish mumkin.',

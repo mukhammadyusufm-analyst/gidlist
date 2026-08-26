@@ -65,6 +65,8 @@ export const en = {
   'space.nameLabel': 'Space name',
   'space.nameHint': 'Name it after the company or department it covers.',
   'space.settings': 'Settings',
+  'archive.listTitle': 'Archived spaces ({count})',
+  'archive.archivedOn': 'Archived {date}',
   'archive.title': 'Archive this space',
   'archive.intro':
     'Hides the space and stops it creating new tasks. Everything already recorded stays, and stays visible in Compliance. You can bring it back at any time.',

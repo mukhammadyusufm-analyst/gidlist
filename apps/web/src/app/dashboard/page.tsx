@@ -2,19 +2,21 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { LayoutGrid, Plus } from 'lucide-react';
 
-import { listMyBoards } from '@/lib/boards/queries';
+import { listArchivedBoards, listMyBoards } from '@/lib/boards/queries';
 import { getTranslations } from '@/lib/i18n/server';
 import { listPendingInvitations } from '@/lib/invitations/queries';
 import { InvitationList } from '@/components/invitations/invitation-list';
 import { buttonVariants } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { SpaceCard } from '@/components/boards/space-card';
+import { ArchivedSpaces } from '@/components/boards/archived-spaces';
 
 export const metadata: Metadata = { title: 'Spaces' };
 
 export default async function DashboardPage() {
-  const [boards, invitations, { t }] = await Promise.all([
+  const [boards, archived, invitations, { t }] = await Promise.all([
     listMyBoards(),
+    listArchivedBoards(),
     listPendingInvitations(),
     getTranslations(),
   ]);
@@ -64,6 +66,11 @@ export default async function DashboardPage() {
           ))}
         </ul>
       )}
+
+      {/* Renders nothing when there is nothing archived. Without it, archiving
+          is one-way: the space leaves this list and its Settings page, which
+          holds the only Restore button, becomes unreachable. */}
+      <ArchivedSpaces boards={archived} />
     </div>
   );
 }

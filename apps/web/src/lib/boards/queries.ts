@@ -29,6 +29,25 @@ export async function listMyBoards(includeArchived = false): Promise<Board[]> {
   return data ?? [];
 }
 
+/**
+ * Archived spaces only.
+ *
+ * Without this, archiving is a one-way trip: an archived space leaves the list,
+ * and its Settings page — the only place holding the Restore button — is then
+ * unreachable unless someone kept the URL.
+ */
+export async function listArchivedBoards(): Promise<Board[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('boards')
+    .select('*')
+    .not('archived_at', 'is', null)
+    .order('archived_at', { ascending: false });
+
+  if (error) throw new Error(`Could not load archived spaces: ${error.message}`);
+  return data ?? [];
+}
+
 export async function getBoardBySlug(slug: string): Promise<Board | null> {
   const supabase = await createClient();
   const { data, error } = await supabase.from('boards').select('*').eq('slug', slug).maybeSingle();
