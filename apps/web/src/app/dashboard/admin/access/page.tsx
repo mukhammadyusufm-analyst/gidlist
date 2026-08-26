@@ -23,30 +23,47 @@ export const metadata: Metadata = { title: 'Access' };
  */
 const PAGE_SIZE = 25;
 
+/** The filter value meaning "holds something, no matter what". */
+const ANY_ACCESS = 'any';
+
 export default async function AccessPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; offset?: string }>;
+  searchParams: Promise<{ q?: string; action?: string; offset?: string }>;
 }) {
   if (!(await hasCapability('grants'))) notFound();
 
-  const { q, offset: offsetParam } = await searchParams;
+  // Named `action` in the URL because the shared filter control uses that key.
+  // Here it holds a capability code, or ANY_ACCESS.
+  const { q, action: filter, offset: offsetParam } = await searchParams;
   const search = q?.trim() ?? '';
   const offset = Math.max(Number(offsetParam ?? 0) || 0, 0);
 
   const supabase = await createClient();
-  const [{ data: people }, { data: capabilities }] = await Promise.all([
+  const [{ data: people }, { data: capabilities }, { data: counts }] = await Promise.all([
     supabase.rpc('platform_people', {
       p_search: search || undefined,
+      p_capability: filter && filter !== ANY_ACCESS ? filter : undefined,
+      p_with_access: filter === ANY_ACCESS,
       p_limit: PAGE_SIZE,
       p_offset: offset,
     }),
     supabase.from('platform_capabilities').select('*').order('sort_order'),
+    supabase.rpc('platform_capability_counts'),
   ]);
 
   const caps = capabilities ?? [];
   const rows = people ?? [];
   const total = rows[0]?.total_count ?? 0;
+
+  // "Anyone with access" first: it is the reason this page usually gets opened,
+  // and scanning hundreds of accounts for the few that hold something is the
+  // work the filter exists to remove.
+  const withAccess = (counts ?? []).reduce((sum, c) => sum + Number(c.holders), 0);
+  const filterOptions = [
+    { action: ANY_ACCESS, uses: withAccess },
+    ...(counts ?? []).map((c) => ({ action: c.capability, uses: Number(c.holders) })),
+  ];
 
   return (
     <div className="space-y-6">
@@ -77,6 +94,15 @@ export default async function AccessPage({
         action="/dashboard/admin/access"
         search={search}
         searchLabel="Search by name or email"
+        actions={filterOptions}
+        selectedAction={filter}
+        actionLabel="Holds"
+        allLabel="Everyone"
+        optionLabel={(value) =>
+          value === ANY_ACCESS
+            ? 'Any access'
+            : (caps.find((c) => c.code === value)?.name ?? value)
+        }
         submitLabel="Search"
       />
 
@@ -99,7 +125,7 @@ export default async function AccessPage({
                   colSpan={caps.length + 1}
                   className="px-4 py-8 text-center text-[var(--color-muted-foreground)]"
                 >
-                  {search ? 'Nobody matches that.' : 'No accounts yet.'}
+                  {search || filter ? 'Nobody matches that.' : 'No accounts yet.'}
                 </td>
               </tr>
             ) : null}
@@ -137,7 +163,7 @@ export default async function AccessPage({
 
       <Pagination
         basePath="/dashboard/admin/access"
-        params={{ q: search }}
+        params={{ q: search, action: filter }}
         offset={offset}
         limit={PAGE_SIZE}
         total={total}

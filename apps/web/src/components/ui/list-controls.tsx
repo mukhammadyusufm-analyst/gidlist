@@ -19,6 +19,7 @@ export function ListFilter({
   selectedAction,
   actionLabel,
   allLabel,
+  optionLabel,
   submitLabel,
 }: {
   /** The page this form submits back to. */
@@ -30,6 +31,10 @@ export function ListFilter({
   selectedAction?: string;
   actionLabel?: string;
   allLabel?: string;
+  /** How to word one option. Defaults to the raw value, which suits the audit
+   *  log — its actions are keys like `member.removed` and reading them exactly
+   *  is the point. Pages with values that are not self-explanatory pass this. */
+  optionLabel?: (value: string) => string;
   submitLabel: string;
 }) {
   return (
@@ -68,7 +73,7 @@ export function ListFilter({
             <option value="">{allLabel}</option>
             {actions.map((entry) => (
               <option key={entry.action} value={entry.action}>
-                {entry.action} ({entry.uses})
+                {optionLabel ? optionLabel(entry.action) : entry.action} ({entry.uses})
               </option>
             ))}
           </select>

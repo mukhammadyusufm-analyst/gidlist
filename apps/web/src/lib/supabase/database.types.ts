@@ -574,7 +574,17 @@ export type Database = {
         Returns: { action: string; uses: number }[];
       };
       platform_people: {
-        Args: { p_search?: string; p_limit?: number; p_offset?: number };
+        Args: {
+          p_search?: string;
+          /** A capability code. Filters to its holders. */
+          p_capability?: string;
+          /** Holds at least one capability. Separate from the above rather than
+           *  a magic value, which would break the day a capability is named
+           *  `any` and read as a bug until then. */
+          p_with_access?: boolean;
+          p_limit?: number;
+          p_offset?: number;
+        };
         Returns: {
           user_id: string;
           email: string;
@@ -582,6 +592,10 @@ export type Database = {
           capabilities: string[];
           total_count: number;
         }[];
+      };
+      platform_capability_counts: {
+        Args: Record<string, never>;
+        Returns: { capability: string; holders: number }[];
       };
       // Returns null when the caller is not an active member of the board.
       my_role: { Args: { p_board_id: string }; Returns: BoardRole | null };
