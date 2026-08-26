@@ -457,7 +457,19 @@ export type Database = {
     };
     Views: Record<never, never>;
     Functions: {
+      // Now means "holds the root `grants` capability" rather than "can do
+      // anything administrative". Prefer has_platform_capability for narrower
+      // questions — widening this would give a translator reach it should not
+      // have.
       is_platform_admin: { Args: Record<string, never>; Returns: boolean };
+      has_platform_capability: { Args: { p_capability: string }; Returns: boolean };
+      my_platform_capabilities: { Args: Record<string, never>; Returns: string[] };
+      // Refuses the root capability: granting that stays a database-console act,
+      // so the set of people who can hand out power changes only deliberately.
+      set_platform_grant: {
+        Args: { p_user_id: string; p_capability: string; p_granted: boolean };
+        Returns: undefined;
+      };
       // Returns null when the caller is not an active member of the board.
       my_role: { Args: { p_board_id: string }; Returns: BoardRole | null };
       // ---- billing (phase 7) -------------------------------------------------

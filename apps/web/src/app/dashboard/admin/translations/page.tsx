@@ -1,7 +1,8 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 
-import { getTranslations, isPlatformAdmin } from '@/lib/i18n/server';
+import { getTranslations } from '@/lib/i18n/server';
+import { hasCapability } from '@/lib/platform/access';
 import { createClient } from '@/lib/supabase/server';
 import { CATALOGUE } from '@/lib/i18n/catalogue';
 import { en } from '@/messages/en';
@@ -16,9 +17,13 @@ export default async function TranslationsPage({
 }: {
   searchParams: Promise<{ locale?: string }>;
 }) {
+  // The specific capability, not "is an administrator". Someone granted
+  // accounts access has no business rewriting the wording every customer reads,
+  // and the layout above only established that they hold something.
+  //
   // Not a redirect to the dashboard: a 404 does not confirm to a curious
   // signed-in user that an admin area exists at this address.
-  if (!(await isPlatformAdmin())) notFound();
+  if (!(await hasCapability('translations'))) notFound();
 
   const { t } = await getTranslations();
   const { locale: requested } = await searchParams;

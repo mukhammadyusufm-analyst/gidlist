@@ -153,9 +153,8 @@ export async function getTranslations() {
   };
 }
 
-/** Whether the signed-in user may manage app-wide settings. */
-export const isPlatformAdmin = cache(async (): Promise<boolean> => {
-  const supabase = await createClient();
-  const { data } = await supabase.rpc('is_platform_admin');
-  return data === true;
-});
+// `isPlatformAdmin` lived here and is gone. Platform access is no longer one
+// flag: see `lib/platform/access.ts`, where capabilities are asked for by name.
+// The name would now mislead — the database function it wrapped means "holds
+// the root grants capability", not "may manage app-wide settings", and a
+// translator holds neither.

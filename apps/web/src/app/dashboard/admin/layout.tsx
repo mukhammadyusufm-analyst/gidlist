@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 
-import { isPlatformAdmin } from '@/lib/i18n/server';
+import { hasAnyCapability } from '@/lib/platform/access';
 
 /**
  * Every route under /dashboard/admin, gated in one place.
@@ -11,19 +11,24 @@ import { isPlatformAdmin } from '@/lib/i18n/server';
  * cannot be forgotten: a new file placed in this folder is covered the moment
  * it exists.
  *
- * Platform admin is not space owner. These pages change things shared by every
- * customer — interface wording most of all — so this is deliberately not
- * something a space owner can grant. The flag is set with SQL only, so nobody
- * can promote themselves or a colleague from inside the product.
+ * Platform access is not space ownership. These pages change things shared by
+ * every customer — interface wording most of all — so none of it is something
+ * a space owner can grant.
+ *
+ * This layout asks only whether the person holds ANY capability, because that
+ * is the question it can answer for the whole segment. Each page checks the
+ * specific one it needs: holding `translations` must not open the accounts
+ * page, which is the entire reason capabilities replaced a single flag.
  *
  * `notFound()` rather than a redirect, so the response does not confirm to a
  * curious signed-in user that an admin area exists at all.
  *
  * Neither this nor the page checks are the real control. Row Level Security
- * refuses these rows to anyone without the flag, so bypassing both would still
- * reach nothing — this decides what is worth rendering, not what is allowed.
+ * refuses these rows to anyone without the capability, so bypassing both would
+ * still reach nothing — this decides what is worth rendering, not what is
+ * allowed.
  */
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  if (!(await isPlatformAdmin())) notFound();
+  if (!(await hasAnyCapability())) notFound();
   return <>{children}</>;
 }

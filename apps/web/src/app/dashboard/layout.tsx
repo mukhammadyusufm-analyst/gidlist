@@ -4,7 +4,8 @@ import { CircleCheckBig, LogOut, Languages } from 'lucide-react';
 
 import { createClient, getUser } from '@/lib/supabase/server';
 import { signOut } from '@/lib/auth/actions';
-import { getAvailableLocales, getTranslations, isPlatformAdmin } from '@/lib/i18n/server';
+import { getAvailableLocales, getTranslations } from '@/lib/i18n/server';
+import { hasCapability } from '@/lib/platform/access';
 import { getTheme } from '@/lib/theme/server';
 import { getTimezone } from '@/lib/timezone/server';
 import { TimezoneProbe } from '@/components/timezone-probe';
@@ -14,10 +15,12 @@ import { Avatar } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const [{ t }, locales, platformAdmin, theme, timezone] = await Promise.all([
+  // The specific capability, not blanket administrator status. Someone granted
+  // accounts access should not see a link to the translation editor.
+  const [{ t }, locales, canTranslate, theme, timezone] = await Promise.all([
     getTranslations(),
     getAvailableLocales(),
-    isPlatformAdmin(),
+    hasCapability('translations'),
     getTheme(),
     getTimezone(),
   ]);
@@ -59,7 +62,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           </Link>
 
           <div className="flex items-center gap-1.5">
-            {platformAdmin ? (
+            {canTranslate ? (
               <Link
                 href="/dashboard/admin/translations"
                 title={t('admin.translations')}
