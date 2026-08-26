@@ -64,6 +64,8 @@ export const en = {
   'space.intro': 'A space is a company or department. Checklists live inside one.',
   'space.nameLabel': 'Space name',
   'space.nameHint': 'Name it after the company or department it covers.',
+  'space.owned': 'Your spaces',
+  'space.shared': 'Shared with you',
   'space.settings': 'Settings',
   'archive.listTitle': 'Archived spaces ({count})',
   'archive.archivedOn': 'Archived {date}',

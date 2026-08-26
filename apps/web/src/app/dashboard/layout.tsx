@@ -63,7 +63,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
               <Link
                 href="/dashboard/admin/translations"
                 title={t('admin.translations')}
-                className="flex size-9 items-center justify-center rounded-md text-[var(--color-muted-foreground)] transition-colors hover:bg-[var(--color-accent)] hover:text-[var(--color-foreground)]"
+                className="flex size-9 items-center justify-center rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] text-[var(--color-muted-foreground)] transition-colors hover:bg-[var(--color-accent)] hover:text-[var(--color-foreground)]"
               >
                 <Languages className="size-4" aria-hidden="true" />
                 <span className="sr-only">{t('admin.translations')}</span>
@@ -94,7 +94,17 @@ export default async function DashboardLayout({ children }: { children: React.Re
             </Link>
 
             <form action={signOut}>
-              <Button type="submit" variant="ghost" size="icon" title={t('auth.signOut')}>
+              {/* Outlined with a card background rather than ghost, so it reads
+                  as the same kind of control as the theme toggle and language
+                  picker next to it. A bare ghost button looked like a different
+                  class of thing sitting in the same row. */}
+              <Button
+                type="submit"
+                variant="outline"
+                size="icon"
+                title={t('auth.signOut')}
+                className="bg-[var(--color-card)]"
+              >
                 <LogOut className="size-4" aria-hidden="true" />
                 <span className="sr-only">{t('auth.signOut')}</span>
               </Button>

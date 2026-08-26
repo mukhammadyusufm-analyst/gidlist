@@ -37,7 +37,13 @@ export function LanguageSwitcher({
             router.refresh();
           });
         }}
-        className="min-h-11 rounded-md border border-[var(--color-input)] bg-transparent px-2 py-1 text-sm disabled:opacity-50"
+        // Matched to the theme toggle beside it: same 36px height as the
+        // header's icon buttons, same border token, same card background.
+        // It previously used min-h-11 — the 44px touch minimum the Button base
+        // sets — which made it stand a head taller than everything around it.
+        // The header is not a gloved-hand surface; the controls that live in it
+        // are all 36px on purpose, and consistency there beats the rule.
+        className="h-9 rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] px-2 text-sm transition-colors hover:bg-[var(--color-accent)] focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:outline-none disabled:opacity-50"
       >
         {locales.map((entry) => (
           <option key={entry.code} value={entry.code}>

@@ -63,6 +63,8 @@ export const uz = {
     'Maydon — bu kompaniya yoki boʻlim. Nazorat roʻyxatlari uning ichida joylashadi.',
   'space.nameLabel': 'Maydon nomi',
   'space.nameHint': 'U qamrab oladigan kompaniya yoki boʻlim nomini bering.',
+  'space.owned': 'Sizning maydonlaringiz',
+  'space.shared': 'Siz qoʻshilgan maydonlar',
   'space.settings': 'Sozlamalar',
   'archive.listTitle': 'Arxivlangan maydonlar ({count})',
   'archive.archivedOn': '{date} dan arxivda',
