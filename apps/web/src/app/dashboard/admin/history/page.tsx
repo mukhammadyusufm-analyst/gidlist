@@ -63,6 +63,19 @@ function platformPhrase(entry: AuditEntry): string {
         : `${who}: subscription is now ${d.status_to}`;
     case 'space.deleted':
       return `${who} deleted the space "${d.name}"`;
+    case 'translation.added':
+    case 'translation.changed':
+      return `${who} changed the ${d.locale} wording for ${d.key}`;
+    case 'translation.reset':
+      return `${who} reset ${d.key} in ${d.locale} to the original`;
+    case 'language.added':
+      return `${who} added ${d.name} (${d.code})`;
+    case 'language.removed':
+      return `${who} removed ${d.name} (${d.code})`;
+    case 'language.enabled':
+      return `${who} enabled ${d.name}`;
+    case 'language.disabled':
+      return `${who} disabled ${d.name}`;
     default:
       // Deliberately still rendered. A trigger added later without matching
       // wording here should show something imperfect, not disappear.

@@ -43,6 +43,36 @@ export async function SpaceHistory({ boardId }: { boardId: string }) {
         return t('audit.spaceArchived', { actor: who });
       case 'space.restored':
         return t('audit.spaceRestored', { actor: who });
+      case 'checklist.published':
+        return t('audit.checklistPublished', {
+          actor: who,
+          checklist: d.checklist ?? '',
+          version: d.version ?? '',
+        });
+      case 'checklist.archived':
+        return t('audit.checklistArchived', { actor: who, checklist: d.checklist ?? '' });
+      case 'checklist.restored':
+        return t('audit.checklistRestored', { actor: who, checklist: d.checklist ?? '' });
+      case 'schedule.created':
+        return t('audit.scheduleCreated', { actor: who, checklist: d.checklist ?? '' });
+      case 'schedule.paused':
+        return t('audit.schedulePaused', { actor: who, checklist: d.checklist ?? '' });
+      case 'schedule.resumed':
+        return t('audit.scheduleResumed', { actor: who, checklist: d.checklist ?? '' });
+      // The count is the point of this row: one schedule deletion can take
+      // months of records with it, and the number is what makes that visible.
+      case 'schedule.deleted':
+        return t('audit.scheduleDeleted', {
+          actor: who,
+          checklist: d.checklist ?? '',
+          count: d.records_removed ?? '0',
+        });
+      case 'submission.deleted':
+        return t('audit.submissionDeleted', {
+          actor: who,
+          checklist: d.checklist ?? '',
+          date: d.due_date ?? '',
+        });
       default:
         // Rendered rather than hidden. A missing audit row and an action that
         // never happened look identical, and only one of them is acceptable.
