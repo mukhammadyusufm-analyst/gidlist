@@ -260,6 +260,7 @@ export const uz = {
   'fill.nextDay': 'Keyingi kun',
   'fill.today': 'Bugun',
 
+  'admin.title': 'Boshqaruv',
   'admin.translations': 'Tarjimalar',
   'admin.translationsIntro':
     'Har qanday matnni kod oʻzgartirmasdan tuzating. Tahrirlar shu tildan foydalanadigan hammaga taʼsir qiladi.',

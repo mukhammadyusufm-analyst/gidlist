@@ -255,6 +255,7 @@ export const ru = {
   'fill.nextDay': 'Следующий день',
   'fill.today': 'Сегодня',
 
+  'admin.title': 'Администрирование',
   'admin.translations': 'Переводы',
   'admin.translationsIntro':
     'Исправляйте любые формулировки без изменения кода. Правки видят все, кто использует этот язык.',

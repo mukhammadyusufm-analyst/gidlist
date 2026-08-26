@@ -1,11 +1,11 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { CircleCheckBig, LogOut, Languages } from 'lucide-react';
+import { CircleCheckBig, LogOut, ShieldCheck } from 'lucide-react';
 
 import { createClient, getUser } from '@/lib/supabase/server';
 import { signOut } from '@/lib/auth/actions';
 import { getAvailableLocales, getTranslations } from '@/lib/i18n/server';
-import { hasCapability } from '@/lib/platform/access';
+import { hasAnyCapability } from '@/lib/platform/access';
 import { getTheme } from '@/lib/theme/server';
 import { getTimezone } from '@/lib/timezone/server';
 import { TimezoneProbe } from '@/components/timezone-probe';
@@ -15,12 +15,13 @@ import { Avatar } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  // The specific capability, not blanket administrator status. Someone granted
-  // accounts access should not see a link to the translation editor.
-  const [{ t }, locales, canTranslate, theme, timezone] = await Promise.all([
+  // One link to the admin area rather than one per tool. What is inside it
+  // depends on which capabilities the person holds, and that decision belongs
+  // on the admin page, not duplicated in the header.
+  const [{ t }, locales, isAdmin, theme, timezone] = await Promise.all([
     getTranslations(),
     getAvailableLocales(),
-    hasCapability('translations'),
+    hasAnyCapability(),
     getTheme(),
     getTimezone(),
   ]);
@@ -62,14 +63,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
           </Link>
 
           <div className="flex items-center gap-1.5">
-            {canTranslate ? (
+            {isAdmin ? (
               <Link
-                href="/dashboard/admin/translations"
-                title={t('admin.translations')}
+                href="/dashboard/admin"
+                title={t('admin.title')}
                 className="flex size-9 items-center justify-center rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] text-[var(--color-muted-foreground)] transition-colors hover:bg-[var(--color-accent)] hover:text-[var(--color-foreground)]"
               >
-                <Languages className="size-4" aria-hidden="true" />
-                <span className="sr-only">{t('admin.translations')}</span>
+                <ShieldCheck className="size-4" aria-hidden="true" />
+                <span className="sr-only">{t('admin.title')}</span>
               </Link>
             ) : null}
 

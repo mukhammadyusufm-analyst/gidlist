@@ -442,6 +442,32 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
+      // ---- platform access ---------------------------------------------------
+      platform_capabilities: {
+        Row: {
+          code: string;
+          name: string;
+          description: string | null;
+          /** True only for `grants`, which is settable by SQL alone. */
+          is_root: boolean;
+          sort_order: number;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      platform_grants: {
+        // Written only through set_platform_grant(), which refuses the root.
+        Row: {
+          user_id: string;
+          capability: string;
+          granted_by: string | null;
+          granted_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       subscription_addons: {
         Row: {
           owner_id: string;
@@ -469,6 +495,49 @@ export type Database = {
       set_platform_grant: {
         Args: { p_user_id: string; p_capability: string; p_granted: boolean };
         Returns: undefined;
+      };
+      // ---- platform admin views ----------------------------------------------
+      // These read across every customer, so the gate is inside each function
+      // rather than on a table: RLS answers "your rows", and the answer needed
+      // here is "everyone's". Each raises before producing a single row.
+      platform_accounts: {
+        Args: Record<string, never>;
+        Returns: {
+          owner_id: string;
+          email: string;
+          full_name: string | null;
+          plan_code: PlanCode;
+          plan_name: string;
+          price_minor: number;
+          currency: string;
+          used_members: number;
+          max_members: number | null;
+          used_spaces: number;
+          max_spaces: number | null;
+          status: SubscriptionStatus;
+          period_end: string | null;
+          joined_at: string;
+        }[];
+      };
+      platform_revenue: {
+        Args: Record<string, never>;
+        Returns: {
+          currency: string;
+          mrr_minor: number;
+          paying_accounts: number;
+          free_accounts: number;
+          past_due: number;
+          near_limit: number;
+        }[];
+      };
+      platform_people: {
+        Args: Record<string, never>;
+        Returns: {
+          user_id: string;
+          email: string;
+          full_name: string | null;
+          capabilities: string[];
+        }[];
       };
       // Returns null when the caller is not an active member of the board.
       my_role: { Args: { p_board_id: string }; Returns: BoardRole | null };

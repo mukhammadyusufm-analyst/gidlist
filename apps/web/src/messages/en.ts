@@ -259,6 +259,7 @@ export const en = {
   'fill.today': 'Today',
 
   // --- translation admin ------------------------------------------------
+  'admin.title': 'Admin',
   'admin.translations': 'Translations',
   'admin.translationsIntro':
     'Correct any wording without a code change. Edits apply to everyone using that language.',
