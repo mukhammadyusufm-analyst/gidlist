@@ -272,6 +272,69 @@ end;
 $$;
 
 -- =============================================================================
+-- Audit log
+--
+-- The log records who did what. If the wrong people can read it, it becomes a
+-- way to learn about companies you have no relationship with — who they hired,
+-- when they lost someone. So it needs the same isolation as everything else,
+-- and rows written by earlier fixtures in this run are the material to test on.
+-- =============================================================================
+do $$
+declare
+  f record;
+  n integer;
+  ok boolean;
+begin
+  select * into f from fixture;
+
+  -- CONTROL: Alice governs Acme, so she must see its entries. The fixtures
+  -- above created members and archived spaces, so there are rows to find.
+  perform pg_temp.act_as(f.alice);
+  select count(*) into n from public.audit_log where board_id = f.acme;
+  perform pg_temp.act_as_postgres();
+  perform pg_temp.check('control: space admin reads their audit log', n > 0, format('saw %s', n));
+
+  -- Bob has no relationship with Acme.
+  perform pg_temp.act_as(f.bob);
+  select count(*) into n from public.audit_log where board_id = f.acme;
+  perform pg_temp.act_as_postgres();
+  perform pg_temp.check('outsider cannot read another space''s audit log', n = 0, format('saw %s', n));
+
+  -- Carol is a member, not an admin. Staffing history is not hers to read.
+  perform pg_temp.act_as(f.carol);
+  select count(*) into n from public.audit_log where board_id = f.acme;
+  perform pg_temp.act_as_postgres();
+  perform pg_temp.check('ordinary member cannot read the audit log', n = 0, format('saw %s', n));
+
+  -- Platform entries — capability grants — belong to whoever manages access.
+  -- Carol holds nothing.
+  perform pg_temp.act_as(f.carol);
+  select count(*) into n from public.audit_log where board_id is null;
+  perform pg_temp.act_as_postgres();
+  perform pg_temp.check('no capability: cannot read platform audit', n = 0, format('saw %s', n));
+
+  -- CONTROL: Alice was given `grants` earlier, so she must see them — and the
+  -- grants themselves were audited, so rows exist.
+  perform pg_temp.act_as(f.alice);
+  select count(*) into n from public.audit_log where board_id is null;
+  perform pg_temp.act_as_postgres();
+  perform pg_temp.check('control: grants holder reads platform audit', n > 0, format('saw %s', n));
+
+  -- Append-only. A log somebody can edit is not a log.
+  perform pg_temp.act_as(f.alice);
+  begin
+    delete from public.audit_log where board_id = f.acme;
+    -- No policy permits delete, so this removes nothing rather than raising.
+    ok := not found;
+  exception when insufficient_privilege or others then
+    ok := true;
+  end;
+  perform pg_temp.act_as_postgres();
+  perform pg_temp.check('audit log cannot be deleted from', ok);
+end;
+$$;
+
+-- =============================================================================
 -- Results
 -- =============================================================================
 -- One result set, with the verdict as its last row. The SQL Editor shows a
