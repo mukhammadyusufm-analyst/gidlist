@@ -12,6 +12,7 @@ import { createClient } from '@/lib/supabase/server';
 
 import { BoardDetailsForm } from './rename-board-form';
 import { ArchiveBoard } from './archive-board';
+import { SpaceHistory } from './space-history';
 
 export const metadata: Metadata = { title: 'Space settings' };
 
@@ -96,6 +97,11 @@ export default async function BoardSettingsPage({
           prefix="banner"
         />
       </section>
+
+      {/* Admins, not only owners: "who removed that person" is a question
+          whoever runs the space day to day needs answered. The database agrees
+          — board_audit_log checks for admin, not ownership. */}
+      <SpaceHistory boardId={board.id} />
 
       {/* Owner only. An admin runs the space day to day; removing it from view
           entirely is the owner's decision, and the database agrees. */}

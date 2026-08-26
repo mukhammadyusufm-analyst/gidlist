@@ -530,6 +530,30 @@ export type Database = {
           near_limit: number;
         }[];
       };
+      // ---- audit -------------------------------------------------------------
+      // Functions rather than direct table reads: auth.users is not readable
+      // through the API, so a raw query would return actor uuids nobody can
+      // read. These resolve the name.
+      board_audit_log: {
+        Args: { p_board_id: string; p_limit?: number };
+        Returns: {
+          id: number;
+          action: string;
+          actor_name: string;
+          detail: Record<string, string | null>;
+          created_at: string;
+        }[];
+      };
+      platform_audit_log: {
+        Args: { p_limit?: number };
+        Returns: {
+          id: number;
+          action: string;
+          actor_name: string;
+          detail: Record<string, string | null>;
+          created_at: string;
+        }[];
+      };
       platform_people: {
         Args: Record<string, never>;
         Returns: {

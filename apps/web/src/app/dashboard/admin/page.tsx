@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { ChevronRight, Languages, ShieldCheck, TrendingUp } from 'lucide-react';
+import { ChevronRight, History, Languages, ShieldCheck, TrendingUp } from 'lucide-react';
 
 import { myCapabilities } from '@/lib/platform/access';
 
@@ -40,6 +40,13 @@ export default async function AdminPage() {
       icon: ShieldCheck,
       title: 'Platform access',
       description: 'Who may do what across every customer.',
+    },
+    {
+      capability: 'grants' as const,
+      href: '/dashboard/admin/history',
+      icon: History,
+      title: 'Platform history',
+      description: 'Access changes and billing, recorded by the database.',
     },
   ].filter((section) => caps.has(section.capability));
 
