@@ -8,7 +8,10 @@ import { canGovern } from '@app/core';
 import { BannerPicker } from '@/components/ui/banner-picker';
 import { ImageUploadForm } from '@/components/ui/image-upload-form';
 
+import { createClient } from '@/lib/supabase/server';
+
 import { BoardDetailsForm } from './rename-board-form';
+import { ArchiveBoard } from './archive-board';
 
 export const metadata: Metadata = { title: 'Space settings' };
 
@@ -28,6 +31,17 @@ export default async function BoardSettingsPage({
   if (!canGovern(role)) notFound();
 
   const { t } = await getTranslations();
+
+  // Whether deletion is even possible. The database refuses once any submission
+  // exists — this asks the same question so the button is never offered when it
+  // would only fail. `head: true` fetches the count without the rows.
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from('submissions')
+    .select('id, checklists!inner(board_id)', { count: 'exact', head: true })
+    .eq('checklists.board_id', board.id);
+
+  const hasHistory = (count ?? 0) > 0;
 
   return (
     <div className="max-w-lg space-y-10">
@@ -82,6 +96,19 @@ export default async function BoardSettingsPage({
           prefix="banner"
         />
       </section>
+
+      {/* Owner only. An admin runs the space day to day; removing it from view
+          entirely is the owner's decision, and the database agrees. */}
+      {role === 'owner' ? (
+        <section>
+          <ArchiveBoard
+            boardId={board.id}
+            boardName={board.name}
+            isArchived={board.archived_at !== null}
+            canDelete={!hasHistory}
+          />
+        </section>
+      ) : null}
     </div>
   );
 }

@@ -48,11 +48,80 @@ export async function createBoard(_prev: ActionState, formData: FormData): Promi
     .single();
 
   if (error || !data) {
-    return { formError: `Could not create the board: ${error?.message ?? 'unknown error'}` };
+    return { formError: planLimitMessage(error?.message) ?? `Could not create the space: ${error?.message ?? 'unknown error'}` };
   }
 
   revalidatePath('/dashboard');
   redirect(`/dashboard/boards/${data.slug}`);
+}
+
+/**
+ * Turn the database's limit refusals into something actionable.
+ *
+ * The triggers raise deliberately matchable sentences. Returning null here
+ * means "not a limit problem", so an unrelated failure is never mislabelled as
+ * one — which would send someone off archiving spaces to fix a network error.
+ */
+function planLimitMessage(message: string | undefined): string | undefined {
+  if (!message) return undefined;
+  if (message.includes('Space limit reached')) {
+    return 'You have reached the number of spaces your plan includes. Archive one you are no longer using, or move up a plan.';
+  }
+  if (message.includes('Member limit reached')) {
+    return 'You have reached the number of people your plan includes. Archive a space you are no longer using, or move up a plan.';
+  }
+  return undefined;
+}
+
+/**
+ * Archive or restore a space.
+ *
+ * Archiving rather than deleting, always. A space's submissions are its
+ * compliance record, and deletion cascades to them — so a tidy-up would destroy
+ * evidence somebody may be required to keep. Archived spaces stop generating
+ * obligations, stay readable in Compliance, and no longer count against a plan.
+ */
+export async function setBoardArchived(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const boardId = String(formData.get('boardId') ?? '');
+  const archived = String(formData.get('archived') ?? '') === 'true';
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc('set_board_archived', {
+    p_board_id: boardId,
+    p_archived: archived,
+  });
+
+  if (error) return { formError: `Could not ${archived ? 'archive' : 'restore'}: ${error.message}` };
+
+  revalidatePath('/dashboard', 'layout');
+  return { notice: archived ? 'Space archived.' : 'Space restored.' };
+}
+
+/**
+ * Delete a space outright — only possible while it has no submissions.
+ *
+ * The database enforces that, not this function. It exists for "I created this
+ * by mistake", and refuses the moment there is any history to lose.
+ */
+export async function deleteBoard(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const boardId = String(formData.get('boardId') ?? '');
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc('delete_board_if_unused', { p_board_id: boardId });
+
+  if (error) {
+    return {
+      formError: error.message.includes('cannot be deleted')
+        ? 'This space has checklist history, so it can only be archived. Archiving keeps the record and hides the space.'
+        : `Could not delete: ${error.message}`,
+    };
+  }
+
+  revalidatePath('/dashboard', 'layout');
+  redirect('/dashboard');
 }
 
 export async function updateBoardDetails(

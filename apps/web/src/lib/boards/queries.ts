@@ -15,10 +15,16 @@ import type { Board, BoardMember } from '@/lib/supabase/database.types';
  * silently hide boards the user was invited to but does not own.
  */
 
-export async function listMyBoards(): Promise<Board[]> {
+export async function listMyBoards(includeArchived = false): Promise<Board[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase.from('boards').select('*').order('name');
+  const query = supabase.from('boards').select('*').order('name');
 
+  // Archived spaces are hidden rather than gone. Their compliance history stays
+  // readable, and they can be brought back — but they should not clutter the
+  // list of places someone actually works.
+  if (!includeArchived) query.is('archived_at', null);
+
+  const { data, error } = await query;
   if (error) throw new Error(`Could not load boards: ${error.message}`);
   return data ?? [];
 }

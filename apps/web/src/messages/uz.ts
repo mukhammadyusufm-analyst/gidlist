@@ -64,6 +64,20 @@ export const uz = {
   'space.nameLabel': 'Maydon nomi',
   'space.nameHint': 'U qamrab oladigan kompaniya yoki boʻlim nomini bering.',
   'space.settings': 'Sozlamalar',
+  'archive.title': 'Maydonni arxivlash',
+  'archive.intro':
+    'Maydon yashiriladi va yangi vazifalar yaratmay qoʻyadi. Yozib olingan hamma narsa saqlanadi va «Muvofiqlik» boʻlimida koʻrinib turadi. Istalgan vaqtda qaytarish mumkin.',
+  'archive.action': 'Arxivlash',
+  'archive.restoreTitle': 'Bu maydon arxivda',
+  'archive.restoreIntro':
+    'U yashirilgan va yangi vazifalar yaratmaydi. Tarixi saqlangan. Ishni davom ettirish uchun tiklang.',
+  'archive.restore': 'Tiklash',
+  'archive.deleteTitle': 'Maydonni oʻchirish',
+  'archive.deleteIntro':
+    'Bu yerda hali hech narsa toʻldirilmagan, shuning uchun maydonni butunlay oʻchirish mumkin. Yozuvlar paydo boʻlgach, faqat arxivlash qoladi.',
+  'archive.deleteConfirm': 'Tasdiqlash uchun {name} deb yozing',
+  'archive.delete': 'Butunlay oʻchirish',
+
   'billing.title': 'Tarif va toʻlov',
   'billing.intro':
     'Tarif sizning barcha maydonlaringizni qamrab oladi. Siz maydon uchun emas, odamlar uchun toʻlaysiz.',

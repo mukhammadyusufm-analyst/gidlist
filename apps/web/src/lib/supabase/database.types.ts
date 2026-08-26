@@ -118,6 +118,8 @@ export type Database = {
           logo_url: string | null;
           banner_url: string | null;
           owner_id: string;
+          /** Archived spaces are hidden, generate nothing, and keep all history. */
+          archived_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -467,6 +469,16 @@ export type Database = {
         Args: { p_owner_id: string; p_feature_key: FeatureKey };
         Returns: boolean;
       };
+      // ---- archiving ---------------------------------------------------------
+      // Archive rather than delete: a space's submissions are its compliance
+      // record, and deletion cascades to them.
+      set_board_archived: { Args: { p_board_id: string; p_archived: boolean }; Returns: undefined };
+      set_checklist_archived: {
+        Args: { p_checklist_id: string; p_archived: boolean };
+        Returns: undefined;
+      };
+      // Refuses once any submission exists. For "I made this by mistake" only.
+      delete_board_if_unused: { Args: { p_board_id: string }; Returns: undefined };
       /** Resolves a space to whoever pays for it. Safe inside RLS policies. */
       board_has_feature: {
         Args: { p_board_id: string; p_feature_key: FeatureKey };

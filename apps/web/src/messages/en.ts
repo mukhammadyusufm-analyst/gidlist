@@ -65,6 +65,20 @@ export const en = {
   'space.nameLabel': 'Space name',
   'space.nameHint': 'Name it after the company or department it covers.',
   'space.settings': 'Settings',
+  'archive.title': 'Archive this space',
+  'archive.intro':
+    'Hides the space and stops it creating new tasks. Everything already recorded stays, and stays visible in Compliance. You can bring it back at any time.',
+  'archive.action': 'Archive space',
+  'archive.restoreTitle': 'This space is archived',
+  'archive.restoreIntro':
+    'It is hidden and creates no new tasks. Its history is intact. Restore it to start using it again.',
+  'archive.restore': 'Restore space',
+  'archive.deleteTitle': 'Delete this space',
+  'archive.deleteIntro':
+    'Nothing has been filled in here yet, so it can still be deleted outright. Once anything is recorded, archiving is the only option.',
+  'archive.deleteConfirm': 'Type {name} to confirm',
+  'archive.delete': 'Delete permanently',
+
   'billing.title': 'Plan and billing',
   'billing.intro': 'Your plan covers every space you own. You pay for people, not for spaces.',
   'billing.currentPlan': 'Current plan',
