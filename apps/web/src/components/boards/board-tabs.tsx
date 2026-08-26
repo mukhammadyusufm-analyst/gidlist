@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart3, ListChecks, Settings, SquareCheckBig, Users } from 'lucide-react';
+import { BarChart3, CreditCard, ListChecks, Settings, SquareCheckBig, Users } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { useT } from '@/components/i18n/provider';
@@ -43,7 +43,12 @@ export function BoardTabs({
     // The staff list is not a member's business. They still see their own role
     // and their own record; the roster belongs to whoever runs the space.
     ...(canEdit ? [{ href: `${base}/members`, label: t('space.members'), icon: Users }] : []),
+    // Governance, like Settings: what a space costs is the owner's business,
+    // not the staff's. Last, because it is the tab visited least often.
     ...(canManage ? [{ href: `${base}/settings`, label: t('space.settings'), icon: Settings }] : []),
+    ...(canManage
+      ? [{ href: `${base}/billing`, label: t('space.billing'), icon: CreditCard }]
+      : []),
   ];
 
   return (

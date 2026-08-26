@@ -32,6 +32,27 @@ export type ChecklistVersionStatus = 'draft' | 'published';
 export type ScheduleKind = 'daily' | 'weekly' | 'monthly' | 'yearly' | 'specific_dates';
 export type SubmissionStatus = 'upcoming' | 'draft' | 'done' | 'missed';
 
+/**
+ * Billing (phase 7).
+ *
+ * `past_due` still entitles, deliberately: cutting off a factory's safety
+ * checklists over a failed card loses the customer rather than collecting from
+ * them. Only `canceled` withdraws access.
+ */
+export type SubscriptionStatus = 'active' | 'trialing' | 'past_due' | 'canceled';
+export type PaymentProvider = 'payme' | 'click' | 'paddle';
+export type PlanCode = 'free' | 'standard';
+
+/**
+ * Capability keys, matched against `plan_features`.
+ *
+ * A union rather than `string` so a typo becomes a compile error instead of a
+ * silently denied feature — `board_has_feature` returns false for a key that
+ * grants nothing, which is indistinguishable from "not on your plan" at runtime.
+ * Adding a module means adding its key here and inserting its rows.
+ */
+export type FeatureKey = 'checklists' | 'spaces' | 'members' | 'compliance';
+
 export type Database = {
   public: {
     Tables: {
@@ -348,12 +369,82 @@ export type Database = {
         Update: { checked?: boolean; comment?: string | null; checked_by?: string | null };
         Relationships: [];
       };
+      // ---- billing (phase 7) -------------------------------------------------
+      // All four are read-only to the app. Subscriptions change because a
+      // payment provider says so, through a webhook using the service role;
+      // there are deliberately no write policies, so `never` here matches what
+      // the database would do anyway.
+      plans: {
+        Row: {
+          code: string;
+          name: string;
+          price_per_seat_minor: number;
+          currency: string;
+          min_seats: number;
+          is_free: boolean;
+          is_offerable: boolean;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      plan_features: {
+        // `limit_value` null means unlimited; a missing row means denied.
+        Row: { plan_code: string; feature_key: string; limit_value: number | null };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      subscriptions: {
+        Row: {
+          board_id: string;
+          plan_code: string;
+          status: SubscriptionStatus;
+          current_period_start: string;
+          current_period_end: string | null;
+          provider: PaymentProvider | null;
+          provider_ref: string | null;
+          canceled_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      board_seat_days: {
+        Row: { board_id: string; day: string; active_seats: number };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
     };
     Views: Record<never, never>;
     Functions: {
       is_platform_admin: { Args: Record<string, never>; Returns: boolean };
       // Returns null when the caller is not an active member of the board.
       my_role: { Args: { p_board_id: string }; Returns: BoardRole | null };
+      // ---- billing (phase 7) -------------------------------------------------
+      // `board_active_seats` and `snapshot_seat_days` are absent on purpose:
+      // both are revoked from every API role, so listing them here would invite
+      // a call that the database refuses.
+      board_plan: { Args: { p_board_id: string }; Returns: PlanCode };
+      board_has_feature: {
+        Args: { p_board_id: string; p_feature_key: FeatureKey };
+        Returns: boolean;
+      };
+      // Null means unlimited, which is why this is not simply a number.
+      board_feature_limit: {
+        Args: { p_board_id: string; p_feature_key: FeatureKey };
+        Returns: number | null;
+      };
+      // Null when the caller is not an admin of the space.
+      board_billable_seats: {
+        Args: { p_board_id: string; p_from: string; p_to: string };
+        Returns: number | null;
+      };
       compliance_counts: {
         Args: {
           p_board_id: string;
@@ -424,3 +515,7 @@ export type Schedule = Database['public']['Tables']['schedules']['Row'];
 export type ScheduleAssignee = Database['public']['Tables']['schedule_assignees']['Row'];
 export type Submission = Database['public']['Tables']['submissions']['Row'];
 export type SubmissionItem = Database['public']['Tables']['submission_items']['Row'];
+export type Plan = Database['public']['Tables']['plans']['Row'];
+export type PlanFeature = Database['public']['Tables']['plan_features']['Row'];
+export type Subscription = Database['public']['Tables']['subscriptions']['Row'];
+export type BoardSeatDay = Database['public']['Tables']['board_seat_days']['Row'];

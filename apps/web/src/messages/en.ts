@@ -65,6 +65,29 @@ export const en = {
   'space.nameLabel': 'Space name',
   'space.nameHint': 'Name it after the company or department it covers.',
   'space.settings': 'Settings',
+  'space.billing': 'Billing',
+
+  'billing.title': 'Billing',
+  'billing.intro': 'What this space costs, and how the amount is worked out.',
+  'billing.currentPlan': 'Current plan',
+  'billing.thisPeriod': 'This month',
+  'billing.activeMembers': 'Active members',
+  'billing.billedSeats': 'Seats billed',
+  'billing.perSeat': 'Per seat',
+  'billing.floorNote':
+    'This plan is billed for at least {seats} seats, so smaller teams pay the same as {seats}.',
+  'billing.howItWorks': 'How it is worked out',
+  'billing.ruleSeats': 'One seat per member of this space, including the owner.',
+  'billing.ruleAccepted': 'People who were invited but have not accepted are not billed.',
+  'billing.rulePeak':
+    'The month is billed on the highest number of members it had, not the number today.',
+  'billing.ruleChecklists': 'Checklists are unlimited on every plan.',
+  'billing.rulePerSpace':
+    'Each space is billed separately. Someone who belongs to two spaces counts in both.',
+  'billing.payment': 'Payment',
+  'billing.paymentReady': 'You can pay for this space online.',
+  'billing.paymentComingSoon':
+    'Online payment is not connected yet. Nothing is charged, and the amount above is what it would be.',
   'space.details': 'Details',
   'space.logo': 'Logo',
   'space.banner': 'Banner',

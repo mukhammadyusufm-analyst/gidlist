@@ -16,5 +16,6 @@ export * from './constants';
 export * from './dates';
 export * from './i18n';
 export * from './media';
+export * from './money';
 export * from './schedules';
 export * from './theme';

@@ -64,6 +64,29 @@ export const uz = {
   'space.nameLabel': 'Maydon nomi',
   'space.nameHint': 'U qamrab oladigan kompaniya yoki boʻlim nomini bering.',
   'space.settings': 'Sozlamalar',
+  'space.billing': 'Toʻlov',
+
+  'billing.title': 'Toʻlov',
+  'billing.intro': 'Bu maydon qancha turadi va summa qanday hisoblanadi.',
+  'billing.currentPlan': 'Joriy tarif',
+  'billing.thisPeriod': 'Shu oyda',
+  'billing.activeMembers': 'Faol aʼzolar',
+  'billing.billedSeats': 'Hisoblangan oʻrinlar',
+  'billing.perSeat': 'Har oʻrin uchun',
+  'billing.floorNote':
+    'Bu tarifda kamida {seats} ta oʻrin hisoblanadi, shuning uchun kichik jamoalar ham {seats} ta oʻrin kabi toʻlaydi.',
+  'billing.howItWorks': 'Qanday hisoblanadi',
+  'billing.ruleSeats': 'Maydonning har bir aʼzosi uchun bitta oʻrin, egasi ham hisobga olinadi.',
+  'billing.ruleAccepted': 'Taklif qilingan, lekin qabul qilmagan kishilar hisoblanmaydi.',
+  'billing.rulePeak':
+    'Oy uchun toʻlov shu oydagi eng koʻp aʼzolar soniga qarab olinadi, bugungi songa emas.',
+  'billing.ruleChecklists': 'Roʻyxatlar soni hech bir tarifda cheklanmagan.',
+  'billing.rulePerSpace':
+    'Har bir maydon alohida hisoblanadi. Ikki maydondagi aʼzo ikkalasida ham sanaladi.',
+  'billing.payment': 'Toʻlov',
+  'billing.paymentReady': 'Bu maydon uchun onlayn toʻlov qilish mumkin.',
+  'billing.paymentComingSoon':
+    'Onlayn toʻlov hali ulanmagan. Hech qanday pul yechilmaydi — yuqoridagi summa qancha boʻlishini koʻrsatadi.',
   'space.details': 'Maʼlumotlar',
   'space.logo': 'Logotip',
   'space.banner': 'Banner',
