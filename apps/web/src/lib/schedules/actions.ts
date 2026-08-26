@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { addAssigneeSchema, createScheduleSchema } from '@app/core';
 
 import { createClient, getUser } from '@/lib/supabase/server';
+import { friendlyDatabaseError } from '@/lib/errors';
 import { isEmailConfigured } from '@/lib/email/send';
 import { sendInvitationEmail } from '@/lib/email/invitation';
 import { getTranslations } from '@/lib/i18n/server';
@@ -187,7 +188,7 @@ export async function inviteAndAssign(
   // 23505 means they are already in the space, which is fine here — the point
   // was to make sure they are a member, and they are.
   if (inviteError && inviteError.code !== '23505') {
-    return { formError: `Could not invite: ${inviteError.message}` };
+    return { formError: friendlyDatabaseError(inviteError.message) ?? `Could not invite: ${inviteError.message}` };
   }
 
   const { error } = await supabase

@@ -11,6 +11,7 @@ import {
 } from '@app/core';
 
 import { createClient, getUser } from '@/lib/supabase/server';
+import { friendlyDatabaseError } from '@/lib/errors';
 import { isEmailConfigured } from '@/lib/email/send';
 import { sendInvitationEmail } from '@/lib/email/invitation';
 import { getTranslations } from '@/lib/i18n/server';
@@ -48,30 +49,13 @@ export async function createBoard(_prev: ActionState, formData: FormData): Promi
     .single();
 
   if (error || !data) {
-    return { formError: planLimitMessage(error?.message) ?? `Could not create the space: ${error?.message ?? 'unknown error'}` };
+    return { formError: friendlyDatabaseError(error?.message) ?? `Could not create the space: ${error?.message ?? 'unknown error'}` };
   }
 
   revalidatePath('/dashboard');
   redirect(`/dashboard/boards/${data.slug}`);
 }
 
-/**
- * Turn the database's limit refusals into something actionable.
- *
- * The triggers raise deliberately matchable sentences. Returning null here
- * means "not a limit problem", so an unrelated failure is never mislabelled as
- * one — which would send someone off archiving spaces to fix a network error.
- */
-function planLimitMessage(message: string | undefined): string | undefined {
-  if (!message) return undefined;
-  if (message.includes('Space limit reached')) {
-    return 'You have reached the number of spaces your plan includes. Archive one you are no longer using, or move up a plan.';
-  }
-  if (message.includes('Member limit reached')) {
-    return 'You have reached the number of people your plan includes. Archive a space you are no longer using, or move up a plan.';
-  }
-  return undefined;
-}
 
 /**
  * Archive or restore a space.
@@ -190,7 +174,7 @@ export async function inviteMember(_prev: ActionState, formData: FormData): Prom
     if (error.code === '23505') {
       return { formError: 'That person has already been invited to this board.' };
     }
-    return { formError: `Could not invite: ${error.message}` };
+    return { formError: friendlyDatabaseError(error.message) ?? `Could not invite: ${error.message}` };
   }
 
   revalidatePath(`/dashboard/boards/[slug]/members`, 'page');
