@@ -183,7 +183,7 @@ remembering a conversation.
 | 4 | **Void a submission, with a reason** | Today a missed record can only be deleted, which is silent. Voiding is recorded, and is what a compliance tool should offer instead. |
 | 5 | **Checklist preview** | A read-only rendering on the Details tab showing the checklist as it appears when filled in, without creating a submission. |
 | 6 | **Per-checklist discussion** | Message thread per checklist, with Supabase realtime. |
-| 7 | **Login page redesign** | Currently a plain centred card; first thing a prospective customer sees. |
+| 7 | ~~**Login page redesign**~~ | **Done.** The sign-in page said nothing about what the product is. Now a two-column layout: the form first in reading order and on phones, the explanation beside it on a wide screen where an evaluator is and a worker is not — moved below rather than hidden on small screens, since a prospect opening the link on a phone would otherwise learn nothing. One copy of the words, reordered with CSS. | Currently a plain centred card; first thing a prospective customer sees. |
 | 8 | **Banner cropping** | A non-3:1 image is silently centre-cropped today. Needs fit/fill plus a draggable focal point. |
 | 9 | **Cross-section drag** | Items reorder among siblings only. Moving between sections, or changing nesting depth, is not draggable. |
 | 10 | ~~**Browser tab titles**~~ | **Done.** Thirteen customer-facing pages moved from `export const metadata` to `generateMetadata`, which can await `getTranslations()` — static metadata is evaluated without a request, so it has no way to know which locale the cookie asked for. The five admin pages stay English, matching the rest of that area, which has one reader. |

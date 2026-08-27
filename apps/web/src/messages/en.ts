@@ -50,6 +50,12 @@ export const en = {
   'auth.invalidCredentials': 'That email and password combination is not correct.',
   'auth.continueWithGoogle': 'Continue with Google',
   'auth.orWithEmail': 'or with email',
+  'auth.pitchTitle': 'Checklists that prove they were done.',
+  'auth.pitchBody':
+    'Build a procedure once, put it on a schedule, and keep a record of who completed what — across every site, shift and language your team works in.',
+  'auth.pitchPointSchedule': 'Recurring checks, assigned to the right people automatically',
+  'auth.pitchPointRecord': 'A record of who completed what, and when, that nobody can quietly edit',
+  'auth.pitchPointPhone': 'Made for the phone people already carry',
 
   // --- dashboard / spaces ------------------------------------------------
   // The product calls these "spaces". The database still calls them boards —

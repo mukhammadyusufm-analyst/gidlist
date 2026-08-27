@@ -51,6 +51,12 @@ export const uz = {
   'auth.invalidCredentials': 'Elektron pochta yoki parol notoʻgʻri.',
   'auth.continueWithGoogle': 'Google orqali davom etish',
   'auth.orWithEmail': 'yoki pochta orqali',
+  'auth.pitchTitle': 'Bajarilganini isbotlaydigan roʻyxatlar.',
+  'auth.pitchBody':
+    'Tartibni bir marta tuzing, jadvalga qoʻying va kim nimani bajarganini yozib boring — jamoangiz ishlaydigan barcha obyekt, smena va tillarda.',
+  'auth.pitchPointSchedule': 'Muntazam tekshiruvlar kerakli odamlarga avtomatik biriktiriladi',
+  'auth.pitchPointRecord': 'Kim nimani qachon bajargani yoziladi va uni bildirmay oʻzgartirib boʻlmaydi',
+  'auth.pitchPointPhone': 'Har kimning cheponasidagi telefon uchun moʻljallangan',
 
   'space.spaces': 'Maydonlar',
   'space.newSpace': 'Yangi maydon',
