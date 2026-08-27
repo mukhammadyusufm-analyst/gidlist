@@ -13,6 +13,11 @@
 -- includes every person who has an account at all.
 -- =============================================================================
 
+-- Dropped first: `create or replace` cannot change a function's return type,
+-- and adding a column changes the row type its OUT parameters define. Postgres
+-- refuses with 42P13 rather than guessing.
+drop function if exists public.platform_revenue();
+
 create or replace function public.platform_revenue()
 returns table (
   currency          text,
