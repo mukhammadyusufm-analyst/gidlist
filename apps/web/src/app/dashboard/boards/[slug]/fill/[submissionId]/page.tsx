@@ -9,7 +9,13 @@ import { StatusBadge } from '@/components/submissions/status-badge';
 import { FillSheet } from '@/components/submissions/fill-sheet';
 import { Banner } from '@/components/ui/banner';
 
-export const metadata: Metadata = { title: 'Fill in' };
+// Translated, so the browser tab matches the language the app is being read in.
+// Static `metadata` cannot do this: it is evaluated without a request, so it
+// has no way to know which locale the cookie asked for.
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getTranslations();
+  return { title: t('space.fillIn') };
+}
 
 export default async function FillPage({
   params,

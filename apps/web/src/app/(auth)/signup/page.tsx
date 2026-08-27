@@ -6,7 +6,13 @@ import { AuthDivider, GoogleButton } from '@/components/auth/google-button';
 
 import { SignupForm } from './signup-form';
 
-export const metadata: Metadata = { title: 'Create account' };
+// Translated, so the browser tab matches the language the app is being read in.
+// Static `metadata` cannot do this: it is evaluated without a request, so it
+// has no way to know which locale the cookie asked for.
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getTranslations();
+  return { title: t('auth.createAccount') };
+}
 
 export default async function SignupPage() {
   const { t } = await getTranslations();

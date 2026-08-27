@@ -14,7 +14,13 @@ import { BoardDetailsForm } from './rename-board-form';
 import { ArchiveBoard } from './archive-board';
 import { SpaceHistory } from './space-history';
 
-export const metadata: Metadata = { title: 'Space settings' };
+// Translated, so the browser tab matches the language the app is being read in.
+// Static `metadata` cannot do this: it is evaluated without a request, so it
+// has no way to know which locale the cookie asked for.
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getTranslations();
+  return { title: t('space.settings') };
+}
 
 export default async function BoardSettingsPage({
   params,

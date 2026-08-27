@@ -12,7 +12,13 @@ import { ImageUploadForm } from '@/components/ui/image-upload-form';
 
 import { ChecklistDetailsForm } from './checklist-details-form';
 
-export const metadata: Metadata = { title: 'Checklist details' };
+// Translated, so the browser tab matches the language the app is being read in.
+// Static `metadata` cannot do this: it is evaluated without a request, so it
+// has no way to know which locale the cookie asked for.
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getTranslations();
+  return { title: t('checklist.details') };
+}
 
 export default async function ChecklistDetailsPage({
   params,

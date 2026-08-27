@@ -9,7 +9,13 @@ import { isIsoDate } from '@app/core';
 import { DatePicker } from '@/components/submissions/date-picker';
 import { SubmissionRow } from '@/components/submissions/submission-row';
 
-export const metadata: Metadata = { title: 'Fill in' };
+// Translated, so the browser tab matches the language the app is being read in.
+// Static `metadata` cannot do this: it is evaluated without a request, so it
+// has no way to know which locale the cookie asked for.
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getTranslations();
+  return { title: t('space.fillIn') };
+}
 
 
 export default async function FillListPage({

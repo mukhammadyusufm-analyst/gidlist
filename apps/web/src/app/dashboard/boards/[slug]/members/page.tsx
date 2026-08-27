@@ -8,7 +8,13 @@ import { MemberRow } from './member-row';
 import { getTranslations } from '@/lib/i18n/server';
 import { canEditContent, canGovern } from '@app/core';
 
-export const metadata: Metadata = { title: 'Members' };
+// Translated, so the browser tab matches the language the app is being read in.
+// Static `metadata` cannot do this: it is evaluated without a request, so it
+// has no way to know which locale the cookie asked for.
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getTranslations();
+  return { title: t('space.members') };
+}
 
 export default async function BoardMembersPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

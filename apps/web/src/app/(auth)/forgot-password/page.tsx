@@ -5,7 +5,13 @@ import { getTranslations } from '@/lib/i18n/server';
 
 import { ForgotPasswordForm } from './forgot-password-form';
 
-export const metadata: Metadata = { title: 'Reset password' };
+// Translated, so the browser tab matches the language the app is being read in.
+// Static `metadata` cannot do this: it is evaluated without a request, so it
+// has no way to know which locale the cookie asked for.
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getTranslations();
+  return { title: t('auth.resetPassword') };
+}
 
 export default async function ForgotPasswordPage() {
   const { t } = await getTranslations();

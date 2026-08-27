@@ -7,7 +7,13 @@ import { AuthDivider, GoogleButton } from '@/components/auth/google-button';
 
 import { LoginForm } from './login-form';
 
-export const metadata: Metadata = { title: 'Sign in' };
+// Translated, so the browser tab matches the language the app is being read in.
+// Static `metadata` cannot do this: it is evaluated without a request, so it
+// has no way to know which locale the cookie asked for.
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getTranslations();
+  return { title: t('auth.signIn') };
+}
 
 /** Callback failures, keyed by the code the auth route redirects with. */
 const LINK_ERROR_KEYS: Record<string, string> = {

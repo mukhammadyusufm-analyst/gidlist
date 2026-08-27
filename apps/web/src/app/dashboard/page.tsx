@@ -12,7 +12,13 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { SpaceCard } from '@/components/boards/space-card';
 import { ArchivedSpaces } from '@/components/boards/archived-spaces';
 
-export const metadata: Metadata = { title: 'Spaces' };
+// Translated, so the browser tab matches the language the app is being read in.
+// Static `metadata` cannot do this: it is evaluated without a request, so it
+// has no way to know which locale the cookie asked for.
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getTranslations();
+  return { title: t('space.spaces') };
+}
 
 export default async function DashboardPage() {
   const [boards, archived, invitations, { t }, user] = await Promise.all([

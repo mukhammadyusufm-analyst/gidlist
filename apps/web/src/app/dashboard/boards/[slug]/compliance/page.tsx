@@ -13,7 +13,13 @@ import { FilterBar } from '@/components/compliance/filter-bar';
 import { SubmissionsTable } from '@/components/compliance/submissions-table';
 import { Pager } from '@/components/compliance/pager';
 
-export const metadata: Metadata = { title: 'Compliance' };
+// Translated, so the browser tab matches the language the app is being read in.
+// Static `metadata` cannot do this: it is evaluated without a request, so it
+// has no way to know which locale the cookie asked for.
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getTranslations();
+  return { title: t('space.compliance') };
+}
 
 const STATUSES: SubmissionStatus[] = ['done', 'draft', 'missed', 'upcoming'];
 
