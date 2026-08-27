@@ -20,5 +20,11 @@ import { config } from 'zod';
  * schemas check a handful of form fields; the difference is not measurable here.
  *
  * Imported for its side effect, first, before any schema is built.
+ *
+ * This covers the server, where module order is predictable. It is NOT enough
+ * for the browser: Zod reads the setting when a schema is *constructed*, and
+ * the bundler decides which chunk evaluates first, so a schema elsewhere can be
+ * built before this runs. `apps/web/src/instrumentation-client.ts` is what
+ * guarantees it on the client.
  */
 config({ jitless: true });
