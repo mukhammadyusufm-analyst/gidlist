@@ -362,6 +362,44 @@ arrive.
 
 ---
 
+## Two databases: development and production
+
+There are two Supabase projects, and knowing which is which matters more than
+anything else in this file.
+
+| | Project | Used by |
+| - | ------- | ------- |
+| **Production** | `ivqprkzqnoiffqlbfkkd` | `app.gidlist.com`. Real customers, real records. |
+| **Development** | the second one | `pnpm dev` on this machine. Disposable. |
+
+Until this split existed, every migration went straight to production the
+moment it was written — the app on this machine and the live site read the same
+rows, so a mistake in the SQL editor was a mistake in front of customers, with
+nothing to roll back to.
+
+**The order is now: development first, production second.**
+
+1. Write the migration.
+2. Apply it to **development** and use the app until you believe it.
+3. Apply the same file to **production**.
+4. Run `supabase/tests/security.sql` against production if the migration touched
+   a policy, a role or a capability.
+
+Never the other way round. A migration that has only ever run against
+production has never been tested — it has been performed.
+
+### Which project am I pointed at?
+
+`apps/web/.env.local` decides it for local development, and its
+`NEXT_PUBLIC_SUPABASE_URL` names the project. The Vercel environment variables
+decide it for the live site and should never point anywhere but production.
+
+If you are unsure which database you are about to change, look at the project
+name in the Supabase dashboard's top bar before running anything. That is a
+two-second check against the one mistake here that cannot be undone.
+
+---
+
 ## Applying a new migration (once per phase)
 
 The Supabase CLI is linked to your project, so this is one command:
