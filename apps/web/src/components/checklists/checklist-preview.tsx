@@ -1,33 +1,58 @@
-import { Square } from 'lucide-react';
-
+import type { AnsweredItem } from '@/lib/submissions/queries';
 import type { GroupWithItems } from '@/lib/checklists/queries';
 import type { ChecklistItem } from '@/lib/supabase/database.types';
 import type { ItemNode } from '@app/core';
+import { Avatar } from '@/components/ui/avatar';
+import { Banner } from '@/components/ui/banner';
+import { FillSheet } from '@/components/submissions/fill-sheet';
 
 /**
- * The checklist as somebody filling it in will see it.
+ * The checklist exactly as somebody filling it in will see it.
  *
- * A separate presentational component rather than the real `FillSheet` in
- * read-only mode, and that is a deliberate choice. `FillSheet` is a client
- * component bound to a submission id: it wires server actions for ticking,
- * commenting and submitting. Reusing it would mean either inventing a
- * submission to preview against — which puts a row in the compliance record for
- * a checklist nobody filled in — or threading a "there is no submission" case
- * through every action in it. Both are worse than rendering the structure.
+ * This renders the real `FillSheet`, not a lookalike. An earlier version was a
+ * separate presentational component, on the reasoning that `FillSheet` is bound
+ * to a submission id and reusing it would mean either inventing a submission —
+ * putting a row in the compliance record for a checklist nobody filled in — or
+ * threading a "there is no submission" case through every action.
  *
- * The trade is that the two can drift: change the fill-in layout and this stops
- * matching. That is acceptable because what an editor is checking here is
- * whether the *wording and nesting* read correctly, not whether the buttons are
- * in the right place.
+ * Neither turned out to be necessary, because `readOnly` already closes every
+ * write path, and closes it twice over:
  *
- * Server component — nothing here is interactive, and a preview that could be
- * clicked would invite somebody to try ticking it.
+ *   - Ticking is gated on `interactive`, which is
+ *     `Boolean(answerId) && !readOnly && !hasChildren`. Every item here is
+ *     given `answer: null`, so `answerId` is undefined and `interactive` is
+ *     false on both counts. The checkbox renders `disabled`, and `toggle`
+ *     early-returns before it reaches the server action.
+ *   - Commenting early-returns on the same missing id, and the control that
+ *     would reveal the box is not rendered under `readOnly` at all.
+ *   - The submit form — the only place `submissionId` is ever read — is inside
+ *     `{!readOnly ? … : null}` and never reaches the DOM.
+ *
+ * So no submission is invented and nothing is written. The placeholder id below
+ * is never read by anything.
+ *
+ * The cost of the old approach was drift: two renderers for one thing, and a
+ * change to the fill-in layout silently stopped matching the preview. That cost
+ * is now gone, and the preview shows the banner, the image and the progress
+ * ring — the visual furniture an editor could not see before.
+ *
+ * Server component. `FillSheet` is the client boundary, as it is on the real
+ * fill page.
  */
 export function ChecklistPreview({
   groups,
+  checklist,
+  slug,
   emptyLabel,
 }: {
   groups: GroupWithItems[];
+  checklist: {
+    id: string;
+    title: string;
+    avatar_url: string | null;
+    banner_url: string | null;
+  };
+  slug: string;
   emptyLabel: string;
 }) {
   const hasAnything = groups.some((group) => group.items.length > 0);
@@ -40,62 +65,57 @@ export function ChecklistPreview({
     );
   }
 
-  return (
-    <div
-      className="space-y-4"
-      // Announced as a picture of the thing rather than the thing: a screen
-      // reader user should not be told there are checkboxes they cannot tick.
-      role="img"
-      aria-label={emptyLabel}
-    >
-      {groups.map((group) => (
-        <section
-          key={group.id}
-          className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-card)]"
-        >
-          <h4 className="border-b border-[var(--color-border)] px-4 py-2.5 text-sm font-medium">
-            {group.title}
-          </h4>
+  const answered = groups.map((group) => ({ ...group, items: withoutAnswers(group.items) }));
+  const totalItems = answered.reduce((sum, group) => sum + countItems(group.items), 0);
 
-          {group.items.length === 0 ? (
-            <p className="px-4 py-3 text-sm text-[var(--color-muted-foreground)]">—</p>
-          ) : (
-            <ul>
-              {group.items.map((item) => (
-                <PreviewItem key={item.id} item={item} depth={0} />
-              ))}
-            </ul>
-          )}
-        </section>
-      ))}
+  return (
+    <div className="space-y-4">
+      {/* The same chrome the fill page puts above the sheet, in the same order.
+          Its absence was the actual complaint: an editor could see the wording
+          but not what the thing looks like. */}
+      {checklist.banner_url ? (
+        <Banner value={checklist.banner_url} alt={`${checklist.title} banner`} />
+      ) : null}
+
+      <div className="flex items-center gap-3">
+        <Avatar
+          name={checklist.title}
+          imageUrl={checklist.avatar_url}
+          seed={checklist.id}
+          className="size-10"
+        />
+        <h4 className="text-xl font-semibold tracking-tight">{checklist.title}</h4>
+      </div>
+
+      {/* Nothing ticked, which is what the first person to open it will see.
+          Showing a half-filled sheet would misrepresent the starting state. */}
+      <FillSheet
+        submissionId="preview"
+        slug={slug}
+        groups={answered}
+        readOnly
+        totalItems={totalItems}
+        checkedItems={0}
+      />
     </div>
   );
 }
 
 /**
- * One item and its children.
+ * Give every item, at every depth, the `answer: null` that `FillSheet` expects.
  *
- * Indentation is padding rather than nesting a `<ul>` per level, so five levels
- * deep still reads as one list on a phone instead of marching off the right
- * edge — which is where these are actually filled in.
+ * Null rather than a stub answer object: a stub would carry an id, and an id is
+ * exactly what the write paths test for before calling a server action.
  */
-function PreviewItem({ item, depth }: { item: ItemNode<ChecklistItem>; depth: number }) {
-  return (
-    <>
-      <li
-        className="flex items-start gap-2.5 border-b border-[var(--color-border)] px-4 py-2.5 last:border-b-0"
-        style={{ paddingLeft: `${1 + depth * 1.25}rem` }}
-      >
-        <Square
-          className="mt-0.5 size-4 shrink-0 text-[var(--color-muted-foreground)]"
-          aria-hidden="true"
-        />
-        <span className="text-sm">{item.title}</span>
-      </li>
+function withoutAnswers(items: ItemNode<ChecklistItem>[]): AnsweredItem[] {
+  return items.map((item) => ({
+    ...item,
+    answer: null,
+    children: withoutAnswers(item.children),
+  }));
+}
 
-      {item.children.map((child) => (
-        <PreviewItem key={child.id} item={child} depth={depth + 1} />
-      ))}
-    </>
-  );
+/** Counts every level, matching how the fill page totals a real submission. */
+function countItems(items: AnsweredItem[]): number {
+  return items.reduce((sum, item) => sum + 1 + countItems(item.children), 0);
 }
