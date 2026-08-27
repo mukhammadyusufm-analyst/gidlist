@@ -388,6 +388,41 @@ nothing to roll back to.
 Never the other way round. A migration that has only ever run against
 production has never been tested — it has been performed.
 
+### Granting yourself platform access on a fresh database
+
+A new project has nobody with platform capabilities, so the admin area is
+invisible and `/dashboard/admin` returns 404 — including for you. That is the
+rule working: the `grants` capability cannot be given from inside the app, in
+development either, so it has to be set with SQL.
+
+Sign up in the app first, then run this against that project:
+
+```sql
+insert into public.platform_grants (user_id, capability)
+select u.id, c.code
+from auth.users u
+cross join public.platform_capabilities c
+where u.email = 'you@example.com'
+on conflict do nothing;
+```
+
+**You should see** `INSERT 0 3`, and the shield icon appears in the header after
+a reload.
+
+To give somebody only part of it — a translator who should not see revenue —
+name the capability instead of taking them all:
+
+```sql
+insert into public.platform_grants (user_id, capability)
+select u.id, 'translations'
+from auth.users u
+where u.email = 'translator@example.com'
+on conflict do nothing;
+```
+
+Everything except `grants` can also be handed out from **Admin → Platform
+access** once you hold it.
+
 ### Which project am I pointed at?
 
 `apps/web/.env.local` decides it for local development, and its
