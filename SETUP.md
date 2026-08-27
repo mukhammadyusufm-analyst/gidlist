@@ -314,15 +314,51 @@ instead of "No email was sent".
 
 ### B. Sign-up and password-reset emails (sent by Supabase)
 
-These are separate and still go through Supabase's built-in sender, which is
-**rate-limited to a handful per hour** and explicitly not for production. It is
-fine for testing; before real customers use the product, set custom SMTP:
+Invitation emails (Part 8A) are sent by the app. **Confirmation and
+password-reset emails are sent by Supabase**, through a different sender, and
+these are the ones that decide whether somebody can finish signing up.
 
-Supabase -> **Project Settings** -> **Authentication** -> **SMTP Settings**, and
-enter the same provider's SMTP credentials.
+Supabase's built-in sender is **rate-limited to a few messages per hour** and is
+explicitly not for production. It fails by going quiet: past the limit, sign-up
+mail simply stops, the person sees "check your email", and nothing arrives.
+Nobody reports that as a bug — they leave.
 
-Doing this also stops confirmation emails landing in spam, which is the usual
-reason a new user reports that "nothing arrived".
+1. Open https://resend.com -> **API Keys** -> **Create API Key**.
+2. Name it `supabase-smtp`, permission **Sending access**.
+
+   > A second key, not the one in Vercel. That one is stored as Sensitive and
+   > cannot be read back — and separate keys mean either can be revoked without
+   > taking the other down with it.
+
+3. Copy the `re_...` key. It is shown once.
+4. In Supabase: **Project Settings** -> **Authentication** -> **SMTP Settings**.
+5. Turn on **Enable Custom SMTP**.
+6. Enter exactly:
+
+| Field | Value |
+| ----- | ----- |
+| Host | `smtp.resend.com` |
+| Port | `465` |
+| Username | `resend` |
+| Password | the `re_...` key from step 3 |
+| Sender email | `noreply@gidlist.com` |
+| Sender name | `Gidlist` |
+
+> The username is the literal word `resend`, not an email address. It is the
+> single most common thing to get wrong here, and the error it produces —
+> authentication failed — reads as if the key were bad.
+
+7. **Save**.
+8. Still in Authentication, find **Rate Limits** and raise the hourly email
+   limit. The default is set low because it protects Supabase's shared sender;
+   once mail goes through your own provider, that ceiling is only throttling
+   your own sign-ups.
+
+**You should see**: sign up with an address you have not used before, and the
+confirmation email arrives from `noreply@gidlist.com` rather than from
+Supabase. Check the spam folder too — mail from a verified domain should land
+in the inbox, and if it does not, DNS is worth re-checking before customers
+arrive.
 
 ---
 
