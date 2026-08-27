@@ -1,4 +1,14 @@
-import { z } from 'zod';
+import { config, z } from 'zod';
+
+// This file parses at module scope, and it is imported by `proxy.ts` and both
+// Supabase clients — so it is very likely the first Zod validation to run in
+// either bundle, before `@app/core` has had a chance to configure anything.
+// Setting it here as well is what makes the order irrelevant.
+//
+// See `packages/core/src/zod-config.ts` for why Zod must not attempt JIT
+// compilation here: it probes with `Function("")`, which the Content Security
+// Policy refuses.
+config({ jitless: true });
 
 /**
  * Environment validation.

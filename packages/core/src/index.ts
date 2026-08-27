@@ -8,6 +8,10 @@
  * platform, or the two clients will eventually disagree.
  */
 
+// First, and imported for its side effect: it configures Zod before any schema
+// below is constructed. See the file for why.
+import './zod-config';
+
 export * from './appearance';
 export * from './auth';
 export * from './boards';
