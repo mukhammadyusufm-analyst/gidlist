@@ -141,10 +141,29 @@ has `BoardRole` and `SubmissionStatus`. That narrowing is what makes
 `database.generated.ts`, which is a reference to diff against. Converting the
 constraints to real enums would retire the arrangement; that is open item 12.
 
-**Platform admin is not space owner.** Interface wording is shared by every
-customer, so only a platform administrator may edit translations. There is no
-way to grant it from inside the app — it is set with SQL, deliberately, so
-nobody can promote themselves.
+**Platform access is capabilities, not a role, and not space ownership.** A
+space owner runs their own company's data; platform capabilities reach across
+every customer. They are separate systems and must stay so — interface wording
+is shared by all customers, so no owner can be allowed to grant it.
+
+Capabilities rather than a role because a role is a bundle, and a bundle is
+always slightly wrong for somebody: you end up with "translator plus billing",
+then "translator plus billing minus refunds". `translations`, `accounts` and
+`grants` compose, and a new one is a row in `platform_capabilities`.
+
+**The root stays out of the app.** `set_platform_grant` refuses to hand out
+`grants` itself, so a master can delegate the others but cannot mint another
+master, and nobody can promote themselves. That property is why the old boolean
+was SQL-only, and it is the one worth keeping while everything below it becomes
+delegable. Ask with `has_platform_capability()` — it is `stable` and
+`security definer`, so it works inside an RLS policy.
+
+**The Content Security Policy is built per request in `proxy.ts`**, not in
+`next.config.ts`, because a strict `script-src` needs a fresh nonce and a static
+config cannot produce one. Next reads the nonce back out of the request headers
+and stamps it on its own scripts; `strict-dynamic` then refuses anything else.
+Every response path in the proxy must set the header — one that escapes without
+it has no policy at all, and the gap would be invisible.
 
 ## Open items
 
@@ -158,7 +177,8 @@ remembering a conversation.
 | 2 | **Supabase auth email (SMTP)** | Sign-up and password-reset mail still uses Supabase's built-in sender, rate-limited to a handful per hour and explicitly not for production — so sign-ups will start failing silently once more than a few people arrive at once. Now cheap to fix: `gidlist.com` is already verified in Resend, so this is Resend's SMTP credentials pasted into Supabase. See SETUP.md Part 8B. |
 | 2c | **Nothing is served statically** | Measured from Tashkent against production, best of 8: a CDN asset 190ms, the proxy redirect 231ms, `/` 452ms, `/login` 463ms. So ~190ms is network, ~41ms the proxy, **~221ms server rendering, and 11ms all database work**. Every page is rendered on demand because `proxy.ts` and the Supabase client read cookies on every request, so even the login form costs a function invocation. This is the largest remaining lever and it is what item 2b would fix. Note the network leg is inflated by requests entering Vercel at its **Hong Kong** edge before reaching Frankfurt. |
 | 2a | **Remaining per-request round trips** | Largely addressed: `getUser()` is memoised, and `my_role()` collapsed the role lookup from two round trips to one. What is left per authenticated page: the proxy's own `auth.getUser()` (cannot share the memo — separate invocation), a `profiles` read in `getLocale()` when no locale cookie is set, and `is_platform_admin()` on every dashboard render. Measure before touching these — free-tier cold starts remain the larger share. |
-| 2b | **Migrate to Cache Components** | `unstable_cache` is superseded by the `use cache` directive, which needs `cacheComponents: true` and a pass over the app wrapping runtime data access in `<Suspense>`. Worth doing for the static shell and instant navigation, but it is a refactor, not a patch — hence not done alongside a performance fix. |
+| 2b | **Migrate to Cache Components** — *blocked, see 2d* | Investigated and deliberately not attempted. The migration guide is explicit: when a cookie drives an attribute on `<html>` — `lang`, `data-theme` — reading it on the server makes the whole subtree request-bound, so there is no child left to wrap in `<Suspense>`. Theme is solvable with a pre-paint script. **Locale is not**: a static shell is one shell per route, and with three languages selected by cookie rather than URL there is no single correct version of any translated text. The shell would hold layout chrome and nothing else, so the 221ms of rendering does not disappear — it moves behind a streamed boundary. That buys first byte at ~190ms instead of 452ms, which is perceived speed, not total, in exchange for a refactor across 22 pages and 6 layouts in the area most likely to produce a visible regression. Revisit only after 2d. |
+| 2d | **Locale in the URL** | `/uz/...`, `/ru/...` instead of a cookie. Makes a language shareable by link, helps SEO on any marketing pages, and is the prerequisite that would make 2b worth doing. Cheaper now than once there are links in the wild. |
 | 3 | ~~**Audit log**~~ | **Done.** `audit_log`, written by triggers on `board_members`, `boards`, `platform_grants` and `subscriptions` — an action the app records is one the app can forget to record, and a trigger cannot be bypassed by a new code path, a direct API call, or a fix applied in the SQL editor. Governance only: a submission already records who ticked what, and auditing every checkbox would bury the twenty rows a year that matter. Append-only by construction — a read policy and nothing else, so Postgres refuses every write from every API role. Space entries are readable by that space's admins, platform entries by `grants` holders. No foreign keys, deliberately: they would erase the subject exactly when it became interesting, and would make deleting a space fail because it tried to record itself. |
 | 4 | **Void a submission, with a reason** | Today a missed record can only be deleted, which is silent. Voiding is recorded, and is what a compliance tool should offer instead. |
 | 5 | **Checklist preview** | A read-only rendering on the Details tab showing the checklist as it appears when filled in, without creating a submission. |
@@ -168,7 +188,8 @@ remembering a conversation.
 | 9 | **Cross-section drag** | Items reorder among siblings only. Moving between sections, or changing nesting depth, is not draggable. |
 | 10 | **Browser tab titles** | Still English — they are static `metadata` exports and need `generateMetadata` to translate. |
 | 12 | **Real Postgres enums** | Roles, member statuses, version statuses, schedule kinds and submission statuses are `text` + CHECK. Converting them to enum types would let `pnpm db:types` generate `database.types.ts` correctly instead of it being hand-maintained, removing a standing chance of someone widening every union back to `string` by running one command. Needs a migration per type and a types regeneration. |
-| 13 | **Enforce the CSP** | It ships as `Content-Security-Policy-Report-Only`. Two blockers: `style-src` cannot drop `'unsafe-inline'` while seven components set `style={{…}}` (the builder's drag transforms change every frame), and the strict `script-src` Next recommends needs a per-request nonce, which forces dynamic rendering — directly against item 2b. Decide 2b first, then enforce. Dev shows only `unsafe-eval` violations, which React does not use in production. |
+| 13 | ~~**Enforce the CSP**~~ | **Done.** Built per request in `proxy.ts`, because a strict `script-src` needs a fresh nonce and a static config cannot make one. `strict-dynamic` with a nonce means an injected `<script src>` never runs. Unblocked by the 2b decision: the nonce forces dynamic rendering, which no longer conflicts with anything now that Cache Components is deferred. Two deliberate loosenings, both documented in the file: `style-src` keeps `'unsafe-inline'` because seven components set `style={{…}}` and CSP ignores `'unsafe-inline'` once a nonce is present, so adding one would break the builder rather than tighten it; `'unsafe-eval'` is development-only, for React's dev overlay. Verified in a browser: nonce unique per request, 22 of 24 scripts nonced, React hydrated, no violations. |
+| 13a | **Verify the CSP in production** | Development allows `'unsafe-eval'` and loads scripts differently, so a policy that works locally can still break live. After the next deploy, open `app.gidlist.com`, sign in, use the checklist builder, and check the console for `Refused to…`. |
 | 14 | ~~**Rate limiting**~~ | **Done.** `enforce_rate_limit()` with a rolling window, enforced in the database — a limit in a server action is bypassed by calling PostgREST directly, which is easier than driving the interface and therefore what an abusive client does. Invitations 30/hour and 100/day per person, materialisation 60/hour. Only *pending* invitations count: accepted members are already bounded by the plan, and it is invitations that never accept which cost sending reputation. Refusals carry SQLSTATE `PT429`, which PostgREST answers as HTTP 429, so a client sees the standard signal rather than a 500. |
 | 15 | ~~**Error tracking**~~ | **Done.** `src/instrumentation.ts` exports Next's `onRequestError`, so every server failure — Server Component render, Server Action, route handler, proxy — is caught by the framework rather than by remembering to try/catch. No SDK: it is a framework export and one fetch, so it works on this version of Next today instead of whenever a vendor catches up. Always writes one structured JSON line tagged `app-error`; also posts to `ERROR_WEBHOOK_URL` when set, deduplicated to one notification per distinct error per ten minutes. **Headers are never forwarded** — `request.headers` carries the Supabase session cookie, and the payload is built from an allow-list rather than by stripping known-bad fields. Verified by throwing from a temporary route and reading the log line back. |
 | 15a | ~~**Alerting on the nightly job**~~ | **Done.** An hourly `check-job-health` reads pg_cron's own `job_run_details` — rather than a record the jobs keep themselves, which would go quiet exactly when they do — and writes `system.job_stale` into the audit log, with a 12-hour cooldown so a lasting outage does not bury the history. Tolerances live in `job_expectations` as rows, so adding a job is an insert. A banner appears at the top of the admin area when anything is behind, and renders nothing otherwise: a permanent green tick stops being read within a week, and then the day it turns red it is not read either. **Push notification is still not wired** — the alert lands where somebody looks rather than reaching them. Doing that from Postgres needs `pg_net`; see 15b. |

@@ -28,10 +28,68 @@ function isPublicRoute(pathname: string) {
   );
 }
 
+/**
+ * The Content Security Policy, built fresh per request.
+ *
+ * It lives here rather than in `next.config.ts` because the script nonce has to
+ * be unpredictable and different every time — a static config cannot produce
+ * one. Next reads the nonce back out of the request headers set below and
+ * stamps it onto its own inline scripts, which is what lets `script-src` refuse
+ * everything else.
+ *
+ * `strict-dynamic` means: trust scripts the nonced ones load, and nothing more.
+ * An injected `<script src>` has no nonce and never runs, which is the single
+ * control that matters here.
+ *
+ * TWO DELIBERATE LOOSENINGS.
+ *
+ * `style-src` keeps 'unsafe-inline'. Seven components set `style={{…}}` — the
+ * checklist builder's drag transforms change every frame and cannot be a
+ * stylesheet. A nonce cannot cover style attributes, and CSP ignores
+ * 'unsafe-inline' entirely once a nonce is present, so adding one here would
+ * break the builder rather than tighten anything. Style injection is also a far
+ * smaller problem than script injection, which stays strict.
+ *
+ * `'unsafe-eval'` in development only. React uses `eval` to rebuild server
+ * stacks in the dev overlay; neither React nor Next uses it in production.
+ */
+function buildCsp(nonce: string): string {
+  const isDev = process.env.NODE_ENV === 'development';
+
+  // The browser talks to Supabase directly for auth and storage uploads, so its
+  // origin has to be named — 'self' does not cover it. `wss:` is for realtime,
+  // which the per-checklist discussion (README item 6) will need.
+  const supabase = 'https://*.supabase.co';
+
+  return [
+    "default-src 'self'",
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`,
+    "style-src 'self' 'unsafe-inline'",
+    `img-src 'self' data: blob: ${supabase}`,
+    "font-src 'self'",
+    `connect-src 'self' ${supabase} wss://*.supabase.co`,
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+    'upgrade-insecure-requests',
+  ].join('; ');
+}
+
 export async function proxy(request: NextRequest) {
+  const nonce = crypto.randomUUID();
+  const csp = buildCsp(nonce);
+
+  // Set on the REQUEST, not only the response: this is how Next finds the nonce
+  // and applies it to the scripts it injects. Without it, every Next script is
+  // unnonced and `strict-dynamic` blocks the entire application.
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-nonce', nonce);
+  requestHeaders.set('Content-Security-Policy', csp);
+
   // This response is what carries any refreshed auth cookies back to the
   // browser. It must be the object we ultimately return, or the refresh is lost.
-  let supabaseResponse = NextResponse.next({ request });
+  let supabaseResponse = NextResponse.next({ request: { headers: requestHeaders } });
 
   const supabase = createServerClient(
     env.NEXT_PUBLIC_SUPABASE_URL,
@@ -47,7 +105,9 @@ export async function proxy(request: NextRequest) {
           for (const { name, value } of cookiesToSet) {
             request.cookies.set(name, value);
           }
-          supabaseResponse = NextResponse.next({ request });
+          // Rebuilt with the same headers object, or the nonce is lost here and
+          // the policy blocks every script on any request that refreshed a token.
+          supabaseResponse = NextResponse.next({ request: { headers: requestHeaders } });
           for (const { name, value, options } of cookiesToSet) {
             supabaseResponse.cookies.set(name, value, options);
           }
@@ -78,6 +138,7 @@ export async function proxy(request: NextRequest) {
     for (const cookie of supabaseResponse.cookies.getAll()) {
       redirectResponse.cookies.set(cookie);
     }
+    redirectResponse.headers.set('Content-Security-Policy', csp);
     return redirectResponse;
   }
 
@@ -91,9 +152,14 @@ export async function proxy(request: NextRequest) {
     for (const cookie of supabaseResponse.cookies.getAll()) {
       redirectResponse.cookies.set(cookie);
     }
+    redirectResponse.headers.set('Content-Security-Policy', csp);
     return redirectResponse;
   }
 
+  // Set on every path out of this function, including both redirects above. A
+  // response that escapes without it is a response with no policy at all, and
+  // the gap would be invisible until somebody went looking for it.
+  supabaseResponse.headers.set('Content-Security-Policy', csp);
   return supabaseResponse;
 }
 

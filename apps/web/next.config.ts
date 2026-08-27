@@ -33,47 +33,18 @@ const nextConfig: NextConfig = {
 };
 
 /**
- * The browser talks to Supabase directly — auth, storage uploads — so its
- * origin has to be allowed explicitly rather than covered by 'self'.
- */
-const SUPABASE_ORIGIN = 'https://*.supabase.co';
-
-/**
- * Reported, not enforced, and deliberately so.
+ * The Content Security Policy is NOT here. It lives in `proxy.ts`, because a
+ * strict `script-src` needs a fresh nonce per request and a static config
+ * cannot produce one.
  *
- * Two things stand between this and a strict enforced policy:
+ * Everything below is enforced from here instead: none of it varies per
+ * request, and none of it can break a working page.
  *
- *   1. `style-src` cannot drop 'unsafe-inline' while seven components set
- *      `style={{…}}`, including the drag transforms in the checklist builder,
- *      which change every frame and cannot be a stylesheet.
- *   2. The strict `script-src` Next recommends needs a per-request nonce, and a
- *      nonce forces every page to render dynamically — the exact opposite of
- *      the static-shell work in README open item 2b. Choosing the CSP before
- *      that decision is settled would mean choosing twice.
+ * `frame-ancestors` is in the CSP, but `X-Frame-Options` stays as well — it is
+ * the older control, understood by anything that predates CSP, and the two
+ * agree.
  *
- * Report-Only still surfaces violations in the browser console, so it tells us
- * what an enforced policy would break without breaking anything for a tester
- * today. Promote it to `Content-Security-Policy` once 2b lands.
- */
-const CSP_REPORT_ONLY = [
-  "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
-  "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' data: blob: ${SUPABASE_ORIGIN}`,
-  "font-src 'self'",
-  `connect-src 'self' ${SUPABASE_ORIGIN} wss://*.supabase.co`,
-  "object-src 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "frame-ancestors 'none'",
-  'upgrade-insecure-requests',
-].join('; ');
-
-/**
- * Sent on every response. Vercel adds none of these itself.
- *
- * Everything here is enforced because none of it can break a working page —
- * unlike the CSP above, which can and therefore is not.
+ * @see proxy.ts for the policy and the two deliberate loosenings in it.
  */
 const SECURITY_HEADERS = [
   {
@@ -106,7 +77,6 @@ const SECURITY_HEADERS = [
     key: 'Permissions-Policy',
     value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
   },
-  { key: 'Content-Security-Policy-Report-Only', value: CSP_REPORT_ONLY },
 ];
 
 export default nextConfig;
