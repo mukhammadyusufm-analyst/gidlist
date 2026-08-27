@@ -250,4 +250,70 @@
     width: 0;
     pointer-events: none;
   }
+
+  /*
+   * The sign-in page's padding.
+   *
+   * `env(safe-area-inset-*)` rather than a fixed value, because the root layout
+   * sets `viewportFit: cover` so the page reaches under a notch and a home
+   * indicator. Without this the text sits against the curve of the screen on
+   * a modern iPhone, which is the sort of thing that reads as unfinished
+   * without anyone being able to say why.
+   *
+   * `max()` keeps a comfortable minimum on every other device, where those
+   * values are zero.
+   */
+  .auth-shell {
+    padding-inline: max(1.25rem, env(safe-area-inset-left), env(safe-area-inset-right));
+    padding-block: max(2rem, env(safe-area-inset-top)) max(2rem, env(safe-area-inset-bottom));
+  }
+
+  /*
+   * Two soft washes of the brand hue behind the sign-in page.
+   *
+   * Drawn in CSS rather than shipped as an image: it costs no request, cannot
+   * arrive late and shift the layout, and scales to any screen without a
+   * second asset. "Pleasant but quick to load" is best served by not loading
+   * anything.
+   *
+   * Colour comes from `--color-primary` through `color-mix`, so it follows the
+   * theme rather than needing a light and a dark version — and if the brand
+   * colour is ever changed, this changes with it.
+   *
+   * `position: fixed` so the wash covers the viewport however tall the content
+   * is, and stays put when the page scrolls. `z-index: -1` with `isolation` on
+   * the parent keeps it behind everything without joining the stacking order.
+   */
+  .auth-backdrop {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .auth-backdrop::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(
+        60rem 45rem at 12% -15%,
+        color-mix(in oklch, var(--color-primary) 16%, transparent),
+        transparent 65%
+      ),
+      radial-gradient(
+        55rem 40rem at 105% 108%,
+        color-mix(in oklch, var(--color-primary) 11%, transparent),
+        transparent 62%
+      );
+  }
+
+  /* A wash that animates would be movement behind a password field, which is
+     distracting rather than pleasant. It is also the first thing to look
+     cheap. Anyone who has asked not to see motion gets the same still image. */
+  @media (prefers-reduced-motion: reduce) {
+    .auth-backdrop::before {
+      transition: none;
+    }
+  }
 }

@@ -9,12 +9,13 @@ import { LanguageSwitcher } from '@/components/i18n/language-switcher';
  *
  * Two audiences arrive here and they want opposite things. Someone evaluating
  * the product needs to know what it is; someone who works here needs to sign in
- * and get on with their shift. So the layout puts the form first in the reading
- * order and on small screens, and shows the explanation beside it on a wide one
- * — where an evaluator almost certainly is, and where a worker is not.
+ * and get on with their shift. So the form comes first in the reading order and
+ * on small screens, and the explanation sits beside it on a wide one — where an
+ * evaluator almost certainly is, and where a worker is not.
  *
  * The explanation is not hidden from phones, only moved below the form. Hiding
- * it would mean a prospect who opened the link on a phone learns nothing.
+ * it would mean a prospect who opened the link on a phone learns nothing, and
+ * that is most of them.
  */
 export default async function AuthLayout({ children }: { children: React.ReactNode }) {
   const [locales, { t }] = await Promise.all([getAvailableLocales(), getTranslations()]);
@@ -26,52 +27,72 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
   ];
 
   return (
-    <div className="min-h-dvh px-4 py-10 sm:py-16">
-      <div className="mx-auto grid w-full max-w-4xl gap-10 lg:grid-cols-[1fr_22rem] lg:items-center lg:gap-16">
-        {/* Second on a phone, first on a wide screen — `order` rather than two
-            copies of the markup, so the words exist once. */}
-        <section className="order-2 lg:order-1">
-          <Link href="/" className="inline-flex items-center gap-2.5">
-            <span className="flex size-9 items-center justify-center rounded-lg bg-[var(--color-primary)] text-[var(--color-primary-foreground)]">
-              <CircleCheckBig className="size-5" aria-hidden="true" />
-            </span>
-            <span className="text-xl font-semibold tracking-tight">Gidlist</span>
-          </Link>
+    // `items-center` with `min-h-dvh` is what centres the whole block
+    // vertically. Without it the content hangs from the top, which is barely
+    // noticeable on a laptop and looks abandoned on a large monitor or when
+    // somebody zooms out.
+    <div className="auth-backdrop auth-shell flex min-h-dvh items-center justify-center">
+      <div className="w-full max-w-4xl">
+        {/* Above the grid rather than inside the left column. In the left
+            column it would follow the form on a phone, so the first thing on
+            the page would be a password field belonging to nothing named. Up
+            here it is first on every screen, and on a wide one it still lines
+            up with the column beneath it. */}
+        <Link
+          href="/"
+          className="mx-auto flex w-fit items-center gap-2.5 lg:mx-0"
+          aria-label="Gidlist"
+        >
+          <span className="flex size-9 items-center justify-center rounded-lg bg-[var(--color-primary)] text-[var(--color-primary-foreground)]">
+            <CircleCheckBig className="size-5" aria-hidden="true" />
+          </span>
+          <span className="text-xl font-semibold tracking-tight">Gidlist</span>
+        </Link>
 
-          <h2 className="mt-6 text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
-            {t('auth.pitchTitle')}
-          </h2>
-          <p className="mt-3 max-w-md text-sm leading-relaxed text-[var(--color-muted-foreground)]">
-            {t('auth.pitchBody')}
-          </p>
+        <div className="mt-8 grid gap-10 lg:mt-10 lg:grid-cols-[1fr_22rem] lg:items-start lg:gap-16">
+          <section className="order-2 lg:order-1">
+            {/* Centred on a phone, left-aligned once there is a column to align
+                to. Left-aligned text under a centred logo on a narrow screen
+                looks like a mistake rather than a choice. */}
+            <h2 className="text-center text-2xl font-semibold tracking-tight text-balance sm:text-3xl lg:text-left">
+              {t('auth.pitchTitle')}
+            </h2>
+            <p className="mx-auto mt-3 max-w-md text-center text-sm leading-relaxed text-[var(--color-muted-foreground)] lg:mx-0 lg:text-left">
+              {t('auth.pitchBody')}
+            </p>
 
-          <ul className="mt-6 space-y-3">
-            {points.map((point) => {
-              const Icon = point.icon;
-              return (
-                <li key={point.text} className="flex items-start gap-2.5 text-sm">
-                  <Icon
-                    className="mt-0.5 size-4 shrink-0 text-[var(--color-muted-foreground)]"
-                    aria-hidden="true"
-                  />
-                  <span>{point.text}</span>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
+            {/* The list stays left-aligned at every width — centred bullets
+                with icons in front of them read as decoration, not points —
+                but the block itself is centred on a phone so it sits under the
+                heading rather than off to one side. */}
+            <ul className="mx-auto mt-6 max-w-md space-y-3 lg:mx-0">
+              {points.map((point) => {
+                const Icon = point.icon;
+                return (
+                  <li key={point.text} className="flex items-start gap-2.5 text-sm">
+                    <Icon
+                      className="mt-0.5 size-4 shrink-0 text-[var(--color-muted-foreground)]"
+                      aria-hidden="true"
+                    />
+                    <span>{point.text}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
 
-        <div className="order-1 lg:order-2">
-          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] p-6 shadow-sm">
-            {children}
-          </div>
+          <div className="order-1 lg:order-2">
+            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] p-6 shadow-sm">
+              {children}
+            </div>
 
-          {/* Here rather than only behind the login. Someone signing in for the
-              first time on a factory floor has no profile yet, so this is their
-              only chance to get out of English before they have to read
-              anything. */}
-          <div className="mt-4 flex justify-center">
-            <LanguageSwitcher locales={locales} />
+            {/* Here rather than only behind the login. Someone signing in for
+                the first time on a factory floor has no profile yet, so this is
+                their only chance to get out of English before they have to read
+                anything. */}
+            <div className="mt-4 flex justify-center">
+              <LanguageSwitcher locales={locales} />
+            </div>
           </div>
         </div>
       </div>
