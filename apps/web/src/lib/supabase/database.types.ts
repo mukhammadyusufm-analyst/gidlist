@@ -356,6 +356,15 @@ export type Database = {
           assignee_email: string | null;
           status: SubmissionStatus;
           submitted_at: string | null;
+          /**
+           * Voiding annotates rather than overwrites: `status` still says the
+           * record was missed, and these say somebody decided it should not
+           * count and why. A 'void' status would erase the fact the reason is
+           * explaining.
+           */
+          voided_at: string | null;
+          voided_by: string | null;
+          void_reason: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -363,6 +372,8 @@ export type Database = {
         // materialisation job, so the set of obligations always matches the
         // schedules that produced them.
         Insert: never;
+        // The void columns are absent here on purpose — they are written only by
+        // `set_submission_void`, which checks the caller is a space admin.
         Update: {
           status?: SubmissionStatus;
           submitted_at?: string | null;
@@ -510,6 +521,11 @@ export type Database = {
       my_platform_capabilities: { Args: Record<string, never>; Returns: string[] };
       // Refuses the root capability: granting that stays a database-console act,
       // so the set of people who can hand out power changes only deliberately.
+      // Null reason lifts the void. Admin only, checked inside the function.
+      set_submission_void: {
+        Args: { p_submission_id: string; p_reason: string | null };
+        Returns: undefined;
+      };
       set_platform_grant: {
         Args: { p_user_id: string; p_capability: string; p_granted: boolean };
         Returns: undefined;

@@ -1,11 +1,11 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 
-import { getBoardBySlug } from '@/lib/boards/queries';
+import { getBoardBySlug, getMyRole } from '@/lib/boards/queries';
 import { getComplianceData } from '@/lib/compliance/queries';
 import { getToday } from '@/lib/timezone/server';
 import { getTranslations } from '@/lib/i18n/server';
-import { addDays, isIsoDate } from '@app/core';
+import { addDays, canGovern, isIsoDate } from '@app/core';
 import type { SubmissionStatus } from '@/lib/supabase/database.types';
 import { StatTiles } from '@/components/compliance/stat-tiles';
 import { CompletionChart } from '@/components/compliance/completion-chart';
@@ -43,6 +43,8 @@ export default async function CompliancePage({
 
   const board = await getBoardBySlug(slug);
   if (!board) notFound();
+
+  const role = await getMyRole(board.id);
 
   // Defaults to the last 30 days. Every parameter is validated rather than
   // trusted — these reach a database query, and an arbitrary string would
@@ -100,7 +102,11 @@ export default async function CompliancePage({
             {data.rows.length}
           </span>
         </h3>
-        <SubmissionsTable rows={data.rows} slug={slug} />
+        {/* Voiding is governance, not content: deciding a missed check should
+            not count against the company is the kind of thing somebody may
+            later be asked to justify. `set_submission_void` checks the same
+            thing, so hiding the control is a courtesy rather than the rule. */}
+        <SubmissionsTable rows={data.rows} slug={slug} canVoid={canGovern(role)} />
         <Pager slug={slug} page={data.page} pageCount={data.pageCount} />
       </section>
     </div>

@@ -28,6 +28,9 @@ export type ComplianceRow = {
   assignee_email: string | null;
   checklist_id: string;
   checklist_title: string;
+  /** Set when somebody decided this record should not count. */
+  voided_at: string | null;
+  void_reason: string | null;
 };
 
 export type ComplianceData = {
@@ -106,7 +109,7 @@ export async function getComplianceData(
   // PostgREST returns the count in a header, so no extra round trip.
   let rowQuery = supabase
     .from('submissions')
-    .select('id, due_date, status, assignee_email, checklist_id', { count: 'exact' })
+    .select('id, due_date, status, assignee_email, checklist_id, voided_at, void_reason', { count: 'exact' })
     .in(
       'checklist_id',
       filters.checklistId ? [filters.checklistId] : checklistList.map((c) => c.id),

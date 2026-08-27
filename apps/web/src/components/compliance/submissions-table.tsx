@@ -4,6 +4,7 @@ import Link from 'next/link';
 
 import type { ComplianceRow } from '@/lib/compliance/queries';
 import { StatusBadge } from '@/components/submissions/status-badge';
+import { VoidControl } from '@/components/compliance/void-control';
 import { useT } from '@/components/i18n/provider';
 
 /**
@@ -14,7 +15,16 @@ import { useT } from '@/components/i18n/provider';
  * scrolls inside its own container so a long checklist name never makes the
  * whole page scroll sideways on a phone.
  */
-export function SubmissionsTable({ rows, slug }: { rows: ComplianceRow[]; slug: string }) {
+export function SubmissionsTable({
+  rows,
+  slug,
+  canVoid,
+}: {
+  rows: ComplianceRow[];
+  slug: string;
+  /** Governance roles only. The database refuses everyone else regardless. */
+  canVoid: boolean;
+}) {
   const { t, locale } = useT();
 
   const formatDate = (iso: string) =>
@@ -72,7 +82,20 @@ export function SubmissionsTable({ rows, slug }: { rows: ComplianceRow[]; slug: 
                 {row.assignee_email ?? t('common.anyone')}
               </td>
               <td className="px-4 py-2.5">
-                <StatusBadge status={row.status} />
+                <div className="flex flex-wrap items-center gap-2">
+                  <StatusBadge status={row.status} voided={row.voided_at !== null} />
+                  {canVoid ? (
+                    <VoidControl
+                      submissionId={row.id}
+                      voidedAt={row.voided_at}
+                      voidReason={row.void_reason}
+                    />
+                  ) : row.voided_at ? (
+                    <span className="text-xs text-[var(--color-muted-foreground)]">
+                      {row.void_reason}
+                    </span>
+                  ) : null}
+                </div>
               </td>
             </tr>
           ))}
