@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { ChevronRight, History, Languages, ShieldCheck, TrendingUp } from 'lucide-react';
 
 import { myCapabilities } from '@/lib/platform/access';
+import { JobHealth } from '@/components/admin/job-health';
 
 export const metadata: Metadata = { title: 'Admin' };
 
@@ -58,6 +59,11 @@ export default async function AdminPage() {
           Tools that reach across every customer. Separate from anything a space owner controls.
         </p>
       </div>
+
+      {/* Above the sections, and renders nothing when all is well. A silent
+          failure has to be put in front of somebody; nobody navigates to a
+          health page. */}
+      <JobHealth />
 
       <ul className="space-y-3">
         {sections.map((section) => {

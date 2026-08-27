@@ -597,6 +597,22 @@ export type Database = {
         Args: Record<string, never>;
         Returns: { capability: string; holders: number }[];
       };
+      /**
+       * Whether the scheduled work is running. Reads pg_cron's own run history
+       * rather than a record the jobs keep themselves — a log written by the
+       * job goes quiet exactly when the job does.
+       */
+      platform_job_health: {
+        Args: Record<string, never>;
+        Returns: {
+          jobname: string;
+          last_success: string | null;
+          last_status: string | null;
+          last_message: string | null;
+          max_silence: string;
+          is_stale: boolean;
+        }[];
+      };
       // Returns null when the caller is not an active member of the board.
       my_role: { Args: { p_board_id: string }; Returns: BoardRole | null };
       // ---- billing (phase 7) -------------------------------------------------

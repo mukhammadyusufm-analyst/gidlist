@@ -120,6 +120,10 @@ function platformPhrase(entry: AuditEntry): string {
       return `${who} enabled ${d.name}`;
     case 'language.disabled':
       return `${who} disabled ${d.name}`;
+    // Written by the hourly health check, which runs with no session — so the
+    // actor resolves to "system" rather than a person.
+    case 'system.job_stale':
+      return `Scheduled job "${d.job}" is behind — last succeeded ${d.last_success ?? 'never'}`;
     default:
       // Deliberately still rendered. A trigger added later without matching
       // wording here should show something imperfect, not disappear.
