@@ -2,7 +2,8 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 
 import { getBoardBySlug, getMyRole } from '@/lib/boards/queries';
-import { getChecklist } from '@/lib/checklists/queries';
+import { getChecklist, getVersionContent } from '@/lib/checklists/queries';
+import { ChecklistPreview } from '@/components/checklists/checklist-preview';
 import { Avatar } from '@/components/ui/avatar';
 import { getTranslations } from '@/lib/i18n/server';
 import { canEditContent } from '@app/core';
@@ -28,6 +29,17 @@ export default async function ChecklistDetailsPage({
   if (!canEditContent(role)) notFound();
 
   const { t } = await getTranslations();
+
+  /**
+   * Preview the draft when there is one, otherwise what is published.
+   *
+   * The draft is the version an editor is about to commit people to, so "does
+   * this read correctly" is a question about the draft. Falling back to the
+   * published version means the preview is never empty on a checklist that is
+   * already in use.
+   */
+  const previewVersion = checklist.draft ?? checklist.latestPublished;
+  const preview = previewVersion ? await getVersionContent(previewVersion.id) : null;
 
   return (
     <div className="max-w-lg space-y-10">
@@ -78,6 +90,20 @@ export default async function ChecklistDetailsPage({
           prefix={`banner-${checklist.id}`}
         />
       </section>
+
+      {/* Last on the page: it is something to look at, not something to change,
+          and the editing controls are why somebody opened this tab. */}
+      {preview && previewVersion ? (
+        <section>
+          <h3 className="text-lg font-semibold tracking-tight">{t('checklist.preview')}</h3>
+          <p className="mt-1 mb-4 text-sm text-[var(--color-muted-foreground)]">
+            {previewVersion.status === 'draft'
+              ? t('checklist.previewDraftIntro', { version: previewVersion.version_number })
+              : t('checklist.previewPublishedIntro', { version: previewVersion.version_number })}
+          </p>
+          <ChecklistPreview groups={preview.groups} emptyLabel={t('checklist.previewEmpty')} />
+        </section>
+      ) : null}
     </div>
   );
 }
