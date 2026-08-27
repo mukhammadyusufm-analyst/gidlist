@@ -39,8 +39,15 @@ export default async function AccountsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Accounts</h1>
+        {/* Said plainly, because "why is this person missing" is the obvious
+            question otherwise. Someone who only joined another company's space
+            has no plan and no price, so a row here would be mostly blanks —
+            they are counted inside that account's member figure instead. */}
         <p className="mt-1 text-sm text-[var(--color-muted-foreground)]">
-          Every account with a live space, and what it pays.
+          One row per account that owns a space, and what it pays. People who
+          only belong to someone else&apos;s space are counted in that
+          account&apos;s members, not listed separately — see Platform access
+          for everyone with a login.
         </p>
       </div>
 
@@ -52,11 +59,14 @@ export default async function AccountsPage() {
             value={formatMoney(money(Number(totals.mrr_minor), totals.currency), locale)}
             hint={`${totals.paying_accounts} paying`}
           />
+          {/* Registered people rather than free accounts: most people who use
+              this will never own a space, so counting only owners makes the
+              product look smaller than it is. Free accounts sit in the hint. */}
           <Stat
             icon={<Users className="size-4" aria-hidden="true" />}
-            label="Free accounts"
-            value={String(totals.free_accounts)}
-            hint="the pipeline"
+            label="Registered people"
+            value={String(totals.registered_people)}
+            hint={`${totals.free_accounts} free ${totals.free_accounts === 1 ? 'account' : 'accounts'}`}
           />
           <Stat
             icon={<AlertTriangle className="size-4" aria-hidden="true" />}

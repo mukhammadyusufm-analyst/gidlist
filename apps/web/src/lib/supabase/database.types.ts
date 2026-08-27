@@ -546,6 +546,8 @@ export type Database = {
           free_accounts: number;
           past_due: number;
           near_limit: number;
+          /** Everyone with a login, whether or not they own a space. */
+          registered_people: number;
         }[];
       };
       // ---- audit -------------------------------------------------------------
