@@ -1,7 +1,7 @@
 import { Check } from 'lucide-react';
 
 import { PLANS, formatPrice } from '@/lib/pricing';
-import { MESSAGES } from '@/lib/i18n/messages';
+import type { SiteMessages } from '@/lib/i18n/messages';
 import type { BuiltinLocale } from '@/lib/i18n/locale';
 import { SIGNUP_URL } from '@/lib/site';
 import { cn } from '@/lib/cn';
@@ -14,9 +14,7 @@ import { cn } from '@/lib/cn';
  * strings. The figures themselves come from `lib/pricing.ts`, which mirrors the
  * `plans` table by hand until Phase C — see the warning at the top of that file.
  */
-export function PricingTable({ locale }: { locale: BuiltinLocale }) {
-  const m = MESSAGES[locale];
-
+export function PricingTable({ locale, m }: { locale: BuiltinLocale; m: SiteMessages }) {
   return (
     <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {PLANS.map((plan) => {

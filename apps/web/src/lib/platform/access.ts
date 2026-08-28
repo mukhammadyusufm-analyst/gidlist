@@ -17,7 +17,14 @@ import { createClient } from '@/lib/supabase/server';
  * rendering, not what is permitted.
  */
 
-export type PlatformCapability = 'translations' | 'accounts' | 'grants';
+/**
+ * `site` is separate from `translations` on purpose. Public marketing copy and
+ * in-product wording have different blast radii: a bad translation confuses a
+ * customer who is already paying, a bad headline is on the front page for
+ * everyone. Trusting somebody to fix a button label is not the same as trusting
+ * them to rewrite the pitch.
+ */
+export type PlatformCapability = 'translations' | 'site' | 'accounts' | 'grants';
 
 /**
  * Everything the caller holds, in one round trip.

@@ -99,6 +99,23 @@ export type Database = {
         Update: { value?: string; updated_by?: string | null };
         Relationships: [];
       };
+      /**
+       * Overrides for the marketing site's copy. Same shape as `translations`
+       * and for the same reason — see the migration.
+       */
+      site_content: {
+        Row: {
+          id: string;
+          locale: string;
+          key: string;
+          value: string;
+          updated_by: string | null;
+          updated_at: string;
+        };
+        Insert: { id?: string; locale: string; key: string; value: string; updated_by?: string | null };
+        Update: { value?: string; updated_by?: string | null };
+        Relationships: [];
+      };
       profiles: {
         Row: {
           id: string;

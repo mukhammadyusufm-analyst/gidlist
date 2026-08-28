@@ -2,11 +2,23 @@ import { notFound } from 'next/navigation';
 import { ArrowRight, CalendarClock, FileLock2, History, TriangleAlert } from 'lucide-react';
 
 import { isBuiltinLocale } from '@/lib/i18n/locale';
-import { MESSAGES } from '@/lib/i18n/messages';
+import { getSiteMessages } from '@/lib/content';
 import { SIGNUP_URL } from '@/lib/site';
 import { SiteHeader } from '@/components/site-header';
 import { SiteFooter } from '@/components/site-footer';
 import { PricingTable } from '@/components/pricing-table';
+
+/**
+ * Still statically generated — this is the window after which an edit made in
+ * the product's admin screen appears here.
+ *
+ * A literal, not `CONTENT_REVALIDATE_SECONDS`. Next reads segment config at
+ * build time by static analysis, so an imported constant is rejected outright:
+ * *"Invalid segment configuration export detected."* The number is therefore in
+ * two places; `lib/content.ts` holds the other one and explains the choice.
+ * Change both together.
+ */
+export const revalidate = 300;
 
 /**
  * The whole marketing page, in one file on purpose.
@@ -25,7 +37,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   if (!isBuiltinLocale(locale)) notFound();
 
-  const m = MESSAGES[locale];
+  const m = await getSiteMessages(locale);
 
   const featureIcons = [CalendarClock, TriangleAlert, FileLock2, History];
 
@@ -40,7 +52,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         {m.skipToContent}
       </a>
 
-      <SiteHeader locale={locale} />
+      <SiteHeader locale={locale} m={m} />
 
       <main id="main" className="flex-1">
         {/* ---------------------------------------------------------------- */}
@@ -201,7 +213,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             {m.pricingLead}
           </p>
 
-          <PricingTable locale={locale} />
+          <PricingTable locale={locale} m={m} />
 
           <p className="reveal mt-8 text-sm text-[var(--color-muted-foreground)]">
             {m.pricingIncluded} {m.pricingNote}
@@ -230,7 +242,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         </section>
       </main>
 
-      <SiteFooter locale={locale} />
+      <SiteFooter locale={locale} m={m} />
     </div>
   );
 }

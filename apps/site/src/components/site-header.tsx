@@ -3,16 +3,20 @@ import { CircleCheckBig } from 'lucide-react';
 
 import { BUILTIN_LOCALE_NAMES } from '@app/core';
 import { SITE_LOCALES, type BuiltinLocale } from '@/lib/i18n/locale';
-import { MESSAGES } from '@/lib/i18n/messages';
+import { MESSAGES, type SiteMessages } from '@/lib/i18n/messages';
 import { SIGNIN_URL } from '@/lib/site';
 
 /**
  * Sticky, because the page is long enough that the call to action would
  * otherwise be a scroll away from wherever somebody was persuaded.
+ *
+ * Copy arrives as a prop rather than being read from `MESSAGES` here: the page
+ * has already layered the database overrides on top, and reaching for the
+ * bundle again would quietly render the un-edited version. `MESSAGES` is still
+ * used below for the *other* locales' `hreflang` values, which are markup
+ * rather than copy and are deliberately not editable.
  */
-export function SiteHeader({ locale }: { locale: BuiltinLocale }) {
-  const m = MESSAGES[locale];
-
+export function SiteHeader({ locale, m }: { locale: BuiltinLocale; m: SiteMessages }) {
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[var(--color-background)]/85 backdrop-blur-md">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-6 py-3.5">

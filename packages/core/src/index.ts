@@ -22,4 +22,5 @@ export * from './i18n';
 export * from './media';
 export * from './money';
 export * from './schedules';
+export * from './site-messages';
 export * from './theme';

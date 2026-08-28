@@ -3,12 +3,11 @@ import { CircleCheckBig } from 'lucide-react';
 
 import { BUILTIN_LOCALE_NAMES } from '@app/core';
 import { SITE_LOCALES, type BuiltinLocale } from '@/lib/i18n/locale';
-import { MESSAGES } from '@/lib/i18n/messages';
+import { MESSAGES, type SiteMessages } from '@/lib/i18n/messages';
 import { SIGNIN_URL, SIGNUP_URL } from '@/lib/site';
 
-export function SiteFooter({ locale }: { locale: BuiltinLocale }) {
-  const m = MESSAGES[locale];
-
+/** Copy comes in as a prop — see the note in `site-header.tsx`. */
+export function SiteFooter({ locale, m }: { locale: BuiltinLocale; m: SiteMessages }) {
   return (
     <footer className="border-t border-[var(--color-border)]">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-12 sm:flex-row sm:items-start sm:justify-between">

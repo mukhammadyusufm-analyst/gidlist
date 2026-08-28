@@ -4,6 +4,7 @@ import { Inter, JetBrains_Mono } from 'next/font/google';
 
 import { SITE_LOCALES, isBuiltinLocale } from '@/lib/i18n/locale';
 import { MESSAGES } from '@/lib/i18n/messages';
+import { getSiteMessages } from '@/lib/content';
 import { SITE_URL } from '@/lib/site';
 
 import '../globals.css';
@@ -54,7 +55,10 @@ export async function generateMetadata({
   const { locale } = await params;
   if (!isBuiltinLocale(locale)) return {};
 
-  const m = MESSAGES[locale];
+  // The overridden copy, not the bundle: the page title and the description
+  // shown in search results are exactly the strings somebody is most likely to
+  // want to rewrite without waiting for a deploy.
+  const m = await getSiteMessages(locale);
 
   return {
     metadataBase: new URL(SITE_URL),

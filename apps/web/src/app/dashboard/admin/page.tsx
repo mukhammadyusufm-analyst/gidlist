@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { ChevronRight, History, Languages, ShieldCheck, TrendingUp } from 'lucide-react';
+import { ChevronRight, Globe, History, Languages, ShieldCheck, TrendingUp } from 'lucide-react';
 
 import { myCapabilities } from '@/lib/platform/access';
 import { JobHealth } from '@/components/admin/job-health';
@@ -34,6 +34,13 @@ export default async function AdminPage() {
       icon: Languages,
       title: 'Translations',
       description: 'The interface wording every customer reads.',
+    },
+    {
+      capability: 'site' as const,
+      href: '/dashboard/admin/site',
+      icon: Globe,
+      title: 'Marketing site',
+      description: 'The wording on gidlist.com, in all three languages.',
     },
     {
       capability: 'grants' as const,
