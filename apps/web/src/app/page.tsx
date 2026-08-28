@@ -1,44 +1,31 @@
-import Link from 'next/link';
+import { redirect } from 'next/navigation';
 
 import { getUser } from '@/lib/supabase/server';
-import { buttonVariants } from '@/components/ui/button';
 
 /**
- * Placeholder landing page.
+ * The app subdomain has no front door of its own — it is a doorway.
  *
- * Phase 0 only needs somewhere for signed-out visitors to land and a way in.
- * The real marketing page is a separate concern — per the SEO plan it belongs
- * on the main site under a subfolder, not inside the app.
+ * This used to be a Phase 0 placeholder landing page: a heading, a paragraph
+ * and two buttons, written before the product had a design and never revisited.
+ * It was the only page on `app.gidlist.com` that did not look like the rest of
+ * the app, which is exactly how it was noticed.
+ *
+ * Restyling it would have been the wrong fix. `app.gidlist.com` is the product;
+ * `gidlist.com` is where the selling happens. A landing page here would compete
+ * with the marketing site for the same words and the same search results, and
+ * the two would drift apart the moment either was edited. So the root sends
+ * people where they were actually going and says nothing.
+ *
+ * Signed in to the dashboard, signed out to sign-in. Not a permanent redirect:
+ * the destination depends on who is asking, so it must never be cached.
+ *
+ * `proxy.ts` reaches the same conclusion for `/login` and `/signup` — it sends
+ * a signed-in visitor to the dashboard — and it already has the user in hand,
+ * so this could have lived there instead. It does not, deliberately: the proxy
+ * is the security boundary that gates every private route, and a cosmetic
+ * routing preference is not worth editing that file for.
  */
 export default async function HomePage() {
   const user = await getUser();
-
-  return (
-    <main className="flex flex-1 flex-col items-center justify-center px-6 py-16 text-center">
-      <h1 className="max-w-2xl text-3xl font-semibold tracking-tight sm:text-4xl">
-        Operational checklists that actually get completed
-      </h1>
-      <p className="mt-4 max-w-xl text-[var(--color-muted-foreground)]">
-        Build checklist templates once, schedule them, assign them, and see exactly what was done,
-        what is still a draft, and what was missed.
-      </p>
-
-      <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-        {user ? (
-          <Link href="/dashboard" className={buttonVariants({ size: 'lg' })}>
-            Go to dashboard
-          </Link>
-        ) : (
-          <>
-            <Link href="/signup" className={buttonVariants({ size: 'lg' })}>
-              Get started
-            </Link>
-            <Link href="/login" className={buttonVariants({ variant: 'outline', size: 'lg' })}>
-              Sign in
-            </Link>
-          </>
-        )}
-      </div>
-    </main>
-  );
+  redirect(user ? '/dashboard' : '/login');
 }
