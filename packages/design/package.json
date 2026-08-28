@@ -1,0 +1,10 @@
+{
+  "name": "@app/design",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Design tokens shared by the product and the marketing site.",
+  "exports": {
+    "./tokens.css": "./tokens.css"
+  },
+  "files": ["tokens.css"]
+}

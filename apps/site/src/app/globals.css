@@ -1,0 +1,70 @@
+@import 'tailwindcss';
+
+/*
+ * Colour, radius and elevation come from packages/design/tokens.css — the same
+ * file the product imports. That is the point: the brandbook promises the site
+ * and the app share one palette, and a second copy would make that false the
+ * first time either changed.
+ */
+@import '@app/design/tokens.css';
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    /* Anchor links and the section navigation both jump; without this they
+       teleport. Overridden for anyone who has asked for less motion. */
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* A marketing page is mostly headings, and headings are where a ragged last
+     word looks worst. */
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* Keyboard focus must stay visible on a public site — it is the only
+     affordance a keyboard visitor has, and the default is removed by the
+     Tailwind reset. */
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    /*
+     * The blanket override. Phase B adds GSAP and a WebGL scene, and every one
+     * of those animations has to answer to this rule; putting it here means a
+     * new animation is opt-out rather than opt-in, so forgetting is safe.
+     */
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

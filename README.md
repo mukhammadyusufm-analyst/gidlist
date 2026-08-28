@@ -23,13 +23,25 @@ A parent item completes automatically once all of its children are complete.
 
 ```
 apps/
-  web/                  Next.js 16 app — the product and, later, the billing side
+  web/                  Next.js 16 app — the product, at app.gidlist.com
+  site/                 Next.js 16 app — the marketing site, at gidlist.com
 packages/
   core/                 Shared domain logic. No React, no Next, no React Native,
                         so the Expo app (Phase 8) can import the same rules.
+  design/               Design tokens — colour, radius, elevation, type slots.
+                        Imported by both apps so neither can drift from the
+                        brandbook.
 supabase/
   migrations/           Database schema, applied in order
 ```
+
+Two apps, two Vercel projects, one repository. They are separate deployments on
+purpose: an edit to the marketing site must not be able to break the product,
+and the product's build must not gate a copy change. What they share, they share
+through `packages/` rather than by copying — which is why the palette moved out
+of `apps/web/src/app/globals.css` and into `packages/design/tokens.css`.
+
+The site runs on port **3001** so both can run at once.
 
 ## Commands
 
@@ -40,7 +52,7 @@ changing any machine-wide security setting.
 
 | Command          | What it does                                  |
 | ---------------- | --------------------------------------------- |
-| `pnpm dev`       | Start the app at http://localhost:3000        |
+| `pnpm dev`       | Start both: product :3000, site :3001         |
 | `pnpm build`     | Production build — run before deploying       |
 | `pnpm typecheck` | Check types across every package              |
 | `pnpm lint`      | Lint                                          |
@@ -200,7 +212,7 @@ remembering a conversation.
 | 18 | ~~**Full visual checklist preview**~~ | **Done.** The Details tab now renders the genuine `FillSheet` in `readOnly` mode, under the checklist's own banner and avatar, so an editor sees the sheet a filler sees. No throwaway submission was needed after all: every item is given `answer: null`, which makes `answerId` undefined, which makes `interactive` false independently of `readOnly` — so the checkboxes render `disabled` and both write paths return before reaching a server action. The submit form, the only reader of `submissionId`, is inside `{!readOnly ? … : null}` and never reaches the DOM. Nothing is written and no row enters the compliance record. This retires the second presentational component from item 5 and with it the drift between the two renderers. |
 | 19 | ~~**Brandbook**~~ | **Done.** Published at [claude.ai/code/artifact/026f2f16](https://claude.ai/code/artifact/026f2f16-469e-4a20-89de-17251bcef19a) — colour roles, type scale, the mark, voice, and the three taglines. Drawn from `apps/web/src/app/globals.css`, which stays the source of truth: when the tokens change, the book changes. **Three decisions settled** — (a) the name stays Latin in all three languages, no `Гидлист`; (b) the audience is operations **and** offices, two rooms with one problem, which is why the voice rule *"name one room, not both"* exists; (c) each language gets its own tagline rather than a translation — `Get it done.` / `Hammasi bajariladi!` / `Всё будет выполнено!` — the English an instruction, the other two a promise, each built on the word its own language already uses for a finished record (`done` / `Bajarilgan` / `Выполнено`). The two exclamation marks are the sole, deliberate exception to the voice rule against them; the rule itself records the exception rather than being silently contradicted. |
 | 20 | **Keep the handover documents current** | Recurring, not one-off. README, SETUP.md, DEPLOY.md and the assistant's memory file are what survive a context window. Whenever a decision is made or reversed, it goes in the README the same day; whenever the setup changes, SETUP.md changes with it. A stale handover is worse than none, because it is believed. |
-| 21 | **Marketing website** | On gidlist.com, which today serves the registrar's parking page and fails on HTTPS. Separate from the app at app.gidlist.com — see the decision block on subfolders. **Unblocked:** the brandbook (19) is written and its three open decisions are settled, so this has an identity to build from rather than one to invent. This is also where locale-in-URL (2d) pays off for SEO. |
+| 21 | **Marketing website** — *Phase A done* | On gidlist.com, which today still serves the registrar's parking page (GoDaddy nameservers `ns25/ns26.domaincontrol.com`, apex A records pointing at GoDaddy). **Scope agreed:** a full product site — award-grade design, GSAP micro-animation, a WebGL moment where it earns its place, CMS-backed content, blog and knowledge base, all three languages, CTA straight to signup. **Phase A (done):** `apps/site` scaffolded, tokens shared via `packages/design`, locale in the URL with `Accept-Language` negotiation and hreflang, all three locales prerendered static, security headers, `prefers-reduced-motion` honoured globally before any animation exists. **Phase B:** the page itself. **Phase C:** CMS on Supabase (`site_*` tables, RLS, the existing capability model — no new vendor). **Phase D:** blog, knowledge base, sitemap, structured data. **Blocked on nothing;** DNS comes after a Vercel project exists to point at, not before. |
 | 22 | **Connect Payme and Click** | Phase 9. The billing structure is built and the seam is lib/billing/provider.ts; this is the provider implementations plus their webhooks, which are the only thing permitted to write a subscription row. Needs the registered entity and signed contracts. Paddle for customers outside Uzbekistan, since Stripe does not onboard Uzbek businesses. |
 | 23 | ~~**The app's root page was the Phase 0 placeholder**~~ | **Done.** `/` no longer renders anything — it redirects, signed in to `/dashboard` and signed out to `/login`. Restyling the placeholder would have been the wrong fix: `app.gidlist.com` is the product and `gidlist.com` is where the selling happens, so a landing page here would compete with the marketing site (21) for the same words and drift from it the moment either was edited. Deliberately **not** done in `proxy.ts`, which already resolves the user and reaches the same conclusion for `/login` and `/signup` — that file is the security boundary gating every private route, and a cosmetic routing preference does not justify editing it. Not a permanent redirect: the destination depends on who is asking, so it must never be cached. |
 
