@@ -209,11 +209,19 @@ Until this is done, the **Continue with Google** button appears but fails with
 
 1. Open https://console.cloud.google.com
 2. At the top, click the project dropdown, then **New project**.
-3. Name it `Checklists` and click **Create**.
+3. Name it `Gidlist` and click **Create**.
 4. In the left menu choose **APIs & Services**, then **OAuth consent screen**.
 5. Choose **External** and click **Create**.
-6. Fill in **App name** (`Checklists`), **User support email**, and
-   **Developer contact email**. Leave everything else alone.
+6. Fill in **App name** (`Gidlist`), **User support email**, and
+   **Developer contact email**.
+
+   > **App name is what the consent screen shows the user.** Google renders it
+   > as "Sign in to continue to <App name>", so this is the product's name in
+   > front of every new person who signs in with Google — not an internal
+   > label. Getting it wrong here is invisible to you and visible to them.
+
+   While you are on this screen, set the **App logo** and the **Application
+   home page** (`https://gidlist.com`) too. Both appear on the same screen.
 7. Click **Save and continue** through the remaining steps, then **Back to dashboard**.
 8. In the left menu click **Credentials**.
 9. Click **Create credentials**, then **OAuth client ID**.

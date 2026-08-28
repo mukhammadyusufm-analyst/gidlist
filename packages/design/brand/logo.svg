@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Gidlist">
+  <title>Gidlist</title>
+  <!--
+    The Gidlist app mark: lucide's CircleCheckBig on the brand primary, in a
+    rounded square. Geometry is copied verbatim from lucide-react so the asset
+    and the interface cannot drift.
+
+    Colours are the sRGB resolution of the brandbook tokens, hard-coded rather
+    than left as oklch() because this file is consumed by tools that do not
+    parse modern CSS colour syntax — Google's OAuth console among them.
+      #2961ce  = oklch(0.52 0.18 262)   --primary
+      #fbfcfd  = oklch(0.99 0.002 262)  --on-primary
+
+    Proportions follow the brandbook masthead: corner radius 22.7% of the side,
+    mark 54.7% of the side, both centred.
+  -->
+  <rect width="512" height="512" rx="116" fill="#2961ce"/>
+  <g transform="translate(116 116) scale(11.6666667)"
+     fill="none"
+     stroke="#fbfcfd"
+     stroke-width="2"
+     stroke-linecap="round"
+     stroke-linejoin="round">
+    <path d="M21.801 10A10 10 0 1 1 17 3.335"/>
+    <path d="m9 11 3 3L22 4"/>
+  </g>
+</svg>
