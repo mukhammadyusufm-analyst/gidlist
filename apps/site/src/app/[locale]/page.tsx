@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { ArrowRight, CalendarClock, FileLock2, History, TriangleAlert } from 'lucide-react';
 
 import { isBuiltinLocale } from '@/lib/i18n/locale';
-import { getSiteMessages } from '@/lib/content';
+import { getPlans, getSiteMessages } from '@/lib/content';
 import { SIGNUP_URL } from '@/lib/site';
 import { SiteHeader } from '@/components/site-header';
 import { SiteFooter } from '@/components/site-footer';
@@ -37,7 +37,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   if (!isBuiltinLocale(locale)) notFound();
 
-  const m = await getSiteMessages(locale);
+  // Both reads in parallel. They are independent, and a pricing page that
+  // waits for its copy before asking for its prices is two round trips deep for
+  // no reason.
+  const [m, plans] = await Promise.all([getSiteMessages(locale), getPlans(locale)]);
 
   const featureIcons = [CalendarClock, TriangleAlert, FileLock2, History];
 
@@ -213,7 +216,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             {m.pricingLead}
           </p>
 
-          <PricingTable locale={locale} m={m} />
+          <PricingTable locale={locale} m={m} plans={plans} />
 
           <p className="reveal mt-8 text-sm text-[var(--color-muted-foreground)]">
             {m.pricingIncluded} {m.pricingNote}

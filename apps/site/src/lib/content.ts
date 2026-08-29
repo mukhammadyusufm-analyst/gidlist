@@ -2,6 +2,13 @@ import 'server-only';
 
 import { MESSAGES, applySiteOverrides, type SiteMessages, type SiteOverrides } from '@app/core';
 import type { BuiltinLocale } from '@/lib/i18n/locale';
+import {
+  CURRENCY_BY_LOCALE,
+  fallbackPlans,
+  plansFromPrices,
+  type Plan,
+  type PlanCode,
+} from '@/lib/pricing';
 
 /**
  * How long a copy edit takes to appear on the live site.
@@ -80,5 +87,64 @@ export async function getSiteMessages(locale: BuiltinLocale): Promise<SiteMessag
     return applySiteOverrides(bundled, overrides);
   } catch {
     return bundled;
+  }
+}
+
+/**
+ * The plans, priced in the currency this locale is shown.
+ *
+ * NEVER THROWS, for the same reason `getSiteMessages` does not: every failure
+ * path returns the fallback price list bundled in `lib/pricing.ts`. A pricing
+ * page is the last thing that should go blank when a database blinks.
+ *
+ * This is what item 25 was for. The figures used to be hand-copied into
+ * `pricing.ts` from the `plans` table, so changing a price in SQL left the site
+ * advertising the old one — the worst kind of wrong, because it is a price a
+ * customer can point at. Now the table is the source and the file is only the
+ * fallback.
+ *
+ * One thing it deliberately does NOT do: convert. So'm prices are their own
+ * deliberate list, read from `plan_prices` where the currency is UZS. Deriving
+ * them from the dollar figures at some exchange rate would reprice every Uzbek
+ * customer every time the rate moved.
+ */
+export async function getPlans(locale: BuiltinLocale): Promise<Plan[]> {
+  const currency = CURRENCY_BY_LOCALE[locale];
+
+  if (!SUPABASE_URL || !SUPABASE_KEY) return fallbackPlans(currency);
+
+  try {
+    const url = new URL(`${SUPABASE_URL}/rest/v1/plan_prices`);
+    url.searchParams.set('select', 'plan_code,price_minor');
+    url.searchParams.set('currency', `eq.${currency}`);
+
+    const response = await fetch(url, {
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+      },
+      next: { revalidate: CONTENT_REVALIDATE_SECONDS },
+    });
+
+    if (!response.ok) return fallbackPlans(currency);
+
+    const rows: unknown = await response.json();
+    if (!Array.isArray(rows)) return fallbackPlans(currency);
+
+    const priceByCode: Partial<Record<PlanCode, number>> = {};
+    for (const row of rows) {
+      if (!row || typeof row !== 'object') continue;
+      const code = (row as { plan_code?: unknown }).plan_code;
+      const price = (row as { price_minor?: unknown }).price_minor;
+      // Integer only. A fractional minor unit means somebody did arithmetic in
+      // the major unit upstream, and rendering it would hide that.
+      if (typeof code === 'string' && typeof price === 'number' && Number.isInteger(price)) {
+        priceByCode[code as PlanCode] = price;
+      }
+    }
+
+    return plansFromPrices(currency, priceByCode);
+  } catch {
+    return fallbackPlans(currency);
   }
 }

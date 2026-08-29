@@ -1,6 +1,6 @@
 import { Check } from 'lucide-react';
 
-import { PLANS, formatPrice } from '@/lib/pricing';
+import { formatPrice, type Plan } from '@/lib/pricing';
 import type { SiteMessages } from '@/lib/i18n/messages';
 import type { BuiltinLocale } from '@/lib/i18n/locale';
 import { SIGNUP_URL } from '@/lib/site';
@@ -9,15 +9,28 @@ import { cn } from '@/lib/cn';
 /**
  * Four plans, priced by capacity.
  *
- * Prices are formatted through `Intl.NumberFormat` with the page's locale, so
+ * Prices arrive as a prop rather than being imported. The page reads them from
+ * `plan_prices`, so the table cannot advertise a figure the product does not
+ * charge — which is exactly what could happen while they were hand-copied into
+ * `lib/pricing.ts`. That file is now only the fallback for when the database
+ * cannot be reached.
+ *
+ * Formatting goes through `Intl.NumberFormat` with the page's locale, so
  * Russian gets its own separator and symbol placement without a second table of
- * strings. The figures themselves come from `lib/pricing.ts`, which mirrors the
- * `plans` table by hand until Phase C — see the warning at the top of that file.
+ * strings, and so'm renders with no decimal places while dollars keep theirs.
  */
-export function PricingTable({ locale, m }: { locale: BuiltinLocale; m: SiteMessages }) {
+export function PricingTable({
+  locale,
+  m,
+  plans,
+}: {
+  locale: BuiltinLocale;
+  m: SiteMessages;
+  plans: Plan[];
+}) {
   return (
     <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {PLANS.map((plan) => {
+      {plans.map((plan) => {
         const free = plan.priceMinor === 0;
 
         return (
