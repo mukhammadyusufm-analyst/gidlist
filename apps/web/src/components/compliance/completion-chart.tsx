@@ -34,7 +34,12 @@ export function CompletionChart({ data }: { data: Point[] }) {
   return (
     <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] p-4 shadow-e1">
       <ResponsiveContainer width="100%" height={240}>
-        <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
+        {/* `left: 0`, not a negative margin. Pulling the plot left to reclaim
+            whitespace also drags the Y axis off the edge, and the axis labels
+            get clipped — "100%" renders as "0%", "75%" as "5%". The scale was
+            always 0–100; only the leading digits were missing, which made the
+            chart look like it was reporting nonsense. */}
+        <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
           {/* Horizontal only, hairline, one step off the surface — the grid is
               there to be read against, not to be looked at. */}
           <CartesianGrid stroke="var(--color-border)" strokeWidth={1} vertical={false} />
