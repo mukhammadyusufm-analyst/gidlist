@@ -247,7 +247,6 @@ export const uz = {
   'schedule.nextDates': 'Keyingi sanalar',
   'schedule.noDates': 'Keyingi 60 kunda sanalar yoʻq.',
   'schedule.assignedTo': 'Kimga biriktirilgan',
-  'schedule.anyoneInSpace': '— maydondagi istalgan kishi',
   'schedule.assign': 'Biriktirish',
   'schedule.choosePerson': 'Maydondagi kishini tanlang',
   'schedule.everyoneAssigned': 'Maydondagi barcha allaqachon biriktirilgan.',

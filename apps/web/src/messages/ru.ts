@@ -242,7 +242,6 @@ export const ru = {
   'schedule.nextDates': 'Ближайшие даты',
   'schedule.noDates': 'В ближайшие 60 дней дат нет.',
   'schedule.assignedTo': 'Назначено',
-  'schedule.anyoneInSpace': '— любому участнику пространства',
   'schedule.assign': 'Назначить',
   'schedule.choosePerson': 'Выберите участника пространства',
   'schedule.everyoneAssigned': 'Все участники пространства уже назначены.',

@@ -245,7 +245,6 @@ export const en = {
   'schedule.nextDates': 'Next dates',
   'schedule.noDates': 'No dates in the next 60 days.',
   'schedule.assignedTo': 'Assigned to',
-  'schedule.anyoneInSpace': '— anyone in the space',
   'schedule.assign': 'Assign',
   'schedule.choosePerson': 'Choose someone in this space',
   'schedule.everyoneAssigned': 'Everyone in this space is already assigned.',

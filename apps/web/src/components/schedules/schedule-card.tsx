@@ -169,11 +169,17 @@ export function ScheduleCard({
         <p className="text-xs font-medium text-[var(--color-muted-foreground)]">
           {t('schedule.assignedTo')}{' '}
           <span className="text-[var(--color-foreground)]">
+            {/* The same three strings the create form uses. They were different
+                before — the form said "Everyone in this space" and this said
+                "anyone in the space" — which read as two settings rather than
+                one, and "anyone" is precisely the word this whole change exists
+                to remove: it suggests one person may do it, when in fact each
+                member gets their own. */}
             {t(
               schedule.assignment_mode === 'creator'
                 ? 'schedule.assignCreator'
                 : schedule.assignment_mode === 'everyone'
-                  ? 'schedule.anyoneInSpace'
+                  ? 'schedule.assignEveryone'
                   : 'schedule.assignSpecific',
             )}
           </span>
