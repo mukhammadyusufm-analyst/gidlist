@@ -320,16 +320,26 @@ export type Database = {
            * Inviting is not requiring. Making it mandatory before an item can
            * be ticked is item 30, which carries decisions this does not.
            */
-          evidence: EvidenceKind;
           /**
-           * Whether the attachment is a condition of ticking, rather than an
-           * invitation. Meaningless when `evidence` is `none`.
+           * Three independent requirements, each with two switches.
            *
-           * Enforced by a database trigger, not by the form: ticking is a plain
-           * update through PostgREST, so a check in TypeScript is a courtesy a
-           * crafted request walks past.
+           *   enabled   the control appears
+           *   required  the item cannot be ticked without it
+           *
+           * Nothing implies anything else: a photo can be mandatory while a
+           * file is merely invited and location is only recorded. This replaced
+           * a single `evidence` enum, under which photo and file were
+           * alternatives rather than separate things.
+           *
+           * `required` is enforced by a database trigger, not by the form:
+           * ticking is a plain update through PostgREST, so a check in
+           * TypeScript is a courtesy a crafted request walks past.
            */
-          evidence_required: boolean;
+          photo_enabled: boolean;
+          photo_required: boolean;
+          file_enabled: boolean;
+          file_required: boolean;
+          location_enabled: boolean;
           /**
            * A place this item has to be ticked at. All three or none.
            *
@@ -341,6 +351,16 @@ export type Database = {
           location_lat: number | null;
           location_lng: number | null;
           location_radius_m: number | null;
+          /**
+           * Whether being inside the radius is a condition of ticking, or only
+           * recorded.
+           *
+           * Separate from `location_enabled`, exactly as `photo_required` is
+           * separate from `photo_enabled`. Enabled-but-not-required is the
+           * useful middle state: every tick records where it happened, without
+           * a poor fix in a basement stopping the work.
+           */
+          location_required: boolean;
           created_at: string;
         };
         // `depth` is absent from Insert and Update on purpose — a database
@@ -354,7 +374,8 @@ export type Database = {
           title: string;
           description?: string | null;
           position?: number;
-          evidence?: EvidenceKind;
+          photo_enabled?: boolean;
+          file_enabled?: boolean;
         };
         Update: {
           title?: string;
@@ -362,8 +383,12 @@ export type Database = {
           position?: number;
           parent_item_id?: string | null;
           group_id?: string;
-          evidence?: EvidenceKind;
-          evidence_required?: boolean;
+          photo_enabled?: boolean;
+          photo_required?: boolean;
+          file_enabled?: boolean;
+          file_required?: boolean;
+          location_enabled?: boolean;
+          location_required?: boolean;
           location_lat?: number | null;
           location_lng?: number | null;
           location_radius_m?: number | null;
@@ -508,17 +533,22 @@ export type Database = {
           checked_at: string | null;
           checked_by: string | null;
           /**
-           * Object name in the **private** `submission-evidence` bucket, as
-           * `<board_id>/<submission_id>/<file>`. The first segment is what the
+           * One slot per kind, because an item can ask for both at once.
+           *
+           * Object names in the **private** `submission-evidence` bucket, as
+           * `<board_id>/<submission_id>/<file>` — the first segment is what the
            * storage policies authorise on.
            *
-           * Never rendered directly — the bucket is private, so displaying it
+           * Never rendered directly: the bucket is private, so displaying one
            * needs a signed URL minted server-side for somebody already in the
            * space.
            */
-          evidence_path: string | null;
-          evidence_uploaded_at: string | null;
-          evidence_uploaded_by: string | null;
+          photo_path: string | null;
+          photo_uploaded_at: string | null;
+          photo_uploaded_by: string | null;
+          file_path: string | null;
+          file_uploaded_at: string | null;
+          file_uploaded_by: string | null;
           /**
            * Where the person was when they ticked it, with the accuracy the
            * browser itself reported.
@@ -543,13 +573,16 @@ export type Database = {
           comment?: string | null;
           checked_by?: string | null;
           /**
-           * Set only by the evidence actions, which build the path themselves.
-           * A client-chosen path would name the folder the storage policy
-           * authorises on, which is another company's.
+           * Set only by the attachment actions, which build the path
+           * themselves. A client-chosen path would name the folder the storage
+           * policy authorises on, which is another company's.
            */
-          evidence_path?: string | null;
-          evidence_uploaded_at?: string | null;
-          evidence_uploaded_by?: string | null;
+          photo_path?: string | null;
+          photo_uploaded_at?: string | null;
+          photo_uploaded_by?: string | null;
+          file_path?: string | null;
+          file_uploaded_at?: string | null;
+          file_uploaded_by?: string | null;
           location_lat?: number | null;
           location_lng?: number | null;
           location_accuracy_m?: number | null;

@@ -36,6 +36,7 @@ import type { GroupWithItems } from '@/lib/checklists/queries';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useT } from '@/components/i18n/provider';
+import { cn } from '@/lib/utils';
 
 type Item = ItemNode<ChecklistItem>;
 
@@ -297,7 +298,9 @@ function SortableItem({
   });
 
   const [showAdd, setShowAdd] = useState(false);
-  const [evidenceState, evidenceAction] = useActionState(updateItem, {});
+  // Kept for the requirements panel below, which surfaces save errors instead of
+  // discarding them the way the rest of this builder does.
+  const [evidenceState] = useActionState(updateItem, {});
   const { t } = useT();
   const canNest = canNestUnder(item.depth);
 
@@ -329,41 +332,6 @@ function SortableItem({
 
         {editable ? (
           <div className="flex shrink-0 items-center gap-1">
-            {/*
-              Evidence sits on the row rather than behind an edit screen,
-              because there is no item edit screen — items are added, reordered
-              and deleted, and nothing else. A select that submits on change is
-              the smallest thing that makes this reachable.
-
-              `title` and `description` ride along as hidden fields because
-              `updateItem` validates the whole item; sending only the evidence
-              would blank the title.
-            */}
-            {/* The result is kept, not discarded. Every other form in this
-                builder throws it away with `void (await …)`, which is why a
-                failed save here looked like the selector silently snapping back
-                to "No attachment" — the write was refused and nothing said so. */}
-            <form action={evidenceAction}>
-              <input type="hidden" name="itemId" value={item.id} />
-              <input type="hidden" name="title" value={item.title} />
-              <input type="hidden" name="description" value={item.description ?? ''} />
-              <select
-                name="evidence"
-                // Keyed on the saved value so a refused save visibly reverts
-                // rather than leaving the control showing something the
-                // database does not hold.
-                key={item.evidence}
-                defaultValue={item.evidence}
-                onChange={(e) => e.currentTarget.form?.requestSubmit()}
-                aria-label={t('checklist.evidenceLabel')}
-                className="rounded-md border border-[var(--color-input)] bg-transparent px-2 py-1 text-xs"
-              >
-                <option value="none">{t('checklist.evidenceNone')}</option>
-                <option value="photo">{t('checklist.evidencePhoto')}</option>
-                <option value="file">{t('checklist.evidenceFile')}</option>
-              </select>
-            </form>
-
             {canNest ? (
               <Button type="button" variant="ghost" size="sm" onClick={() => setShowAdd((v) => !v)}>
                 {t('checklist.addSubItem')}
@@ -521,7 +489,23 @@ function ItemRequirements({
   const [locationError, setLocationError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
-  const hasLocation = item.location_lat !== null && item.location_radius_m !== null;
+  // Held in state rather than read from the DOM so the required checkbox can
+  // enable and disable as its feature is switched on and off.
+  const [photoEnabled, setPhotoEnabled] = useState(item.photo_enabled);
+  const [fileEnabled, setFileEnabled] = useState(item.file_enabled);
+  const [locationEnabled, setLocationEnabled] = useState(item.location_enabled);
+
+  const summary = [
+    item.photo_enabled
+      ? t(item.photo_required ? 'checklist.photoRequired' : 'checklist.photoOn')
+      : null,
+    item.file_enabled
+      ? t(item.file_required ? 'checklist.fileRequired' : 'checklist.fileOn')
+      : null,
+    item.location_enabled
+      ? t(item.location_required ? 'checklist.requiresLocation' : 'checklist.recordsLocation')
+      : null,
+  ].filter((v): v is string => v !== null);
 
   function useCurrentPosition() {
     if (!('geolocation' in navigator)) {
@@ -562,15 +546,12 @@ function ItemRequirements({
     <details className="px-2 pb-2">
       <summary className="cursor-pointer text-xs text-[var(--color-muted-foreground)]">
         {t('checklist.requirements')}
-        {item.evidence_required || hasLocation ? (
-          <span className="ml-1.5 text-[var(--color-primary)]">
-            {[
-              item.evidence_required ? t('checklist.requiresAttachment') : null,
-              hasLocation ? t('checklist.requiresLocation') : null,
-            ]
-              .filter(Boolean)
-              .join(' · ')}
-          </span>
+        {/* Each enabled feature listed, and marked when it is also enforced.
+            Required and merely recorded are different states, and somebody
+            scanning the builder should not have to open every item to tell
+            them apart. */}
+        {summary.length > 0 ? (
+          <span className="ml-1.5 text-[var(--color-primary)]">{summary.join(' · ')}</span>
         ) : null}
       </summary>
 
@@ -582,28 +563,39 @@ function ItemRequirements({
         <input type="hidden" name="itemId" value={item.id} />
         <input type="hidden" name="title" value={item.title} />
         <input type="hidden" name="description" value={item.description ?? ''} />
-        <input type="hidden" name="evidence" value={item.evidence} />
 
-        <label className="flex items-start gap-2 text-sm">
-          <input
-            type="checkbox"
-            name="evidenceRequired"
-            defaultChecked={item.evidence_required}
-            disabled={item.evidence === 'none'}
-            className="mt-0.5 size-4"
-          />
-          <span>
-            {t('checklist.evidenceRequired')}
-            {item.evidence === 'none' ? (
-              <span className="mt-0.5 block text-xs text-[var(--color-muted-foreground)]">
-                {t('checklist.evidenceRequiredHint')}
-              </span>
-            ) : null}
-          </span>
-        </label>
+        {/* Photo and file are independent, not alternatives — an item can want
+            a photograph of the fridge and a signed delivery note. Each has its
+            own on switch and its own enforcement, and "required" is disabled
+            until the feature is on, because enforcing something switched off is
+            a rule with nothing to apply to. */}
+        <RequirementToggle
+          label={t('checklist.photo')}
+          enabledName="photoEnabled"
+          requiredName="photoRequired"
+          enabled={photoEnabled}
+          onEnabledChange={setPhotoEnabled}
+          defaultRequired={item.photo_required}
+        />
+
+        <RequirementToggle
+          label={t('checklist.file')}
+          enabledName="fileEnabled"
+          requiredName="fileRequired"
+          enabled={fileEnabled}
+          onEnabledChange={setFileEnabled}
+          defaultRequired={item.file_required}
+        />
 
         <div>
-          <p className="mb-1.5 text-sm font-medium">{t('checklist.locationTitle')}</p>
+          <RequirementToggle
+            label={t('checklist.locationTitle')}
+            enabledName="locationEnabled"
+            requiredName="locationRequired"
+            enabled={locationEnabled}
+            onEnabledChange={setLocationEnabled}
+            defaultRequired={item.location_required}
+          />
           <div className="grid grid-cols-3 gap-2">
             <Input
               name="locationLat"
@@ -661,5 +653,67 @@ function ItemRequirements({
         </Button>
       </form>
     </details>
+  );
+}
+
+/**
+ * One feature, with its two switches.
+ *
+ * Enabled and required are separate decisions and neither implies the other —
+ * an item can demand a photograph while merely inviting a file, and record a
+ * location without insisting on it. Required is disabled until the feature is
+ * on, because enforcing something switched off is a rule with nothing to apply
+ * to; the database refuses that combination too.
+ *
+ * Enabled is held in state rather than read from the DOM so the required
+ * checkbox can grey out the moment its feature is switched off, instead of
+ * waiting for a save to tell somebody the combination was invalid.
+ */
+function RequirementToggle({
+  label,
+  enabledName,
+  requiredName,
+  enabled,
+  onEnabledChange,
+  defaultRequired,
+}: {
+  label: string;
+  enabledName: string;
+  requiredName: string;
+  enabled: boolean;
+  onEnabledChange: (next: boolean) => void;
+  defaultRequired: boolean;
+}) {
+  const { t } = useT();
+
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+      <label className="flex items-center gap-2 text-sm font-medium">
+        <input
+          type="checkbox"
+          name={enabledName}
+          checked={enabled}
+          onChange={(e) => onEnabledChange(e.target.checked)}
+          className="size-4"
+        />
+        {label}
+      </label>
+
+      <label
+        className={cn(
+          'flex items-center gap-2 text-sm',
+          enabled ? '' : 'text-[var(--color-muted-foreground)]',
+        )}
+      >
+        <input
+          type="checkbox"
+          name={requiredName}
+          defaultChecked={defaultRequired}
+          disabled={!enabled}
+          className="size-4"
+        />
+        {t('checklist.enforced')}
+      </label>
+    </div>
   );
 }

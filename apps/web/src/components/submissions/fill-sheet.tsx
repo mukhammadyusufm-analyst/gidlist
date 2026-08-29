@@ -324,16 +324,34 @@ function ItemRow({
             rather than a file browser, which is the difference between taking
             the photo where the work is and remembering to do it later. On a
             desktop the attribute is ignored and it behaves as a file picker. */}
-        {item.evidence !== 'none' && answerId ? (
-          <div className="px-3 pb-2">
-            <EvidenceControl
-              answerId={answerId}
-              kind={item.evidence}
-              url={item.evidenceUrl}
-              hasFile={Boolean(item.answer?.evidence_path)}
-              readOnly={readOnly}
-              onError={onError}
-            />
+        {/* Two independent controls, because an item can ask for both — a
+            photograph of the fridge and a signed delivery note are different
+            evidence, and one does not satisfy a demand for the other. */}
+        {answerId && (item.photo_enabled || item.file_enabled) ? (
+          <div className="space-y-2 px-3 pb-2">
+            {item.photo_enabled ? (
+              <EvidenceControl
+                answerId={answerId}
+                kind="photo"
+                required={item.photo_required}
+                url={item.photoUrl}
+                hasFile={Boolean(item.answer?.photo_path)}
+                readOnly={readOnly}
+                onError={onError}
+              />
+            ) : null}
+
+            {item.file_enabled ? (
+              <EvidenceControl
+                answerId={answerId}
+                kind="file"
+                required={item.file_required}
+                url={item.fileUrl}
+                hasFile={Boolean(item.answer?.file_path)}
+                readOnly={readOnly}
+                onError={onError}
+              />
+            ) : null}
           </div>
         ) : null}
 
@@ -389,6 +407,7 @@ function ItemRow({
 function EvidenceControl({
   answerId,
   kind,
+  required,
   url,
   hasFile,
   readOnly,
@@ -396,6 +415,8 @@ function EvidenceControl({
 }: {
   answerId: string;
   kind: 'photo' | 'file';
+  /** Whether the item cannot be ticked without it. Shown here, enforced in the database. */
+  required: boolean;
   url: string | null;
   hasFile: boolean;
   readOnly: boolean;
@@ -408,6 +429,7 @@ function EvidenceControl({
     onError(null);
     const data = new FormData();
     data.set('answerId', answerId);
+    data.set('kind', kind);
     data.set('file', file);
 
     startTransition(async () => {
@@ -420,6 +442,7 @@ function EvidenceControl({
     onError(null);
     const data = new FormData();
     data.set('answerId', answerId);
+    data.set('kind', kind);
 
     startTransition(async () => {
       const result = await removeEvidence(data);
@@ -482,6 +505,7 @@ function EvidenceControl({
         <label className="flex cursor-pointer items-center gap-2 text-sm">
           <Paperclip className="size-4 shrink-0" aria-hidden="true" />
           <span>
+            {required ? <span className="text-[var(--color-destructive)]">* </span> : null}
             {pending
               ? t('fill.evidenceUploading')
               : kind === 'photo'

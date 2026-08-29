@@ -56,36 +56,45 @@ export const addItemSchema = z.object({
 });
 
 /**
- * What an item asks for alongside the tick.
+ * The three things an item can ask for, each with two independent switches.
  *
- * Inviting, not requiring — making it mandatory before an item can be ticked is
- * a separate decision with its own consequences, chiefly that a required photo
- * somewhere with no signal is a person who cannot finish their job.
+ *   enabled   the control appears when filling in
+ *   required  the item cannot be ticked without it
+ *
+ * Nothing implies anything else. A photo can be mandatory while a file is only
+ * invited and location is merely recorded — which is the whole reason these are
+ * six booleans rather than one enum with a flag.
  */
-export const EVIDENCE_KINDS = ['none', 'photo', 'file'] as const;
-export type EvidenceKind = (typeof EVIDENCE_KINDS)[number];
+export const REQUIREMENT_KINDS = ['photo', 'file', 'location'] as const;
+export type RequirementKind = (typeof REQUIREMENT_KINDS)[number];
 
-export const updateItemSchema = z.object({
-  itemId: z.uuid(),
-  title: itemTitleSchema,
-  description: z.string().trim().max(2000).optional(),
-  // Defaulted rather than required, so a form that predates this field still
-  // validates instead of failing on a value nobody was asked for.
-  evidence: z.enum(EVIDENCE_KINDS).default('none'),
-  evidenceRequired: z.boolean().default(false),
+export const updateItemSchema = z
+  .object({
+    itemId: z.uuid(),
+    title: itemTitleSchema,
+    description: z.string().trim().max(2000).optional(),
 
-  /**
-   * A place this item must be ticked at. All three or none.
-   *
-   * The 25m floor is not arbitrary. GPS is roughly 5–20m outdoors and far worse
-   * indoors, which is where warehouses, kitchens and clinics are — a tighter
-   * radius would reject people standing in exactly the right place, and read as
-   * the product being broken rather than strict.
-   */
-  locationLat: z.number().min(-90).max(90).nullable().default(null),
-  locationLng: z.number().min(-180).max(180).nullable().default(null),
-  locationRadiusM: z.number().int().min(25).max(100_000).nullable().default(null),
-})
+    // Defaulted rather than required, so a form that predates any of these
+    // still validates instead of failing on a value nobody was asked for.
+    photoEnabled: z.boolean().default(false),
+    photoRequired: z.boolean().default(false),
+    fileEnabled: z.boolean().default(false),
+    fileRequired: z.boolean().default(false),
+    locationEnabled: z.boolean().default(false),
+    locationRequired: z.boolean().default(false),
+
+    /**
+     * Where the location is, when there is one. All three or none.
+     *
+     * The 25m floor is not arbitrary. GPS is roughly 5–20m outdoors and far
+     * worse indoors, which is where warehouses, kitchens and clinics are — a
+     * tighter radius would reject people standing in exactly the right place,
+     * and read as the product being broken rather than strict.
+     */
+    locationLat: z.number().min(-90).max(90).nullable().default(null),
+    locationLng: z.number().min(-180).max(180).nullable().default(null),
+    locationRadiusM: z.number().int().min(25).max(100_000).nullable().default(null),
+  })
   .refine(
     (v) =>
       (v.locationLat === null && v.locationLng === null && v.locationRadiusM === null) ||
@@ -95,9 +104,23 @@ export const updateItemSchema = z.object({
       path: ['locationRadiusM'],
     },
   )
-  .refine((v) => v.evidence !== 'none' || !v.evidenceRequired, {
-    error: 'Choose a photo or file before making it required.',
-    path: ['evidenceRequired'],
+  // Each pair on its own: enforcing something that was never switched on is a
+  // rule with nothing to apply to.
+  .refine((v) => v.photoEnabled || !v.photoRequired, {
+    error: 'Turn the photo on before making it required.',
+    path: ['photoRequired'],
+  })
+  .refine((v) => v.fileEnabled || !v.fileRequired, {
+    error: 'Turn the file on before making it required.',
+    path: ['fileRequired'],
+  })
+  .refine((v) => v.locationEnabled || !v.locationRequired, {
+    error: 'Turn the location on before making it required.',
+    path: ['locationRequired'],
+  })
+  .refine((v) => !v.locationEnabled || v.locationLat !== null, {
+    error: 'Set the coordinates and radius for the location.',
+    path: ['locationLat'],
   });
 
 /** A checklist item plus its children, to `MAX_ITEM_DEPTH` levels. */

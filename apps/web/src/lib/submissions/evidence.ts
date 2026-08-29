@@ -6,6 +6,15 @@ import { createClient, getUser } from '@/lib/supabase/server';
 
 export type EvidenceResult = { error?: string };
 
+/**
+ * Which slot an attachment goes in.
+ *
+ * Photo and file are separate columns because an item can ask for both — a
+ * photograph of the fridge and a signed delivery note are different evidence,
+ * and one arriving does not satisfy a demand for the other.
+ */
+export type AttachmentKind = 'photo' | 'file';
+
 const BUCKET = 'submission-evidence';
 
 /**
@@ -49,7 +58,10 @@ function safeExtension(fileName: string, type: string): string {
  */
 export async function uploadEvidence(formData: FormData): Promise<EvidenceResult> {
   const answerId = String(formData.get('answerId') ?? '');
+  const kind = String(formData.get('kind') ?? '') as AttachmentKind;
   const file = formData.get('file');
+
+  if (kind !== 'photo' && kind !== 'file') return { error: 'Unknown attachment type.' };
 
   if (!answerId) return { error: 'Missing answer.' };
   if (!(file instanceof File) || file.size === 0) return { error: 'Choose a file first.' };
@@ -64,7 +76,7 @@ export async function uploadEvidence(formData: FormData): Promise<EvidenceResult
   // and the upload never happens.
   const { data: answer } = await supabase
     .from('submission_items')
-    .select('id, submission_id, evidence_path')
+    .select('id, submission_id, photo_path, file_path')
     .eq('id', answerId)
     .single();
 
@@ -85,13 +97,14 @@ export async function uploadEvidence(formData: FormData): Promise<EvidenceResult
 
   if (uploadError) return { error: uploadError.message };
 
+  const now = new Date().toISOString();
   const { error } = await supabase
     .from('submission_items')
-    .update({
-      evidence_path: path,
-      evidence_uploaded_at: new Date().toISOString(),
-      evidence_uploaded_by: user.id,
-    })
+    .update(
+      kind === 'photo'
+        ? { photo_path: path, photo_uploaded_at: now, photo_uploaded_by: user.id }
+        : { file_path: path, file_uploaded_at: now, file_uploaded_by: user.id },
+    )
     .eq('id', answerId);
 
   if (error) {
@@ -101,9 +114,10 @@ export async function uploadEvidence(formData: FormData): Promise<EvidenceResult
     return { error: error.message };
   }
 
-  // The previous file, now that the new one is safely recorded.
-  if (answer.evidence_path) {
-    await supabase.storage.from(BUCKET).remove([answer.evidence_path]);
+  // The previous file in this slot, now that the new one is safely recorded.
+  const previous = kind === 'photo' ? answer.photo_path : answer.file_path;
+  if (previous) {
+    await supabase.storage.from(BUCKET).remove([previous]);
   }
 
   revalidatePath('/dashboard/boards/[slug]/fill/[submissionId]', 'page');
@@ -113,29 +127,37 @@ export async function uploadEvidence(formData: FormData): Promise<EvidenceResult
 /** Remove an attachment, object and reference together. */
 export async function removeEvidence(formData: FormData): Promise<EvidenceResult> {
   const answerId = String(formData.get('answerId') ?? '');
+  const kind = String(formData.get('kind') ?? '') as AttachmentKind;
+
   if (!answerId) return { error: 'Missing answer.' };
+  if (kind !== 'photo' && kind !== 'file') return { error: 'Unknown attachment type.' };
 
   const supabase = await createClient();
 
   const { data: answer } = await supabase
     .from('submission_items')
-    .select('id, evidence_path')
+    .select('id, photo_path, file_path')
     .eq('id', answerId)
     .single();
 
-  if (!answer?.evidence_path) return {};
+  const path = kind === 'photo' ? answer?.photo_path : answer?.file_path;
+  if (!path) return {};
 
   // The row first. If the object delete fails afterwards the result is a file
   // nobody references, which is untidy; the reverse would be a reference to a
   // file that is gone, which renders as a broken attachment.
   const { error } = await supabase
     .from('submission_items')
-    .update({ evidence_path: null, evidence_uploaded_at: null, evidence_uploaded_by: null })
+    .update(
+      kind === 'photo'
+        ? { photo_path: null, photo_uploaded_at: null, photo_uploaded_by: null }
+        : { file_path: null, file_uploaded_at: null, file_uploaded_by: null },
+    )
     .eq('id', answerId);
 
   if (error) return { error: error.message };
 
-  await supabase.storage.from(BUCKET).remove([answer.evidence_path]);
+  await supabase.storage.from(BUCKET).remove([path]);
 
   revalidatePath('/dashboard/boards/[slug]/fill/[submissionId]', 'page');
   return {};

@@ -56,13 +56,14 @@ export type AnsweredItem = ItemNode<
   ChecklistItem & {
     answer: SubmissionItem | null;
     /**
-     * A signed URL for the attachment, valid for an hour.
+     * Signed URLs for the attachments, valid for an hour.
      *
-     * The evidence bucket is private, so `answer.evidence_path` cannot be
-     * rendered directly — this is that path, signed server-side for somebody
-     * already in the space.
+     * The evidence bucket is private, so the stored paths cannot be rendered
+     * directly — these are those paths, signed server-side for somebody already
+     * in the space. One per kind, because an item can ask for both.
      */
-    evidenceUrl: string | null;
+    photoUrl: string | null;
+    fileUrl: string | null;
   }
 >;
 
@@ -129,7 +130,7 @@ export async function getSubmissionDetail(submissionId: string): Promise<Submiss
    * copied out of the page stops working the same day.
    */
   const evidencePaths = (answers ?? [])
-    .map((a) => a.evidence_path)
+    .flatMap((a) => [a.photo_path, a.file_path])
     .filter((p): p is string => Boolean(p));
 
   const signedByPath = new Map<string, string>();
@@ -152,9 +153,8 @@ export async function getSubmissionDetail(submissionId: string): Promise<Submiss
       answer,
       // Null when there is no attachment, and also when signing failed — the
       // component shows "attached, could not load" rather than a broken image.
-      evidenceUrl: answer?.evidence_path
-        ? (signedByPath.get(answer.evidence_path) ?? null)
-        : null,
+      photoUrl: answer?.photo_path ? (signedByPath.get(answer.photo_path) ?? null) : null,
+      fileUrl: answer?.file_path ? (signedByPath.get(answer.file_path) ?? null) : null,
     };
   });
 
