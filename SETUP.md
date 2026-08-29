@@ -378,7 +378,40 @@ anything else in this file.
 | | Project | Used by |
 | - | ------- | ------- |
 | **Production** | `ivqprkzqnoiffqlbfkkd` | `app.gidlist.com`. Real customers, real records. |
-| **Development** | the second one | `pnpm dev` on this machine. Disposable. |
+| **Development** | `zffoidgzuyhojnydshkq` | `pnpm dev` on this machine. Disposable. |
+
+### Read the URL, not the page
+
+**The only reliable way to tell which database you are about to change is the
+project ref in the browser address bar:**
+
+```
+supabase.com/dashboard/project/ivqprkzqnoiffqlbfkkd   <- PRODUCTION
+supabase.com/dashboard/project/zffoidgzuyhojnydshkq   <- development
+```
+
+Nothing else on the screen can be trusted for this, and one thing is actively
+misleading. The breadcrumb on the dev project reads:
+
+```
+checklists / gidlist-dev / main  [PRODUCTION]
+```
+
+Three traps in one line. **`checklists` is the organisation**, and it happens to
+share its name with the production project. **`main` is a database branch**, and
+Supabase badges the default branch of *every* project — including the dev one —
+as `PRODUCTION`. So the word "production" appears in a green badge while you are
+looking at the development database.
+
+This has already cost an afternoon: a migration and a capability grant were run
+against dev while every check reported success, and the live app kept behaving
+as though nothing had been applied — because for it, nothing had. The symptom is
+confusing rather than obvious: the app does not error, it simply omits whatever
+the missing rows would have produced.
+
+**When somebody tells you to "run this in production", check the ref before you
+press Run.** If a change appears to have no effect on `app.gidlist.com`, check
+the ref again before looking anywhere else.
 
 Until this split existed, every migration went straight to production the
 moment it was written — the app on this machine and the live site read the same
