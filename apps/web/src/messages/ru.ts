@@ -8,6 +8,7 @@ import type { Messages } from '@app/core';
  */
 export const ru = {
   'common.save': 'Сохранить',
+  'common.reset': 'Сбросить',
   'common.saved': 'Сохранено.',
   'common.cancel': 'Отмена',
   'common.delete': 'Удалить',
@@ -406,6 +407,12 @@ export const ru = {
   'media.uploadImage': 'Загрузить изображение',
   'media.cancelUpload': 'Отменить загрузку',
   'media.currentLogo': 'Текущий логотип',
+  'media.focalPoint': 'Фокус баннера',
+  'media.fitFill': 'Заполнить',
+  'media.fitWhole': 'Целиком',
+  'media.saveFraming': 'Сохранить кадр',
+  'media.focalHint': 'Перетащите точку на баннере, чтобы выбрать, что останется в кадре. Стрелки тоже работают.',
+  'media.containHint': 'Изображение показано целиком, ничего не обрезается.',
 
   'auth.linkIncomplete': 'Ссылка неполная. Запросите новую и попробуйте снова.',
   'auth.linkExpired': 'Срок действия ссылки истёк или она уже использована. Запросите новую.',

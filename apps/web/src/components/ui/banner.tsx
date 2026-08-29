@@ -1,4 +1,4 @@
-import { bannerPresetGradient, isBannerPreset } from '@app/core';
+import { bannerPresetGradient, isBannerPreset, parseBannerValue } from '@app/core';
 
 /**
  * A wide header image — either an uploaded file or one of the built-in
@@ -8,8 +8,9 @@ import { bannerPresetGradient, isBannerPreset } from '@app/core';
  * can never be in the contradictory state of having both.
  *
  * `aspect-[3/1]` is fixed so the layout does not jump when an uploaded image
- * loads, and `object-cover` lets a photo of any shape fill the strip without
- * distorting.
+ * loads. How the image sits inside that strip is the author's choice, stored
+ * with the URL — see `parseBannerValue`. Before that existed every image was
+ * centre-cropped, which put the subject of a tall photograph off-screen.
  */
 export function Banner({ value, alt = '' }: { value: string | null; alt?: string }) {
   if (!value) return null;
@@ -24,10 +25,21 @@ export function Banner({ value, alt = '' }: { value: string | null; alt?: string
     return <div className={shell} style={{ backgroundImage: gradient }} role="presentation" />;
   }
 
+  const { src, framing } = parseBannerValue(value);
+
   return (
     <div className={shell}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={value} alt={alt} className="size-full object-cover" />
+      <img
+        src={src}
+        alt={alt}
+        className="size-full"
+        style={{
+          objectFit: framing.fit,
+          // Ignored by the browser under `contain`, where nothing is cropped.
+          objectPosition: `${framing.focusX}% ${framing.focusY}%`,
+        }}
+      />
     </div>
   );
 }

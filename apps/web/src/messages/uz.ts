@@ -12,6 +12,7 @@ import type { Messages } from '@app/core';
  */
 export const uz = {
   'common.save': 'Saqlash',
+  'common.reset': 'Tiklash',
   'common.saved': 'Saqlandi.',
   'common.cancel': 'Bekor qilish',
   'common.delete': 'Oʻchirish',
@@ -412,6 +413,12 @@ export const uz = {
   'media.uploadImage': 'Rasm yuklash',
   'media.cancelUpload': 'Yuklashni bekor qilish',
   'media.currentLogo': 'Joriy logotip',
+  'media.focalPoint': 'Banner fokusi',
+  'media.fitFill': 'Toʻldirish',
+  'media.fitWhole': 'Butun rasm',
+  'media.saveFraming': 'Kadrni saqlash',
+  'media.focalHint': 'Kadrda nima qolishini tanlash uchun banner ustida nuqtani suring. Strelka tugmalari ham ishlaydi.',
+  'media.containHint': 'Rasm toʻliq koʻrsatiladi, hech narsa qirqilmaydi.',
 
   'auth.linkIncomplete': 'Havola toʻliq emas. Yangisini soʻrab, qayta urinib koʻring.',
   'auth.linkExpired': 'Havola muddati tugagan yoki allaqachon ishlatilgan. Yangisini soʻrang.',

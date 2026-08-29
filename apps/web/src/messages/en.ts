@@ -11,6 +11,7 @@ import type { Messages } from '@app/core';
 export const en = {
   // --- common -----------------------------------------------------------
   'common.save': 'Save',
+  'common.reset': 'Reset',
   'common.saved': 'Saved.',
   'common.cancel': 'Cancel',
   'common.delete': 'Delete',
@@ -411,6 +412,12 @@ export const en = {
   'media.uploadImage': 'Upload image',
   'media.cancelUpload': 'Cancel upload',
   'media.currentLogo': 'Current logo',
+  'media.focalPoint': 'Banner focal point',
+  'media.fitFill': 'Fill',
+  'media.fitWhole': 'Whole image',
+  'media.saveFraming': 'Save framing',
+  'media.focalHint': 'Drag on the banner to choose what stays in shot. Arrow keys work too.',
+  'media.containHint': 'The whole image is shown, so nothing is cropped.',
 
   'auth.linkIncomplete': 'That link was incomplete. Request a new one and try again.',
   'auth.linkExpired': 'That link has expired or was already used. Request a new one.',

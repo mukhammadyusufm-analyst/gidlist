@@ -5,6 +5,7 @@ import { BANNER_PRESETS, BANNER_PRESET_PREFIX, isBannerPreset } from '@app/core'
 
 import { setBoardBanner, setChecklistBanner } from '@/lib/media/actions';
 import { Banner } from '@/components/ui/banner';
+import { BannerFramingControl } from '@/components/ui/banner-framing';
 import { Button } from '@/components/ui/button';
 import { FormNotice } from '@/components/ui/field-error';
 import { ImageUploadForm, type UploadTarget } from '@/components/ui/image-upload-form';
@@ -52,7 +53,12 @@ export function BannerPicker({
     <div className="space-y-4">
       {error ? <FormNotice kind="error">{error}</FormNotice> : null}
 
-      {current ? (
+      {/* An uploaded image gets the framing control instead of a plain preview:
+          it renders the same 3:1 strip, so showing both would be the same
+          picture twice. A preset is a gradient with nothing to frame. */}
+      {current && !isBannerPreset(current) ? (
+        <BannerFramingControl current={current} target={target} />
+      ) : current ? (
         <Banner value={current} alt="Current banner" />
       ) : (
         <p className="text-sm text-[var(--color-muted-foreground)]">{t('space.noBanner')}</p>

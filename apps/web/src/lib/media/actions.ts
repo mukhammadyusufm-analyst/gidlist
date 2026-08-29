@@ -3,9 +3,12 @@
 import { revalidatePath } from 'next/cache';
 import {
   bannerPresetValue,
+  isBannerPreset,
   isKnownBannerPreset,
   isMediaBucket,
   pathBelongsToBoard,
+  withBannerFraming,
+  type BannerFraming,
   type MediaBucket,
 } from '@app/core';
 
@@ -119,6 +122,73 @@ export async function setChecklistBanner(input: {
     .from('checklists')
     .update({ banner_url: value })
     .eq('id', input.checklistId);
+
+  if (error) return { error: `Could not save: ${error.message}` };
+
+  revalidatePath('/dashboard/boards/[slug]/checklists/[id]', 'layout');
+  return {};
+}
+
+/**
+ * Save how an uploaded banner is fitted and where its focal point sits.
+ *
+ * Reads the row first rather than taking a URL from the client. The framing is
+ * appended to the stored value, so accepting a URL would let a caller point the
+ * banner at any address it liked under the guise of adjusting a crop — the same
+ * hole `saveMedia` exists to close. Here the client sends only three display
+ * values, and the URL they attach to is whatever the row already holds.
+ *
+ * A preset has nothing to frame, so it is refused rather than silently ignored.
+ */
+export async function setBannerFraming(input: {
+  target: { kind: 'board'; boardId: string; slug: string } | { kind: 'checklist'; checklistId: string };
+  framing: BannerFraming;
+}): Promise<SaveMediaResult> {
+  const supabase = await createClient();
+  const { target, framing } = input;
+
+  // Branched on the discriminant rather than through a boolean: a `const isBoard`
+  // reads more neatly and narrows nothing, so every property access afterwards
+  // is a type error.
+  if (target.kind === 'board') {
+    const { data, error: readError } = await supabase
+      .from('boards')
+      .select('banner_url')
+      .eq('id', target.boardId)
+      .maybeSingle();
+
+    if (readError) return { error: `Could not save: ${readError.message}` };
+    if (!data?.banner_url || isBannerPreset(data.banner_url)) {
+      return { error: 'There is no uploaded banner to adjust.' };
+    }
+
+    const { error } = await supabase
+      .from('boards')
+      .update({ banner_url: withBannerFraming(data.banner_url, framing) })
+      .eq('id', target.boardId);
+
+    if (error) return { error: `Could not save: ${error.message}` };
+
+    revalidatePath(`/dashboard/boards/${target.slug}`, 'layout');
+    revalidatePath('/dashboard', 'page');
+    return {};
+  }
+
+  const { data, error: readError } = await supabase
+    .from('checklists')
+    .select('banner_url')
+    .eq('id', target.checklistId)
+    .maybeSingle();
+
+  if (readError) return { error: `Could not save: ${readError.message}` };
+  if (!data?.banner_url || isBannerPreset(data.banner_url)) {
+    return { error: 'There is no uploaded banner to adjust.' };
+  }
+
+  const { error } = await supabase
+    .from('checklists')
+    .update({ banner_url: withBannerFraming(data.banner_url, framing) })
+    .eq('id', target.checklistId);
 
   if (error) return { error: `Could not save: ${error.message}` };
 
