@@ -5,6 +5,7 @@ import { BUILTIN_LOCALE_NAMES } from '@app/core';
 import { SITE_LOCALES, type BuiltinLocale } from '@/lib/i18n/locale';
 import { MESSAGES, type SiteMessages } from '@/lib/i18n/messages';
 import { SIGNIN_URL, SIGNUP_URL } from '@/lib/site';
+import { COMPANY_NAME, LEGAL } from '@/lib/legal';
 
 /** Copy comes in as a prop — see the note in `site-header.tsx`. */
 export function SiteFooter({ locale, m }: { locale: BuiltinLocale; m: SiteMessages }) {
@@ -72,10 +73,30 @@ export function SiteFooter({ locale, m }: { locale: BuiltinLocale; m: SiteMessag
         </div>
       </div>
 
-      <div className="mx-auto w-full max-w-6xl px-6 pb-10 text-sm text-[var(--color-muted-foreground)]">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-6 pb-10 text-sm text-[var(--color-muted-foreground)] sm:flex-row sm:items-center sm:justify-between">
         <p>
-          © {new Date().getFullYear()} Gidlist. {m.footerRights} {m.footerNote}
+          © {new Date().getFullYear()} {COMPANY_NAME}. {m.footerRights} {m.footerNote}
         </p>
+
+        {/* Down here rather than in the columns above, which is where people look
+            for them, and where they stay out of the way of the actual argument.
+            The labels are the documents' own titles, so they translate with the
+            documents instead of needing two more catalogue keys that could drift
+            out of step with the page they point at. */}
+        <nav className="flex gap-6" aria-label={LEGAL[locale].privacy.title}>
+          <Link
+            href={`/${locale}/privacy`}
+            className="transition-colors hover:text-[var(--color-foreground)]"
+          >
+            {LEGAL[locale].privacy.title}
+          </Link>
+          <Link
+            href={`/${locale}/terms`}
+            className="transition-colors hover:text-[var(--color-foreground)]"
+          >
+            {LEGAL[locale].terms.title}
+          </Link>
+        </nav>
       </div>
     </footer>
   );
