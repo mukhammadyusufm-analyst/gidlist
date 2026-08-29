@@ -72,7 +72,33 @@ export const updateItemSchema = z.object({
   // Defaulted rather than required, so a form that predates this field still
   // validates instead of failing on a value nobody was asked for.
   evidence: z.enum(EVIDENCE_KINDS).default('none'),
-});
+  evidenceRequired: z.boolean().default(false),
+
+  /**
+   * A place this item must be ticked at. All three or none.
+   *
+   * The 25m floor is not arbitrary. GPS is roughly 5–20m outdoors and far worse
+   * indoors, which is where warehouses, kitchens and clinics are — a tighter
+   * radius would reject people standing in exactly the right place, and read as
+   * the product being broken rather than strict.
+   */
+  locationLat: z.number().min(-90).max(90).nullable().default(null),
+  locationLng: z.number().min(-180).max(180).nullable().default(null),
+  locationRadiusM: z.number().int().min(25).max(100_000).nullable().default(null),
+})
+  .refine(
+    (v) =>
+      (v.locationLat === null && v.locationLng === null && v.locationRadiusM === null) ||
+      (v.locationLat !== null && v.locationLng !== null && v.locationRadiusM !== null),
+    {
+      error: 'A location needs coordinates and a radius, or none of the three.',
+      path: ['locationRadiusM'],
+    },
+  )
+  .refine((v) => v.evidence !== 'none' || !v.evidenceRequired, {
+    error: 'Choose a photo or file before making it required.',
+    path: ['evidenceRequired'],
+  });
 
 /** A checklist item plus its children, to `MAX_ITEM_DEPTH` levels. */
 export type ItemNode<T> = T & { children: ItemNode<T>[] };

@@ -321,6 +321,26 @@ export type Database = {
            * be ticked is item 30, which carries decisions this does not.
            */
           evidence: EvidenceKind;
+          /**
+           * Whether the attachment is a condition of ticking, rather than an
+           * invitation. Meaningless when `evidence` is `none`.
+           *
+           * Enforced by a database trigger, not by the form: ticking is a plain
+           * update through PostgREST, so a check in TypeScript is a courtesy a
+           * crafted request walks past.
+           */
+          evidence_required: boolean;
+          /**
+           * A place this item has to be ticked at. All three or none.
+           *
+           * `location_radius_m` has a 25m floor because GPS indoors — which is
+           * where warehouses and kitchens are — is much worse than people
+           * expect, and a tighter radius rejects people standing in the right
+           * place.
+           */
+          location_lat: number | null;
+          location_lng: number | null;
+          location_radius_m: number | null;
           created_at: string;
         };
         // `depth` is absent from Insert and Update on purpose — a database
@@ -343,6 +363,10 @@ export type Database = {
           parent_item_id?: string | null;
           group_id?: string;
           evidence?: EvidenceKind;
+          evidence_required?: boolean;
+          location_lat?: number | null;
+          location_lng?: number | null;
+          location_radius_m?: number | null;
         };
         Relationships: [];
       };
@@ -495,6 +519,19 @@ export type Database = {
           evidence_path: string | null;
           evidence_uploaded_at: string | null;
           evidence_uploaded_by: string | null;
+          /**
+           * Where the person was when they ticked it, with the accuracy the
+           * browser itself reported.
+           *
+           * The accuracy is not decoration: the database refuses a reading only
+           * when somebody is *certainly* outside the radius, and this figure is
+           * what "certainly" means. Indoors it is routinely tens or hundreds of
+           * metres, which is why the rule is generous.
+           */
+          location_lat: number | null;
+          location_lng: number | null;
+          location_accuracy_m: number | null;
+          location_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -513,6 +550,10 @@ export type Database = {
           evidence_path?: string | null;
           evidence_uploaded_at?: string | null;
           evidence_uploaded_by?: string | null;
+          location_lat?: number | null;
+          location_lng?: number | null;
+          location_accuracy_m?: number | null;
+          location_at?: string | null;
         };
         Relationships: [];
       };

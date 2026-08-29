@@ -383,6 +383,17 @@ function SortableItem({
         ) : null}
       </div>
 
+      {/*
+        Requirements live on their own row, below the item, because they are
+        settings rather than content — and because a leaf item is the only place
+        they mean anything. A parent completes by rollup, so a rule on it would
+        have no moment at which anybody could satisfy it; the database exempts
+        parents and the interface does not offer them the choice.
+      */}
+      {editable && item.children.length === 0 ? (
+        <ItemRequirements item={item} evidenceState={evidenceState} />
+      ) : null}
+
       {evidenceState.formError ? (
         <p className="px-2 pb-2 text-xs text-[var(--color-destructive)]">
           {evidenceState.formError}
@@ -484,5 +495,171 @@ function AddGroupForm({ versionId }: { versionId: string }) {
         {t('checklist.addSection')}
       </Button>
     </form>
+  );
+}
+
+/**
+ * The two conditions an item can carry: a required attachment, and a place.
+ *
+ * Behind a disclosure rather than always open, because most items have neither
+ * and a builder where every row carries six inputs is unreadable. The summary
+ * says which are set, so nothing is hidden — only folded.
+ *
+ * The coordinate fields are numbers rather than a map. A map is the better
+ * interface and a much larger one; "use where I am now" covers the common case,
+ * which is somebody standing in the place they are describing.
+ */
+function ItemRequirements({
+  item,
+  evidenceState,
+}: {
+  item: Item;
+  evidenceState: { fieldErrors?: Record<string, string[]> };
+}) {
+  const { t } = useT();
+  const [locating, setLocating] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  const hasLocation = item.location_lat !== null && item.location_radius_m !== null;
+
+  function useCurrentPosition() {
+    if (!('geolocation' in navigator)) {
+      setLocationError(t('checklist.locationUnsupported'));
+      return;
+    }
+
+    setLocationError(null);
+    setLocating(true);
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocating(false);
+        const form = formRef.current;
+        if (!form) return;
+
+        // Six decimal places is about 0.1m — far finer than any consumer GPS,
+        // and short enough to read.
+        (form.elements.namedItem('locationLat') as HTMLInputElement).value =
+          pos.coords.latitude.toFixed(6);
+        (form.elements.namedItem('locationLng') as HTMLInputElement).value =
+          pos.coords.longitude.toFixed(6);
+
+        const radius = form.elements.namedItem('locationRadiusM') as HTMLInputElement;
+        // Seed a sensible radius rather than leaving it blank and failing
+        // validation. 50m is generous enough to survive a poor indoor fix.
+        if (!radius.value) radius.value = '50';
+      },
+      () => {
+        setLocating(false);
+        setLocationError(t('checklist.locationDenied'));
+      },
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 },
+    );
+  }
+
+  return (
+    <details className="px-2 pb-2">
+      <summary className="cursor-pointer text-xs text-[var(--color-muted-foreground)]">
+        {t('checklist.requirements')}
+        {item.evidence_required || hasLocation ? (
+          <span className="ml-1.5 text-[var(--color-primary)]">
+            {[
+              item.evidence_required ? t('checklist.requiresAttachment') : null,
+              hasLocation ? t('checklist.requiresLocation') : null,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          </span>
+        ) : null}
+      </summary>
+
+      <form
+        ref={formRef}
+        action={async (fd: FormData) => void (await updateItem({}, fd))}
+        className="mt-2 space-y-3 rounded-md border border-[var(--color-border)] p-3"
+      >
+        <input type="hidden" name="itemId" value={item.id} />
+        <input type="hidden" name="title" value={item.title} />
+        <input type="hidden" name="description" value={item.description ?? ''} />
+        <input type="hidden" name="evidence" value={item.evidence} />
+
+        <label className="flex items-start gap-2 text-sm">
+          <input
+            type="checkbox"
+            name="evidenceRequired"
+            defaultChecked={item.evidence_required}
+            disabled={item.evidence === 'none'}
+            className="mt-0.5 size-4"
+          />
+          <span>
+            {t('checklist.evidenceRequired')}
+            {item.evidence === 'none' ? (
+              <span className="mt-0.5 block text-xs text-[var(--color-muted-foreground)]">
+                {t('checklist.evidenceRequiredHint')}
+              </span>
+            ) : null}
+          </span>
+        </label>
+
+        <div>
+          <p className="mb-1.5 text-sm font-medium">{t('checklist.locationTitle')}</p>
+          <div className="grid grid-cols-3 gap-2">
+            <Input
+              name="locationLat"
+              defaultValue={item.location_lat ?? ''}
+              placeholder={t('checklist.latitude')}
+              aria-label={t('checklist.latitude')}
+              inputMode="decimal"
+            />
+            <Input
+              name="locationLng"
+              defaultValue={item.location_lng ?? ''}
+              placeholder={t('checklist.longitude')}
+              aria-label={t('checklist.longitude')}
+              inputMode="decimal"
+            />
+            <Input
+              name="locationRadiusM"
+              defaultValue={item.location_radius_m ?? ''}
+              placeholder={t('checklist.radius')}
+              aria-label={t('checklist.radius')}
+              inputMode="numeric"
+            />
+          </div>
+
+          {/* Said plainly, because a radius chosen without knowing this will be
+              too tight and the feature will look broken. */}
+          <p className="mt-1.5 text-xs text-[var(--color-muted-foreground)]">
+            {t('checklist.locationAccuracyNote')}
+          </p>
+
+          {locationError ? (
+            <p className="mt-1 text-xs text-[var(--color-destructive)]">{locationError}</p>
+          ) : null}
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-2"
+            onClick={useCurrentPosition}
+            disabled={locating}
+          >
+            {locating ? t('checklist.locating') : t('checklist.useMyLocation')}
+          </Button>
+        </div>
+
+        {evidenceState.fieldErrors?.locationRadiusM ? (
+          <p className="text-xs text-[var(--color-destructive)]">
+            {evidenceState.fieldErrors.locationRadiusM[0]}
+          </p>
+        ) : null}
+
+        <Button type="submit" size="sm">
+          {t('common.save')}
+        </Button>
+      </form>
+    </details>
   );
 }

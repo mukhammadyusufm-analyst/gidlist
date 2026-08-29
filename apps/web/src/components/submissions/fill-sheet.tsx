@@ -8,6 +8,7 @@ import {
   setItemChecked,
   submitSubmission,
   type ActionState,
+  type TickPosition,
 } from '@/lib/submissions/actions';
 import { removeEvidence, uploadEvidence } from '@/lib/submissions/evidence';
 import type { AnsweredItem } from '@/lib/submissions/queries';
@@ -185,11 +186,57 @@ function ItemRow({
   const answerId = item.answer?.id;
   const interactive = Boolean(answerId) && !readOnly && !hasChildren;
 
+  const needsLocation = item.location_lat !== null && item.location_radius_m !== null;
+
+  /**
+   * Read the browser's position, for items that are pinned to a place.
+   *
+   * `enableHighAccuracy` asks for GPS rather than the cheaper network estimate,
+   * which is the difference between tens of metres and hundreds. The timeout is
+   * generous because a cold GPS fix indoors genuinely takes that long, and
+   * `maximumAge: 0` refuses a cached position — a reading from where the phone
+   * was ten minutes ago is exactly the thing this must not accept.
+   */
+  function readPosition(): Promise<TickPosition> {
+    return new Promise((resolve, reject) => {
+      if (!('geolocation' in navigator)) {
+        reject(new Error(t('fill.locationUnsupported')));
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) =>
+          resolve({
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+            accuracy: pos.coords.accuracy,
+          }),
+        () => reject(new Error(t('fill.locationDenied'))),
+        { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 },
+      );
+    });
+  }
+
   function toggle() {
     if (!interactive || !answerId) return;
     onError(null);
+
     startTransition(async () => {
-      const result = await setItemChecked(answerId, !checked);
+      let position: TickPosition | undefined;
+
+      // Only when ticking, and only when the item asks for it. Reading a
+      // position to *un*-tick something would prompt for permission to record
+      // where somebody was when they changed their mind.
+      if (!checked && needsLocation) {
+        try {
+          position = await readPosition();
+        } catch (e) {
+          onError(e instanceof Error ? e.message : t('fill.locationDenied'));
+          return;
+        }
+      }
+
+      const result = await setItemChecked(answerId, !checked, position);
       if (result.error) onError(result.error);
     });
   }

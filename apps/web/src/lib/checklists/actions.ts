@@ -177,12 +177,31 @@ export async function addItem(_prev: ActionState, formData: FormData): Promise<A
   return {};
 }
 
+/**
+ * A number, or null for a field left blank.
+ *
+ * `Number('')` is 0, which for a radius would mean "reject everybody" rather
+ * than "no location set" — the distinction this exists to keep.
+ */
+function numberOrNull(value: FormDataEntryValue | null): number | null {
+  const text = String(value ?? '').trim();
+  if (text === '') return null;
+  const n = Number(text);
+  return Number.isFinite(n) ? n : null;
+}
+
 export async function updateItem(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const parsed = updateItemSchema.safeParse({
     itemId: formData.get('itemId'),
     title: formData.get('title'),
     description: formData.get('description') || undefined,
     evidence: formData.get('evidence') || undefined,
+    evidenceRequired: formData.get('evidenceRequired') === 'on',
+    // Empty string means "not set", which is a different thing from zero —
+    // Number('') is 0, and a radius of 0 would reject everybody.
+    locationLat: numberOrNull(formData.get('locationLat')),
+    locationLng: numberOrNull(formData.get('locationLng')),
+    locationRadiusM: numberOrNull(formData.get('locationRadiusM')),
   });
   if (!parsed.success) return { fieldErrors: parsed.error.flatten().fieldErrors };
 
@@ -193,6 +212,10 @@ export async function updateItem(_prev: ActionState, formData: FormData): Promis
       title: parsed.data.title,
       description: parsed.data.description ?? null,
       evidence: parsed.data.evidence,
+      evidence_required: parsed.data.evidenceRequired,
+      location_lat: parsed.data.locationLat,
+      location_lng: parsed.data.locationLng,
+      location_radius_m: parsed.data.locationRadiusM,
     })
     .eq('id', parsed.data.itemId);
 

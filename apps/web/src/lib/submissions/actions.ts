@@ -39,9 +39,24 @@ export async function startSubmission(_prev: ActionState, formData: FormData): P
  * phone on a production floor, where an interrupted session must not lose the
  * work already done.
  */
+/**
+ * Where the person was, as the browser reported it.
+ *
+ * `accuracy` travels with the coordinates and is not optional. A position
+ * without it cannot be judged: the database refuses a reading only when
+ * somebody is *certainly* outside the radius, and "certainly" is exactly what
+ * the accuracy figure decides.
+ */
+export type TickPosition = {
+  latitude: number;
+  longitude: number;
+  accuracy: number;
+};
+
 export async function setItemChecked(
   submissionItemId: string,
   checked: boolean,
+  position?: TickPosition,
 ): Promise<{ error?: string }> {
   const supabase = await createClient();
   const user = await getUser();
@@ -52,6 +67,12 @@ export async function setItemChecked(
     .update({
       checked,
       checked_by: checked ? user.id : null,
+      // Recorded only when ticking, and cleared when un-ticking — a position
+      // left behind on an unticked item would be a reading attached to nothing.
+      location_lat: checked ? (position?.latitude ?? null) : null,
+      location_lng: checked ? (position?.longitude ?? null) : null,
+      location_accuracy_m: checked ? (position?.accuracy ?? null) : null,
+      location_at: checked && position ? new Date().toISOString() : null,
     })
     .eq('id', submissionItemId);
 
