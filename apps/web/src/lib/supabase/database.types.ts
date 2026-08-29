@@ -39,6 +39,15 @@ export type ScheduleKind = 'daily' | 'weekly' | 'monthly' | 'yearly' | 'specific
  * by "Anyone".
  */
 export type AssignmentMode = 'creator' | 'everyone' | 'specific';
+
+/**
+ * What an item asks for alongside the tick.
+ *
+ * `photo` opens the camera directly on a phone; `file` accepts a document too.
+ * Neither is proof — a photograph proves something was photographed, not that
+ * it was photographed here or now — and the interface should never say it is.
+ */
+export type EvidenceKind = 'none' | 'photo' | 'file';
 export type SubmissionStatus = 'upcoming' | 'draft' | 'done' | 'missed';
 
 /**
@@ -301,6 +310,17 @@ export type Database = {
           description: string | null;
           position: number;
           depth: number;
+          /**
+           * Whether this item invites a photograph, any file, or nothing.
+           *
+           * Lives on the item, so it is versioned with the rest of the template
+           * — adding a photo requirement in March cannot change what a January
+           * submission was asked for.
+           *
+           * Inviting is not requiring. Making it mandatory before an item can
+           * be ticked is item 30, which carries decisions this does not.
+           */
+          evidence: EvidenceKind;
           created_at: string;
         };
         // `depth` is absent from Insert and Update on purpose — a database
@@ -314,6 +334,7 @@ export type Database = {
           title: string;
           description?: string | null;
           position?: number;
+          evidence?: EvidenceKind;
         };
         Update: {
           title?: string;
@@ -321,6 +342,7 @@ export type Database = {
           position?: number;
           parent_item_id?: string | null;
           group_id?: string;
+          evidence?: EvidenceKind;
         };
         Relationships: [];
       };
@@ -461,13 +483,37 @@ export type Database = {
           comment: string | null;
           checked_at: string | null;
           checked_by: string | null;
+          /**
+           * Object name in the **private** `submission-evidence` bucket, as
+           * `<board_id>/<submission_id>/<file>`. The first segment is what the
+           * storage policies authorise on.
+           *
+           * Never rendered directly — the bucket is private, so displaying it
+           * needs a signed URL minted server-side for somebody already in the
+           * space.
+           */
+          evidence_path: string | null;
+          evidence_uploaded_at: string | null;
+          evidence_uploaded_by: string | null;
           created_at: string;
           updated_at: string;
         };
         // Created only by start_submission(), so the answer sheet always
         // matches the version it was pinned to.
         Insert: never;
-        Update: { checked?: boolean; comment?: string | null; checked_by?: string | null };
+        Update: {
+          checked?: boolean;
+          comment?: string | null;
+          checked_by?: string | null;
+          /**
+           * Set only by the evidence actions, which build the path themselves.
+           * A client-chosen path would name the folder the storage policy
+           * authorises on, which is another company's.
+           */
+          evidence_path?: string | null;
+          evidence_uploaded_at?: string | null;
+          evidence_uploaded_by?: string | null;
+        };
         Relationships: [];
       };
       // ---- billing (phase 7) -------------------------------------------------
@@ -841,6 +887,8 @@ export type Database = {
         Returns: string;
       };
       start_submission: { Args: { p_submission_id: string }; Returns: string };
+      /** Which space a submission belongs to, for building a storage path. */
+      submission_board_id: { Args: { p_submission_id: string }; Returns: string | null };
       submit_submission: { Args: { p_submission_id: string }; Returns: undefined };
       generate_occurrences: {
         Args: {

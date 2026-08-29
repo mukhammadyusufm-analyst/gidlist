@@ -55,10 +55,23 @@ export const addItemSchema = z.object({
   title: itemTitleSchema,
 });
 
+/**
+ * What an item asks for alongside the tick.
+ *
+ * Inviting, not requiring — making it mandatory before an item can be ticked is
+ * a separate decision with its own consequences, chiefly that a required photo
+ * somewhere with no signal is a person who cannot finish their job.
+ */
+export const EVIDENCE_KINDS = ['none', 'photo', 'file'] as const;
+export type EvidenceKind = (typeof EVIDENCE_KINDS)[number];
+
 export const updateItemSchema = z.object({
   itemId: z.uuid(),
   title: itemTitleSchema,
   description: z.string().trim().max(2000).optional(),
+  // Defaulted rather than required, so a form that predates this field still
+  // validates instead of failing on a value nobody was asked for.
+  evidence: z.enum(EVIDENCE_KINDS).default('none'),
 });
 
 /** A checklist item plus its children, to `MAX_ITEM_DEPTH` levels. */

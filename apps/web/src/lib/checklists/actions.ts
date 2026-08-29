@@ -182,6 +182,7 @@ export async function updateItem(_prev: ActionState, formData: FormData): Promis
     itemId: formData.get('itemId'),
     title: formData.get('title'),
     description: formData.get('description') || undefined,
+    evidence: formData.get('evidence') || undefined,
   });
   if (!parsed.success) return { fieldErrors: parsed.error.flatten().fieldErrors };
 
@@ -191,6 +192,7 @@ export async function updateItem(_prev: ActionState, formData: FormData): Promis
     .update({
       title: parsed.data.title,
       description: parsed.data.description ?? null,
+      evidence: parsed.data.evidence,
     })
     .eq('id', parsed.data.itemId);
 

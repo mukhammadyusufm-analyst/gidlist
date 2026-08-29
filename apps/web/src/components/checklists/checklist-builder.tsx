@@ -26,6 +26,7 @@ import {
   addItem,
   deleteGroup,
   deleteItem,
+  updateItem,
   renameGroup,
   reorderGroups,
   reorderItems,
@@ -327,6 +328,33 @@ function SortableItem({
 
         {editable ? (
           <div className="flex shrink-0 items-center gap-1">
+            {/*
+              Evidence sits on the row rather than behind an edit screen,
+              because there is no item edit screen — items are added, reordered
+              and deleted, and nothing else. A select that submits on change is
+              the smallest thing that makes this reachable.
+
+              `title` and `description` ride along as hidden fields because
+              `updateItem` validates the whole item; sending only the evidence
+              would blank the title.
+            */}
+            <form action={async (fd: FormData) => void (await updateItem({}, fd))}>
+              <input type="hidden" name="itemId" value={item.id} />
+              <input type="hidden" name="title" value={item.title} />
+              <input type="hidden" name="description" value={item.description ?? ''} />
+              <select
+                name="evidence"
+                defaultValue={item.evidence}
+                onChange={(e) => e.currentTarget.form?.requestSubmit()}
+                aria-label={t('checklist.evidenceLabel')}
+                className="rounded-md border border-[var(--color-input)] bg-transparent px-2 py-1 text-xs"
+              >
+                <option value="none">{t('checklist.evidenceNone')}</option>
+                <option value="photo">{t('checklist.evidencePhoto')}</option>
+                <option value="file">{t('checklist.evidenceFile')}</option>
+              </select>
+            </form>
+
             {canNest ? (
               <Button type="button" variant="ghost" size="sm" onClick={() => setShowAdd((v) => !v)}>
                 {t('checklist.addSubItem')}

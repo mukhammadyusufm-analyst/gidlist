@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState, useState, useTransition } from 'react';
-import { Check, Lock, MessageSquarePlus, Send } from 'lucide-react';
+import { Check, Lock, MessageSquarePlus, Paperclip, Send } from 'lucide-react';
 
 import {
   saveComment,
@@ -9,6 +9,7 @@ import {
   submitSubmission,
   type ActionState,
 } from '@/lib/submissions/actions';
+import { removeEvidence, uploadEvidence } from '@/lib/submissions/evidence';
 import type { AnsweredItem } from '@/lib/submissions/queries';
 import type { ChecklistGroup } from '@/lib/supabase/database.types';
 import { Button } from '@/components/ui/button';
@@ -269,6 +270,26 @@ function ItemRow({
           </span>
         </label>
 
+        {/* Attachments sit above the note, because an item that asks for a
+            photograph is asking for the photograph first.
+
+            `capture="environment"` opens the rear camera directly on a phone
+            rather than a file browser, which is the difference between taking
+            the photo where the work is and remembering to do it later. On a
+            desktop the attribute is ignored and it behaves as a file picker. */}
+        {item.evidence !== 'none' && answerId ? (
+          <div className="px-3 pb-2">
+            <EvidenceControl
+              answerId={answerId}
+              kind={item.evidence}
+              url={item.evidenceUrl}
+              hasFile={Boolean(item.answer?.evidence_path)}
+              readOnly={readOnly}
+              onError={onError}
+            />
+          </div>
+        ) : null}
+
         <div className="px-3 pb-3">
           {showComment ? (
             <textarea
@@ -302,6 +323,139 @@ function ItemRow({
           />
         </div>
       ) : null}
+    </div>
+  );
+}
+
+/**
+ * The attachment on one answer.
+ *
+ * Uploads on selection rather than behind a separate button. Somebody wearing
+ * gloves on a shop floor has already made the decision by the time the camera
+ * closes; asking them to press Upload afterwards is a step that only exists to
+ * be forgotten.
+ *
+ * Never claims more than it knows. The label says "Photo attached", not
+ * "verified" — a photograph proves something was photographed, not that it was
+ * photographed here or now.
+ */
+function EvidenceControl({
+  answerId,
+  kind,
+  url,
+  hasFile,
+  readOnly,
+  onError,
+}: {
+  answerId: string;
+  kind: 'photo' | 'file';
+  url: string | null;
+  hasFile: boolean;
+  readOnly: boolean;
+  onError: (message: string | null) => void;
+}) {
+  const [pending, startTransition] = useTransition();
+  const { t } = useT();
+
+  function upload(file: File) {
+    onError(null);
+    const data = new FormData();
+    data.set('answerId', answerId);
+    data.set('file', file);
+
+    startTransition(async () => {
+      const result = await uploadEvidence(data);
+      if (result.error) onError(result.error);
+    });
+  }
+
+  function remove() {
+    onError(null);
+    const data = new FormData();
+    data.set('answerId', answerId);
+
+    startTransition(async () => {
+      const result = await removeEvidence(data);
+      if (result.error) onError(result.error);
+    });
+  }
+
+  return (
+    <div className="rounded-lg border border-dashed border-[var(--color-border)] p-2.5">
+      {hasFile ? (
+        <div className="flex items-center gap-3">
+          {/* An image preview where there is one; a link otherwise, because a
+              PDF has nothing to show inline. eslint-disable because these are
+              signed URLs on a private bucket that next/image cannot fetch. */}
+          {url ? (
+            <a href={url} target="_blank" rel="noreferrer" className="shrink-0">
+              {/* A plain <img>, not next/image: these are short-lived signed
+                  URLs on a private bucket, which the image optimiser cannot
+                  fetch and should not cache. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={url}
+                alt={t('fill.evidenceAttached')}
+                className="size-16 rounded-md border border-[var(--color-border)] object-cover"
+              />
+            </a>
+          ) : null}
+
+          <div className="min-w-0 flex-1 text-sm">
+            <p className="font-medium">{t('fill.evidenceAttached')}</p>
+            {url ? (
+              <a
+                href={url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs underline underline-offset-4"
+              >
+                {t('fill.evidenceOpen')}
+              </a>
+            ) : (
+              // Signing failed. Saying so beats a broken image, and the file
+              // itself is still attached.
+              <p className="text-xs text-[var(--color-muted-foreground)]">
+                {t('fill.evidenceUnavailable')}
+              </p>
+            )}
+          </div>
+
+          {!readOnly ? (
+            <Button type="button" variant="ghost" size="sm" onClick={remove} disabled={pending}>
+              {t('common.delete')}
+            </Button>
+          ) : null}
+        </div>
+      ) : readOnly ? (
+        <p className="text-sm text-[var(--color-muted-foreground)]">
+          {kind === 'photo' ? t('fill.evidenceWantsPhoto') : t('fill.evidenceWantsFile')}
+        </p>
+      ) : (
+        <label className="flex cursor-pointer items-center gap-2 text-sm">
+          <Paperclip className="size-4 shrink-0" aria-hidden="true" />
+          <span>
+            {pending
+              ? t('fill.evidenceUploading')
+              : kind === 'photo'
+                ? t('fill.evidenceAddPhoto')
+                : t('fill.evidenceAddFile')}
+          </span>
+          <input
+            type="file"
+            accept={kind === 'photo' ? 'image/*' : 'image/*,application/pdf'}
+            capture={kind === 'photo' ? 'environment' : undefined}
+            disabled={pending}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) upload(file);
+              // Cleared so choosing the same file twice still fires a change.
+              e.target.value = '';
+            }}
+            className="sr-only"
+          />
+        </label>
+      )}
     </div>
   );
 }

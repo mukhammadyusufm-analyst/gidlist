@@ -111,6 +111,9 @@ function withoutAnswers(items: ItemNode<ChecklistItem>[]): AnsweredItem[] {
   return items.map((item) => ({
     ...item,
     answer: null,
+    // No answer means no attachment to sign. The preview shows that an item
+    // asks for a photograph without inventing one that was never taken.
+    evidenceUrl: null,
     children: withoutAnswers(item.children),
   }));
 }
