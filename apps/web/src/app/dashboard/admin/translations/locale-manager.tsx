@@ -51,23 +51,37 @@ export function LocaleManager({
       {error ? <FormNotice kind="error">{error}</FormNotice> : null}
       {notice ? <FormNotice kind="info">{notice}</FormNotice> : null}
 
+      {/* The languages are a selector, and previously did not look like one:
+          the name was plain text with no hover, no pointer and no pressed
+          state, while the "Hide" link beside it was underlined — so the only
+          thing on the row that looked clickable was the one that did not change
+          what you were editing. Reported as "it only shows Uzbek", which is the
+          default, because there was no visible way to pick anything else. */}
+      <p className="text-sm text-[var(--color-muted-foreground)]">
+        {t('admin.chooseLanguageToEdit')}
+      </p>
+
       <ul className="flex flex-wrap gap-2">
         {locales.map((locale) => (
           <li key={locale.code}>
             <div
               className={cn(
-                'flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm',
+                'flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm transition-colors',
                 locale.code === editing
                   ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10'
-                  : 'border-[var(--color-border)]',
+                  : 'border-[var(--color-border)] hover:border-[var(--color-primary)]',
               )}
             >
               <button
                 type="button"
                 onClick={() => router.push(`/dashboard/admin/translations?locale=${locale.code}`)}
-                className="font-medium"
+                aria-pressed={locale.code === editing}
+                className="cursor-pointer font-medium underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
               >
                 {locale.name}
+                {locale.code === editing ? (
+                  <span className="sr-only"> ({t('admin.currentlyEditing')})</span>
+                ) : null}
               </button>
               <code className="text-xs text-[var(--color-muted-foreground)]">{locale.code}</code>
 

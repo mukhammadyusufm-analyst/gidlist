@@ -357,6 +357,8 @@ export const uz = {
   'admin.translationsIntro':
     'Har qanday matnni kod oʻzgartirmasdan tuzating. Tahrirlar shu tildan foydalanadigan hammaga taʼsir qiladi.',
   'admin.languages': 'Tillar',
+  'admin.chooseLanguageToEdit': 'Tahrirlash uchun tilni tanlang. Ingliz tili manba matni boʻlib, uni kamdan-kam oʻzgartirish kerak.',
+  'admin.currentlyEditing': 'hozir tahrirlanmoqda',
   'admin.addLanguage': 'Til qoʻshish',
   'admin.languageCode': 'Kod',
   'admin.languageCodeHint': 'Ikki harf, masalan qozoq tili uchun kk, turk tili uchun tr.',

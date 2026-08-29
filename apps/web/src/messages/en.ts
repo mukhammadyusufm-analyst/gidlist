@@ -354,6 +354,8 @@ export const en = {
   'admin.translationsIntro':
     'Correct any wording without a code change. Edits apply to everyone using that language.',
   'admin.languages': 'Languages',
+  'admin.chooseLanguageToEdit': 'Choose a language to edit. English is the source text and rarely needs changing.',
+  'admin.currentlyEditing': 'currently editing',
   'admin.addLanguage': 'Add a language',
   'admin.languageCode': 'Code',
   'admin.languageCodeHint': 'Two letters, e.g. kk for Kazakh, tr for Turkish.',

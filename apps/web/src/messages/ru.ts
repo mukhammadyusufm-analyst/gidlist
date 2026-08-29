@@ -351,6 +351,8 @@ export const ru = {
   'admin.translationsIntro':
     'Исправляйте любые формулировки без изменения кода. Правки видят все, кто использует этот язык.',
   'admin.languages': 'Языки',
+  'admin.chooseLanguageToEdit': 'Выберите язык для редактирования. Английский — исходный текст, его редко нужно менять.',
+  'admin.currentlyEditing': 'редактируется сейчас',
   'admin.addLanguage': 'Добавить язык',
   'admin.languageCode': 'Код',
   'admin.languageCodeHint': 'Две буквы, например kk для казахского, tr для турецкого.',
