@@ -368,6 +368,7 @@ function ItemRow({
                 required={item.photo_required}
                 url={item.photoUrl}
                 hasFile={Boolean(item.answer?.photo_path)}
+                expiredAt={item.answer?.photo_expired_at ?? null}
                 readOnly={readOnly}
                 onError={onError}
               />
@@ -380,6 +381,7 @@ function ItemRow({
                 required={item.file_required}
                 url={item.fileUrl}
                 hasFile={Boolean(item.answer?.file_path)}
+                expiredAt={item.answer?.file_expired_at ?? null}
                 readOnly={readOnly}
                 onError={onError}
               />
@@ -442,6 +444,7 @@ function EvidenceControl({
   required,
   url,
   hasFile,
+  expiredAt,
   readOnly,
   onError,
 }: {
@@ -451,11 +454,13 @@ function EvidenceControl({
   required: boolean;
   url: string | null;
   hasFile: boolean;
+  /** Set when retention removed the file. The record of it still stands. */
+  expiredAt: string | null;
   readOnly: boolean;
   onError: (message: string | null) => void;
 }) {
   const [pending, startTransition] = useTransition();
-  const { t } = useT();
+  const { t, locale } = useT();
 
   function upload(file: File) {
     onError(null);
@@ -529,6 +534,16 @@ function EvidenceControl({
             </Button>
           ) : null}
         </div>
+      ) : expiredAt ? (
+        /* An attachment that existed and was aged out reads differently from
+           one that was never made. Collapsing the two would quietly erase the
+           fact evidence was provided, which is the opposite of what a
+           compliance record is for. */
+        <p className="text-sm text-[var(--color-muted-foreground)]">
+          {t('fill.evidenceExpired', {
+            date: new Date(expiredAt).toLocaleDateString(locale),
+          })}
+        </p>
       ) : readOnly ? (
         <p className="text-sm text-[var(--color-muted-foreground)]">
           {kind === 'photo' ? t('fill.evidenceWantsPhoto') : t('fill.evidenceWantsFile')}

@@ -333,6 +333,7 @@ export const en = {
     'Location access is blocked for this site. An installed app has no entry of its own in your phone settings — open Chrome, go to Settings, Site settings, Location, and allow it for this address.',
   'fill.locationNeeded': 'Tick this at its location',
   'fill.locationRecorded': 'Location recorded, accurate to about {m} m',
+  'fill.evidenceExpired': 'An attachment was provided, and the file was removed on {date} under the retention policy.',
   'fill.evidenceAttached': 'Photo attached',
   'fill.evidenceOpen': 'Open',
   'fill.evidenceUnavailable': 'Attached, but could not be loaded just now.',

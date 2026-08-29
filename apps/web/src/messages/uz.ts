@@ -337,6 +337,7 @@ export const uz = {
     'Bu sayt uchun joylashuvga ruxsat berilmagan. Oʻrnatilgan ilovaning telefon sozlamalarida alohida yozuvi boʻlmaydi — Chrome’ni oching, Sozlamalar, Sayt sozlamalari, Joylashuv boʻlimidan shu manzilga ruxsat bering.',
   'fill.locationNeeded': 'Buni oʻz joyida belgilang',
   'fill.locationRecorded': 'Joylashuv yozildi, taxminan {m} m aniqlik bilan',
+  'fill.evidenceExpired': 'Ilova biriktirilgan edi; fayl saqlash muddati boʻyicha {date} sanasida oʻchirildi.',
   'fill.evidenceAttached': 'Surat biriktirilgan',
   'fill.evidenceOpen': 'Ochish',
   'fill.evidenceUnavailable': 'Biriktirilgan, lekin hozir yuklab boʻlmadi.',

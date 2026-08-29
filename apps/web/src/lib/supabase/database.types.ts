@@ -550,6 +550,16 @@ export type Database = {
           file_uploaded_at: string | null;
           file_uploaded_by: string | null;
           /**
+           * Set when the file was aged out by retention.
+           *
+           * The row still records that an attachment existed — only the file is
+           * gone. A compliance history that says "photo attached, expired" is
+           * honest; one that silently loses the fact a photo was ever taken is
+           * not.
+           */
+          photo_expired_at: string | null;
+          file_expired_at: string | null;
+          /**
            * Where the person was when they ticked it, with the accuracy the
            * browser itself reported.
            *
@@ -609,6 +619,12 @@ export type Database = {
           /** Distinct people pooled across every space. Null = unlimited. */
           max_members: number | null;
           max_spaces: number | null;
+          /**
+           * How long attachments are kept before the file is expired. Null
+           * keeps them indefinitely — which is a thing a paid tier can offer.
+           * The submission record is never deleted either way.
+           */
+          evidence_retention_days: number | null;
           is_free: boolean;
           is_offerable: boolean;
           sort_order: number;
@@ -627,6 +643,7 @@ export type Database = {
           price_minor?: number;
           max_members?: number | null;
           max_spaces?: number | null;
+          evidence_retention_days?: number | null;
           is_offerable?: boolean;
         };
         Relationships: [];
