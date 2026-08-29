@@ -71,6 +71,9 @@ export async function createSchedule(_prev: ActionState, formData: FormData): Pr
     endDate: endDateRaw || null,
     timezone: formData.get('timezone'),
     assignmentMode: formData.get('assignmentMode'),
+    // Only present when "specific people" is chosen; the schema requires at
+    // least one in that case and ignores them otherwise.
+    assignees: formData.getAll('assignees').map(String).filter(Boolean),
   });
 
   if (!parsed.success) {
@@ -85,30 +88,35 @@ export async function createSchedule(_prev: ActionState, formData: FormData): Pr
   const user = await getUser();
   if (!user) redirect('/login');
 
-  const { data, error } = await supabase
-    .from('schedules')
-    .insert({
-      checklist_id: parsed.data.checklistId,
-      kind: parsed.data.kind,
-      config: parsed.data.config as never,
-      start_date: parsed.data.startDate,
-      end_date: parsed.data.endDate ?? null,
-      timezone: parsed.data.timezone,
-      // Only 'creator' or 'everyone' can be chosen here — see the schema.
-      assignment_mode: parsed.data.assignmentMode,
-      created_by: user.id,
-    })
-    .select('id')
-    .single();
+  /*
+   * One call, one transaction.
+   *
+   * Inserting the schedule and then its assignees over two requests is two
+   * transactions, and the deferred constraint fires at the end of the first —
+   * when the schedule names nobody. That is what previously made "specific
+   * people" impossible to offer at creation. The function writes both together,
+   * so the trigger sees a complete schedule, which is what deferring it was for.
+   */
+  const { data, error } = await supabase.rpc('create_schedule_with_assignees', {
+    p_checklist_id: parsed.data.checklistId,
+    p_kind: parsed.data.kind,
+    p_config: parsed.data.config as never,
+    p_start_date: parsed.data.startDate,
+    p_end_date: parsed.data.endDate ?? null,
+    p_timezone: parsed.data.timezone,
+    p_assignment_mode: parsed.data.assignmentMode,
+    p_assignees: parsed.data.assignees,
+  });
 
   if (error || !data) {
-    return { formError: `Could not create the schedule: ${error?.message ?? 'unknown error'}` };
+    return { formError: friendlyDatabaseError(error?.message ?? 'unknown error') };
   }
 
   // Generate this schedule's obligations straight away. Waiting for the nightly
   // job would leave a schedule that looks broken for up to 24 hours.
   const { error: matError } = await supabase.rpc('materialise_schedule', {
-    p_schedule_id: data.id,
+    // The function returns the new id directly, not a row.
+    p_schedule_id: data,
     p_horizon_days: 45,
   });
 

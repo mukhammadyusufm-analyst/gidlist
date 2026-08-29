@@ -233,7 +233,10 @@ export const ru = {
   'schedule.assignEveryoneNote':
     'Каждый активный участник получает свой, и список меняется вместе с составом.',
   'schedule.assignSpecific': 'Конкретные люди',
-  'schedule.assignSpecificNote': 'Добавьте человека ниже — и чек-лист перейдёт только к нему.',
+  'schedule.assignSpecificNote': 'Выберите ниже, кому. Каждый получит свой чек-лист.',
+  'schedule.noCandidates':
+    'В этом пространстве пока никого нет. Сначала пригласите людей в разделе «Участники».',
+  'schedule.pendingInvite': 'ещё не присоединился',
   'schedule.none': 'Расписаний пока нет. Пока его нет, заполнять никто не обязан.',
   'schedule.nextDates': 'Ближайшие даты',
   'schedule.noDates': 'В ближайшие 60 дней дат нет.',

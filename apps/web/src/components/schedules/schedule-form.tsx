@@ -2,15 +2,18 @@
 
 import { useActionState, useState } from 'react';
 import {
+  ASSIGNMENT_MODES,
   COMMON_TIMEZONES,
   MONTHS,
   SCHEDULE_KINDS,
   WEEKDAYS,
   toIsoDate,
+  type AssignmentMode,
   type ScheduleKind,
 } from '@app/core';
 
 import { createSchedule, type ActionState } from '@/lib/schedules/actions';
+import type { AssignCandidate } from '@/components/schedules/schedule-card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { FieldError, FormNotice } from '@/components/ui/field-error';
@@ -38,10 +41,33 @@ function today(): string {
   return toIsoDate(new Date());
 }
 
-export function ScheduleForm({ checklistId }: { checklistId: string }) {
+/** Kept beside the modes so a new one cannot be added without its wording. */
+const MODE_LABELS: Record<AssignmentMode, string> = {
+  creator: 'schedule.assignCreator',
+  everyone: 'schedule.assignEveryone',
+  specific: 'schedule.assignSpecific',
+};
+
+const MODE_NOTES: Record<AssignmentMode, string> = {
+  creator: 'schedule.assignCreatorNote',
+  everyone: 'schedule.assignEveryoneNote',
+  specific: 'schedule.assignSpecificNote',
+};
+
+export function ScheduleForm({
+  checklistId,
+  candidates,
+}: {
+  checklistId: string;
+  /** Everyone in the space, for the "specific people" case. */
+  candidates: AssignCandidate[];
+}) {
   const [state, formAction] = useActionState(createSchedule, initialState);
   const [kind, setKind] = useState<ScheduleKind>('daily');
   const [specificDates, setSpecificDates] = useState<string[]>(['']);
+  // Null until somebody picks, so nothing is chosen on their behalf — the whole
+  // point of asking.
+  const [assignmentMode, setAssignmentMode] = useState<AssignmentMode | null>(null);
   const { t } = useT();
 
   return (
@@ -213,7 +239,7 @@ export function ScheduleForm({ checklistId }: { checklistId: string }) {
         <legend className="mb-2 text-sm font-medium">{t('schedule.assignTo')}</legend>
 
         <div className="space-y-2">
-          {(['creator', 'everyone'] as const).map((mode) => (
+          {ASSIGNMENT_MODES.map((mode) => (
             <label
               key={mode}
               className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-[var(--color-input)] p-3 transition-colors hover:bg-[var(--color-accent)]"
@@ -222,20 +248,57 @@ export function ScheduleForm({ checklistId }: { checklistId: string }) {
                 type="radio"
                 name="assignmentMode"
                 value={mode}
+                checked={assignmentMode === mode}
+                onChange={() => setAssignmentMode(mode)}
                 className="mt-0.5 size-4"
                 required
               />
               <span className="text-sm">
-                {mode === 'creator' ? t('schedule.assignCreator') : t('schedule.assignEveryone')}
+                {t(MODE_LABELS[mode])}
                 <span className="mt-0.5 block text-xs text-[var(--color-muted-foreground)]">
-                  {mode === 'creator'
-                    ? t('schedule.assignCreatorNote')
-                    : t('schedule.assignEveryoneNote')}
+                  {t(MODE_NOTES[mode])}
                 </span>
               </span>
             </label>
           ))}
         </div>
+
+        {/* The names, in the same step rather than afterwards. Choosing
+            "specific people" and then being sent elsewhere to say who would
+            leave a schedule that claims named people and has none — which the
+            database refuses outright. */}
+        {assignmentMode === 'specific' ? (
+          <div className="mt-3 rounded-lg border border-[var(--color-input)] p-3">
+            {candidates.length === 0 ? (
+              <p className="text-sm text-[var(--color-muted-foreground)]">
+                {t('schedule.noCandidates')}
+              </p>
+            ) : (
+              <ul className="space-y-1.5">
+                {candidates.map((candidate) => (
+                  <li key={candidate.email}>
+                    <label className="flex cursor-pointer items-center gap-2.5 text-sm">
+                      <input
+                        type="checkbox"
+                        name="assignees"
+                        value={candidate.email}
+                        className="size-4"
+                      />
+                      <span className="min-w-0 truncate">
+                        {candidate.name}
+                        <span className="ml-1.5 text-xs text-[var(--color-muted-foreground)]">
+                          {candidate.email}
+                          {candidate.pending ? ` · ${t('schedule.pendingInvite')}` : ''}
+                        </span>
+                      </span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <FieldError messages={state.fieldErrors?.assignees} />
+          </div>
+        ) : null}
 
         <FieldError messages={state.fieldErrors?.assignmentMode} />
       </fieldset>

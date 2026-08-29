@@ -66,7 +66,7 @@ export default async function SchedulesPage({
           <p className="mt-1 mb-4 text-sm text-[var(--color-muted-foreground)]">
             {t('schedule.addIntro')}
           </p>
-          <ScheduleForm checklistId={checklist.id} />
+          <ScheduleForm checklistId={checklist.id} candidates={candidates} />
         </section>
       ) : null}
 

@@ -236,7 +236,11 @@ export const uz = {
   'schedule.assignEveryoneNote':
     'Har bir faol aʼzoga oʻzinikidan bittadan beriladi va roʻyxat kim qoʻshilib, kim chiqqaniga qarab yangilanadi.',
   'schedule.assignSpecific': 'Muayyan odamlar',
-  'schedule.assignSpecificNote': 'Quyida odam qoʻshsangiz, faqat oʻshalarga oʻtadi.',
+  'schedule.assignSpecificNote':
+    'Quyida kimligini tanlang. Har biriga toʻldirish uchun oʻzinikidan beriladi.',
+  'schedule.noCandidates':
+    'Bu makonda hozircha boshqa hech kim yoʻq. Avval «Aʼzolar» boʻlimidan odam taklif qiling.',
+  'schedule.pendingInvite': 'hali qoʻshilmagan',
   'schedule.none':
     'Hozircha jadval yoʻq. U yaratilmaguncha hech kimdan toʻldirish soʻralmaydi.',
   'schedule.nextDates': 'Keyingi sanalar',

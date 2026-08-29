@@ -819,6 +819,27 @@ export type Database = {
         Args: { p_schedule_id: string; p_horizon_days?: number };
         Returns: number;
       };
+      /**
+       * Writes the schedule and its assignees in one transaction, so a schedule
+       * created as `specific` names somebody by the time the deferred
+       * constraint is checked. Two separate writes are two transactions, and
+       * the first would be refused for naming nobody.
+       *
+       * Returns the new schedule's id.
+       */
+      create_schedule_with_assignees: {
+        Args: {
+          p_checklist_id: string;
+          p_kind: string;
+          p_config: Json;
+          p_start_date: string;
+          p_end_date: string | null;
+          p_timezone: string;
+          p_assignment_mode: AssignmentMode;
+          p_assignees?: string[];
+        };
+        Returns: string;
+      };
       start_submission: { Args: { p_submission_id: string }; Returns: string };
       submit_submission: { Args: { p_submission_id: string }; Returns: undefined };
       generate_occurrences: {

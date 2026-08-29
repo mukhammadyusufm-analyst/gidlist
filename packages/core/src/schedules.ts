@@ -96,24 +96,28 @@ export const createScheduleSchema = z
     endDate: isoDate.optional().nullable(),
     timezone: z.string().min(1).max(60),
     /*
-     * Only the two modes that are valid at creation, and required with no
-     * default — a default would recreate the thing this exists to remove: an
-     * ownership decision nobody made.
-     *
-     * `specific` is absent because a schedule is written before its assignees
-     * exist, so a schedule created as `specific` would name nobody at the
-     * moment the constraint is checked. Choosing named people is done by adding
-     * them, which switches the mode. That also keeps the interface honest:
-     * there is no state where it says "specific people" and means nobody.
+     * Required, with no default. A default would recreate the thing this exists
+     * to remove: an ownership decision nobody made.
      */
-    assignmentMode: z.enum(['creator', 'everyone'], {
+    assignmentMode: z.enum(ASSIGNMENT_MODES, {
       error: 'Choose who this checklist is for.',
     }),
+
+    /**
+     * Only meaningful for `specific`, and required there — checked by the
+     * refinement below rather than by the field, so the message lands on the
+     * list instead of on a mode the person chose correctly.
+     */
+    assignees: z.array(z.email({ error: 'Enter a valid email address.' })).default([]),
   })
   .and(scheduleConfigSchema)
   .refine((v) => !v.endDate || v.endDate >= v.startDate, {
     error: 'The end date cannot be before the start date.',
     path: ['endDate'],
+  })
+  .refine((v) => v.assignmentMode !== 'specific' || v.assignees.length > 0, {
+    error: 'Choose at least one person, or assign this to everyone.',
+    path: ['assignees'],
   });
 
 export const addAssigneeSchema = z.object({
