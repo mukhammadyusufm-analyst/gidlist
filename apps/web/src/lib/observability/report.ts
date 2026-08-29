@@ -83,7 +83,39 @@ function shouldNotify(signature: string): boolean {
 }
 
 export function isErrorWebhookConfigured(): boolean {
-  return Boolean(process.env.ERROR_WEBHOOK_URL);
+  return Boolean(process.env.ERROR_WEBHOOK_URL || process.env.ALERT_EMAIL);
+}
+
+/**
+ * Email the report, when `ALERT_EMAIL` is set.
+ *
+ * Sent directly rather than through `/api/alerts`, even though that endpoint
+ * exists and would work. The endpoint is for the database, which has no other
+ * way out. Routing the application's own errors through an application route
+ * means that when the app is what is broken, the path carrying the alarm is the
+ * broken thing — and an error raised *inside* `/api/alerts` would be reported by
+ * posting to `/api/alerts`.
+ */
+async function emailReport(report: ErrorReport, lines: string[]): Promise<void> {
+  const to = process.env.ALERT_EMAIL;
+  if (!to) return;
+
+  // Imported here rather than at module scope: this file is pulled in by the
+  // instrumentation hook on every server start, and the email module reads
+  // configuration that a deployment without email need not have.
+  const { sendEmail, isEmailConfigured } = await import('@/lib/email/send');
+  if (!isEmailConfigured()) return;
+
+  const body = lines.join('\n');
+  await sendEmail({
+    to,
+    subject: `Gidlist error: ${report.message.slice(0, 120)}`,
+    text: body,
+    html: `<pre style="font:14px/1.5 ui-monospace,monospace;white-space:pre-wrap">${body.replace(
+      /[<>&]/g,
+      (c) => `&#${c.charCodeAt(0)};`,
+    )}</pre>`,
+  });
 }
 
 export async function reportError(report: ErrorReport): Promise<void> {
@@ -99,7 +131,8 @@ export async function reportError(report: ErrorReport): Promise<void> {
     );
 
     const webhook = process.env.ERROR_WEBHOOK_URL;
-    if (!webhook) return;
+    const email = process.env.ALERT_EMAIL;
+    if (!webhook && !email) return;
 
     // Grouped by where and what, not by the full message: an error carrying an
     // id would otherwise defeat the cooldown by looking new every time.
@@ -112,7 +145,13 @@ export async function reportError(report: ErrorReport): Promise<void> {
       report.path ? `path: ${report.path}` : null,
       report.kind ? `where: ${report.kind}` : null,
       report.digest ? `digest: ${report.digest}` : null,
-    ].filter(Boolean);
+      // A type guard rather than `filter(Boolean)`, which does not narrow away
+      // the nulls and leaves the array unusable as `string[]`.
+    ].filter((line): line is string => line !== null);
+
+    await emailReport(report, lines);
+
+    if (!webhook) return;
 
     await fetch(webhook, {
       method: 'POST',

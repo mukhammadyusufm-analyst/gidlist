@@ -27,6 +27,7 @@ import {
   deleteGroup,
   deleteItem,
   updateItem,
+  moveItemToGroup,
   renameGroup,
   reorderGroups,
   reorderItems,
@@ -34,12 +35,22 @@ import {
 import type { ChecklistItem } from '@/lib/supabase/database.types';
 import type { ActionState } from '@/lib/checklists/actions';
 import type { GroupWithItems } from '@/lib/checklists/queries';
+import { locate, reseat } from '@/lib/checklists/tree';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FormNotice } from '@/components/ui/field-error';
 import { useT } from '@/components/i18n/provider';
 
 type Item = ItemNode<ChecklistItem>;
+
+/**
+ * The depth of a top-level item.
+ *
+ * One, not zero: `set_checklist_item_depth` in the database assigns 1 to an item
+ * with no parent, and this optimistic copy has to agree with it or the tree
+ * flickers to a different shape and back on every move.
+ */
+const ROOT_DEPTH = 1;
 
 /**
  * Shared drag sensors.
@@ -82,12 +93,36 @@ export function ChecklistBuilder({
     (_current, next: GroupWithItems[]) => next,
   );
 
-  function handleGroupDragEnd(event: DragEndEvent) {
+  /**
+   * One context for the whole builder, and every drag ends here.
+   *
+   * It used to be one context per sibling list, which is why an item could never
+   * leave its section: each list was a separate drag world with no knowledge of
+   * the others, so there was no drop target to aim at. dnd-kit does not nest
+   * contexts usefully, so the fix is to have exactly one and route by what is
+   * being dragged.
+   */
+  function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    const oldIndex = optimisticGroups.findIndex((g) => g.id === active.id);
-    const newIndex = optimisticGroups.findIndex((g) => g.id === over.id);
+    if (active.data.current?.type === 'group') {
+      moveGroup(String(active.id), String(over.id));
+    } else {
+      moveItem(String(active.id), String(over.id));
+    }
+  }
+
+  function moveGroup(activeId: string, overId: string) {
+    // A section dropped onto an item counts as dropping onto that item's
+    // section, rather than doing nothing and feeling broken.
+    const targetId = optimisticGroups.some((g) => g.id === overId)
+      ? overId
+      : locate(optimisticGroups, overId)?.groupId;
+    if (!targetId || targetId === activeId) return;
+
+    const oldIndex = optimisticGroups.findIndex((g) => g.id === activeId);
+    const newIndex = optimisticGroups.findIndex((g) => g.id === targetId);
     if (oldIndex < 0 || newIndex < 0) return;
 
     const next = arrayMove(optimisticGroups, oldIndex, newIndex);
@@ -101,13 +136,67 @@ export function ChecklistBuilder({
     });
   }
 
+  function moveItem(activeId: string, overId: string) {
+    // Cloned so the handlers can splice arrays directly. useOptimistic replaces
+    // the whole tree with the server's copy when the transition settles, so this
+    // is a throwaway that only has to survive until then.
+    const next = structuredClone(optimisticGroups) as GroupWithItems[];
+
+    const from = locate(next, activeId);
+    if (!from) return;
+
+    const droppedOnSection = next.find((g) => g.id === overId);
+    const to = droppedOnSection ? null : locate(next, overId);
+
+    // Dropped on a sibling: a plain reorder, which is what the old behaviour
+    // did and still the common case.
+    if (to && to.groupId === from.groupId && to.parentId === from.parentId) {
+      const reordered = arrayMove(from.siblings, from.index, to.index);
+      from.siblings.length = 0;
+      from.siblings.push(...reordered);
+
+      const orderedIds = from.siblings.map((i) => i.id);
+      startTransition(async () => {
+        setOptimisticGroups(next);
+        await reorderItems(versionId, orderedIds);
+      });
+      return;
+    }
+
+    /*
+     * Everything else is a move into another section, landing at its top level.
+     *
+     * Dropping onto a *nested* item is deliberately ignored: that gesture reads
+     * as "make this a sub-item of that", which is a nesting change, and nesting
+     * has a depth limit and a subtree to re-check. Sub-items are still created
+     * through the Add sub-item control, so nothing is unreachable — the drag
+     * just declines to guess.
+     */
+    const targetList = droppedOnSection ? droppedOnSection.items : to?.siblings;
+    const targetGroupId = droppedOnSection ? droppedOnSection.id : to?.groupId;
+    if (!targetList || !targetGroupId) return;
+    if (!droppedOnSection && to?.parentId !== null) return;
+
+    // Already exactly where it would land.
+    if (from.groupId === targetGroupId && from.parentId === null && droppedOnSection) return;
+
+    from.siblings.splice(from.index, 1);
+    from.item.parent_item_id = null;
+    reseat(from.item, ROOT_DEPTH, targetGroupId);
+
+    const insertAt = droppedOnSection ? targetList.length : targetList.findIndex((i) => i.id === overId);
+    targetList.splice(insertAt < 0 ? targetList.length : insertAt, 0, from.item);
+
+    const orderedIds = targetList.map((i) => i.id);
+    startTransition(async () => {
+      setOptimisticGroups(next);
+      await moveItemToGroup(versionId, activeId, targetGroupId, orderedIds);
+    });
+  }
+
   return (
     <div className="space-y-6">
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleGroupDragEnd}
-      >
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext
           items={optimisticGroups.map((g) => g.id)}
           strategy={verticalListSortingStrategy}
@@ -142,6 +231,9 @@ function SortableGroup({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: group.id,
     disabled: !editable,
+    // Read in handleDragEnd. Groups and items now share one context, so what is
+    // being dragged has to be stated rather than guessed from the id.
+    data: { type: 'group' },
   });
   const { t } = useT();
 
@@ -229,7 +321,14 @@ function GroupTitleForm({ groupId, title }: { groupId: string; title: string }) 
   );
 }
 
-/** One level of siblings. Recurses for sub-items. */
+/**
+ * One level of siblings. Recurses for sub-items.
+ *
+ * Presentational now: it registers its ids as a sortable list, and the single
+ * DndContext in ChecklistBuilder decides what a drop means. It previously owned
+ * a context and its own optimistic state, which is precisely what confined a
+ * drag to one list — and it also meant two sources of truth for the same items.
+ */
 function ItemList({
   versionId,
   items,
@@ -239,48 +338,14 @@ function ItemList({
   items: Item[];
   editable: boolean;
 }) {
-  const sensors = useDragSensors();
-  const [, startTransition] = useTransition();
-  const [optimisticItems, setOptimisticItems] = useOptimistic(
-    items,
-    (_current, next: Item[]) => next,
-  );
-
-  function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-
-    const oldIndex = optimisticItems.findIndex((i) => i.id === active.id);
-    const newIndex = optimisticItems.findIndex((i) => i.id === over.id);
-    if (oldIndex < 0 || newIndex < 0) return;
-
-    const next = arrayMove(optimisticItems, oldIndex, newIndex);
-
-    startTransition(async () => {
-      setOptimisticItems(next);
-      await reorderItems(
-        versionId,
-        next.map((i) => i.id),
-      );
-    });
-  }
-
   return (
-    // Each sibling list owns its own context: a level-3 sub-task has no valid
-    // drop position among top-level items, and nesting contexts makes both
-    // behave erratically.
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-      <SortableContext
-        items={optimisticItems.map((i) => i.id)}
-        strategy={verticalListSortingStrategy}
-      >
-        <ul className="space-y-1">
-          {optimisticItems.map((item) => (
-            <SortableItem key={item.id} versionId={versionId} item={item} editable={editable} />
-          ))}
-        </ul>
-      </SortableContext>
-    </DndContext>
+    <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+      <ul className="space-y-1">
+        {items.map((item) => (
+          <SortableItem key={item.id} versionId={versionId} item={item} editable={editable} />
+        ))}
+      </ul>
+    </SortableContext>
   );
 }
 
@@ -296,6 +361,7 @@ function SortableItem({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
     disabled: !editable,
+    data: { type: 'item' },
   });
 
   const [showAdd, setShowAdd] = useState(false);

@@ -150,5 +150,23 @@ async function cleanup(request: NextRequest) {
     .select('id', { count: 'exact', head: true })
     .is('deleted_at', null);
 
+  /*
+   * Tell the database this ran. `check_job_health()` watches pg_cron jobs by
+   * reading `cron.job_run_details`, and this one runs on Vercel, so without a
+   * heartbeat it is invisible to the only thing that would notice it stopping.
+   *
+   * Deliberately last, and deliberately not fatal. Only a run that got this far
+   * counts as a success, and a failure to record that is worth logging but not
+   * worth turning a completed cleanup into a 500 that makes the scheduler retry
+   * work already done.
+   */
+  const { error: heartbeatError } = await supabase.rpc('record_job_heartbeat', {
+    p_jobname: 'storage-cleanup',
+  });
+
+  if (heartbeatError) {
+    console.error('[storage-cleanup] could not record the heartbeat:', heartbeatError.message);
+  }
+
   return NextResponse.json({ deleted, remaining: count ?? 0 });
 }

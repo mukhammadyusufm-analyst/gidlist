@@ -775,6 +775,11 @@ export type Database = {
       // anything administrative". Prefer has_platform_capability for narrower
       // questions — widening this would give a translator reach it should not
       // have.
+      // Reports that a job running outside Postgres finished successfully, so
+      // check_job_health() can judge it the way it judges a pg_cron job. Execute
+      // is revoked from every ordinary role: forging a heartbeat silences the
+      // alarm for the job it names.
+      record_job_heartbeat: { Args: { p_jobname: string }; Returns: undefined };
       is_platform_admin: { Args: Record<string, never>; Returns: boolean };
       has_platform_capability: { Args: { p_capability: string }; Returns: boolean };
       my_platform_capabilities: { Args: Record<string, never>; Returns: string[] };

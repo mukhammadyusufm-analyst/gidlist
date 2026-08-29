@@ -106,7 +106,7 @@ function buildCsp(nonce: string): string {
  * checks its own credential and refuses without it. Nothing belongs on this list
  * unless it does that first.
  */
-const SELF_AUTHENTICATING_ROUTES = ['/api/cron'];
+const SELF_AUTHENTICATING_ROUTES = ['/api/cron', '/api/alerts'];
 
 function isSelfAuthenticating(pathname: string) {
   return SELF_AUTHENTICATING_ROUTES.some(

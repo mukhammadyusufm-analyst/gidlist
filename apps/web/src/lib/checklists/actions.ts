@@ -266,6 +266,115 @@ export async function renameGroup(_prev: ActionState, formData: FormData): Promi
   return {};
 }
 
+/**
+ * Move an item into a different section, and put the target list in order.
+ *
+ * WHY THIS IS NOT `reorderItems` WITH ANOTHER ARGUMENT. An item is the root of a
+ * subtree, and three things have to stay true afterwards:
+ *
+ *   - its descendants move with it. `group_id` is not nullable and is what
+ *     decides where a row renders, so a child left behind in the old section
+ *     would appear there detached from its parent — or, once the parent is
+ *     re-parented, render nowhere at all. A checklist that silently loses a task
+ *     is the one failure this product cannot have.
+ *   - depth stays consistent. The item lands at the top level of its new
+ *     section, which is depth 1 — not 0 — and every descendant follows. The
+ *     database trigger derives all of it; nothing here writes `depth`.
+ *   - `parent_item_id` is cleared on the moved item only. Its children still
+ *     point at it, which is what preserves the subtree.
+ *
+ * Dropping *into* another item — changing nesting by drag — is deliberately not
+ * supported here. That needs drop targets that mean "inside this" rather than
+ * "next to this", and a depth check against MAX_ITEM_DEPTH for the whole
+ * subtree. Sub-items are still created and nested through the interface.
+ */
+export async function moveItemToGroup(
+  versionId: string,
+  itemId: string,
+  targetGroupId: string,
+  orderedIds: string[],
+): Promise<void> {
+  const supabase = await createClient();
+
+  // The whole version, because the subtree is only discoverable by walking
+  // parent links and the moved item may be nested several levels down.
+  const { data: all } = await supabase
+    .from('checklist_items')
+    .select('id, parent_item_id, depth')
+    .eq('version_id', versionId);
+
+  if (!all) return;
+
+  const moved = all.find((row) => row.id === itemId);
+  if (!moved) return;
+
+  const childrenOf = new Map<string, typeof all>();
+  for (const row of all) {
+    if (!row.parent_item_id) continue;
+    const siblings = childrenOf.get(row.parent_item_id) ?? [];
+    siblings.push(row);
+    childrenOf.set(row.parent_item_id, siblings);
+  }
+
+  // Breadth-first rather than recursive: the tree is shallow, and an explicit
+  // queue cannot blow the stack if the data ever contains a cycle.
+  const descendants: typeof all = [];
+  const queue = [itemId];
+  const seen = new Set<string>([itemId]);
+  while (queue.length) {
+    const current = queue.shift() as string;
+    for (const child of childrenOf.get(current) ?? []) {
+      if (seen.has(child.id)) continue;
+      seen.add(child.id);
+      descendants.push(child);
+      queue.push(child.id);
+    }
+  }
+
+  // Clearing the parent is what re-seats it: `set_checklist_item_depth` fires on
+  // any update that assigns `parent_item_id` and sets depth to 1 for a root.
+  // Depth is never written from here — the trigger owns it.
+  await supabase
+    .from('checklist_items')
+    .update({ group_id: targetGroupId, parent_item_id: null })
+    .eq('id', itemId)
+    .eq('version_id', versionId);
+
+  /*
+   * Then touch every descendant, parents before children, assigning each its own
+   * unchanged `parent_item_id`.
+   *
+   * That looks like a no-op and is not. `update of parent_item_id` fires on the
+   * column being assigned, not on its value changing, so this re-runs the
+   * trigger — which reads the parent's *already updated* row and copies down
+   * both the new depth and the new `group_id`. Without it the subtree keeps the
+   * depth it had three levels down in another section.
+   *
+   * Sequential on purpose: each row reads its parent, so a parent that has not
+   * been written yet would hand its child stale values. `descendants` is in
+   * breadth-first order, which is exactly parents-before-children.
+   */
+  for (const row of descendants) {
+    await supabase
+      .from('checklist_items')
+      .update({ parent_item_id: row.parent_item_id })
+      .eq('id', row.id)
+      .eq('version_id', versionId);
+  }
+
+  await Promise.all(
+    orderedIds.map((id, index) =>
+      supabase
+        .from('checklist_items')
+        .update({ position: (index + 1) * POSITION_STEP })
+        .eq('id', id)
+        .eq('version_id', versionId),
+    ),
+  );
+
+  revalidatePath('/dashboard/boards/[slug]/checklists/[id]', 'page');
+}
+
 /** Persist a new section order after a drag. Same approach as reorderItems. */
 export async function reorderGroups(versionId: string, orderedIds: string[]): Promise<void> {
   const supabase = await createClient();
