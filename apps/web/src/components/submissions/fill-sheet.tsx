@@ -186,7 +186,10 @@ function ItemRow({
   const answerId = item.answer?.id;
   const interactive = Boolean(answerId) && !readOnly && !hasChildren;
 
-  const needsLocation = item.location_lat !== null && item.location_radius_m !== null;
+  // Enabled means "record where this was ticked". Required means "and refuse
+  // if it is not inside the radius". Only the second one may stop anybody.
+  const recordsLocation = item.location_enabled;
+  const locationRequired = item.location_enabled && item.location_required;
 
   /**
    * Read the browser's position, for items that are pinned to a place.
@@ -211,7 +214,25 @@ function ItemRow({
             longitude: pos.coords.longitude,
             accuracy: pos.coords.accuracy,
           }),
-        () => reject(new Error(t('fill.locationDenied'))),
+        /*
+         * The three failures need three different actions, so they get three
+         * different messages. "Could not read your location" told somebody
+         * nothing about whether to change a setting, walk outside, or wait.
+         *
+         * PERMISSION_DENIED is the one that catches people on an installed app:
+         * a PWA has no entry of its own in Android's app permissions, so the
+         * setting lives under Chrome's per-site permissions for this address,
+         * not under a Gidlist app.
+         */
+        (err) => {
+          if (err.code === err.PERMISSION_DENIED) {
+            reject(new Error(t('fill.locationDenied')));
+          } else if (err.code === err.TIMEOUT) {
+            reject(new Error(t('fill.locationTimeout')));
+          } else {
+            reject(new Error(t('fill.locationUnavailable')));
+          }
+        },
         { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 },
       );
     });
@@ -224,15 +245,26 @@ function ItemRow({
     startTransition(async () => {
       let position: TickPosition | undefined;
 
-      // Only when ticking, and only when the item asks for it. Reading a
-      // position to *un*-tick something would prompt for permission to record
-      // where somebody was when they changed their mind.
-      if (!checked && needsLocation) {
+      /*
+       * Only when ticking, and only when the item asks for it. Reading a
+       * position to *un*-tick something would prompt for permission to record
+       * where somebody was when they changed their mind.
+       *
+       * THE FAILURE IS ONLY FATAL WHEN THE LOCATION IS ENFORCED. Enabled but not
+       * required means "record it if you can" — so a denied prompt, a device
+       * with no fix, or a basement leaves the position null and the tick goes
+       * ahead. Blocking there was the bug: it made a switch labelled optional
+       * behave exactly like the mandatory one.
+       */
+      if (!checked && recordsLocation) {
         try {
           position = await readPosition();
         } catch (e) {
-          onError(e instanceof Error ? e.message : t('fill.locationDenied'));
-          return;
+          if (locationRequired) {
+            onError(e instanceof Error ? e.message : t('fill.locationDenied'));
+            return;
+          }
+          // Not required: proceed with no reading rather than stopping the work.
         }
       }
 

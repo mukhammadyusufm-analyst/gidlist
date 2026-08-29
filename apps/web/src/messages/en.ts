@@ -326,8 +326,11 @@ export const en = {
     '{count} not ticked. You can still submit — they will be recorded as not done.',
   'fill.autoCompletes': 'Completes when all sub-tasks are ticked',
   'fill.addNote': 'Add a note',
+  'fill.locationTimeout': 'Could not get a location fix in time. Step outside or nearer a window and try again.',
+  'fill.locationUnavailable': 'No location fix is available here. Try again in a moment, or nearer a window.',
   'fill.locationUnsupported': 'This device cannot report its location.',
-  'fill.locationDenied': 'Location is needed to tick this item. Allow location access and try again.',
+  'fill.locationDenied':
+    'Location access is blocked for this site. An installed app has no entry of its own in your phone settings — open Chrome, go to Settings, Site settings, Location, and allow it for this address.',
   'fill.locationNeeded': 'Tick this at its location',
   'fill.locationRecorded': 'Location recorded, accurate to about {m} m',
   'fill.evidenceAttached': 'Photo attached',

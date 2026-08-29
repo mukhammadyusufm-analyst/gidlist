@@ -10,6 +10,26 @@ const nextConfig: NextConfig = {
   transpilePackages: ['@app/core'],
 
   /**
+   * Server actions accept a 1 MB body by default, and a photograph from a phone
+   * camera is 2–5 MB.
+   *
+   * That default silently defeated the whole attachment feature: the upload
+   * never reached the action, so none of its own checks ran and the person
+   * filling in a checklist got a bare "a server error occurred" rather than
+   * anything about the file. The limit has to sit above the 10 MB the action and
+   * the storage bucket allow, or the outer boundary keeps rejecting things the
+   * inner ones were written to explain.
+   *
+   * 12 MB, not larger. This is the ceiling on anything posted to a server
+   * action, so raising it further would raise it for every form in the app.
+   */
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '12mb',
+    },
+  },
+
+  /**
    * In a pnpm workspace the app is not the repo root. Without this, standalone
    * output traces the wrong directory and Vercel drops files it actually needs.
    */

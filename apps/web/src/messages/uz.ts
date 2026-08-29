@@ -330,8 +330,11 @@ export const uz = {
     '{count} ta belgilanmagan. Baribir topshirishingiz mumkin — ular bajarilmagan deb yoziladi.',
   'fill.autoCompletes': 'Barcha ichki bandlar belgilanganda avtomatik bajariladi',
   'fill.addNote': 'Izoh qoʻshish',
+  'fill.locationTimeout': 'Joylashuvni vaqtida aniqlab boʻlmadi. Tashqariga yoki deraza yoniga chiqib qayta urinib koʻring.',
+  'fill.locationUnavailable': 'Bu yerda joylashuvni aniqlab boʻlmadi. Birozdan soʻng yoki deraza yonida qayta urinib koʻring.',
   'fill.locationUnsupported': 'Bu qurilma joylashuvini aniqlay olmaydi.',
-  'fill.locationDenied': 'Bu bandni belgilash uchun joylashuv kerak. Ruxsat bering va qayta urinib koʻring.',
+  'fill.locationDenied':
+    'Bu sayt uchun joylashuvga ruxsat berilmagan. Oʻrnatilgan ilovaning telefon sozlamalarida alohida yozuvi boʻlmaydi — Chrome’ni oching, Sozlamalar, Sayt sozlamalari, Joylashuv boʻlimidan shu manzilga ruxsat bering.',
   'fill.locationNeeded': 'Buni oʻz joyida belgilang',
   'fill.locationRecorded': 'Joylashuv yozildi, taxminan {m} m aniqlik bilan',
   'fill.evidenceAttached': 'Surat biriktirilgan',
