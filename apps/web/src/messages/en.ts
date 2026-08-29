@@ -240,6 +240,7 @@ export const en = {
   'schedule.assignSpecificNote': 'Choose who below. Each of them gets their own to fill in.',
   'schedule.noCandidates': 'Nobody else is in this space yet. Invite people from Members first.',
   'schedule.pendingInvite': 'not joined yet',
+  'schedule.changeTo': 'Change to',
   'schedule.none': 'No schedules yet. Until one exists, nobody is asked to fill this in.',
   'schedule.nextDates': 'Next dates',
   'schedule.noDates': 'No dates in the next 60 days.',

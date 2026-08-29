@@ -241,6 +241,7 @@ export const uz = {
   'schedule.noCandidates':
     'Bu makonda hozircha boshqa hech kim yoʻq. Avval «Aʼzolar» boʻlimidan odam taklif qiling.',
   'schedule.pendingInvite': 'hali qoʻshilmagan',
+  'schedule.changeTo': 'Oʻzgartirish:',
   'schedule.none':
     'Hozircha jadval yoʻq. U yaratilmaguncha hech kimdan toʻldirish soʻralmaydi.',
   'schedule.nextDates': 'Keyingi sanalar',

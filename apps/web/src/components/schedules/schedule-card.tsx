@@ -158,35 +158,42 @@ export function ScheduleCard({
           accept the mode. These two buttons are the way *out* of specific, and
           without them removing your last assignee would be a dead end.
         */}
-        {canManage ? (
-          <form action={modeAction} className="mb-3 flex flex-wrap items-center gap-2">
-            <input type="hidden" name="scheduleId" value={schedule.id} />
-            {(['creator', 'everyone'] as const).map((mode) => (
-              <Button
-                key={mode}
-                type="submit"
-                name="mode"
-                value={mode}
-                size="sm"
-                variant={schedule.assignment_mode === mode ? 'primary' : 'outline'}
-                disabled={schedule.assignment_mode === mode}
-              >
-                {mode === 'creator' ? t('schedule.assignCreator') : t('schedule.assignEveryone')}
-              </Button>
-            ))}
-            {schedule.assignment_mode === 'specific' ? (
-              <span className="text-xs text-[var(--color-muted-foreground)]">
-                {t('schedule.assignSpecific')}
-              </span>
-            ) : null}
-          </form>
-        ) : null}
+        {/* The current mode as a statement, then only the modes it can be
+            changed *to* as buttons. Rendering the current one as a disabled
+            button alongside the others made it read as unavailable rather than
+            as the answer.
 
+            Switching to specific people is not a button: it happens by naming
+            somebody below, which is also the only thing the database will
+            accept. These are the way out of specific. */}
         <p className="text-xs font-medium text-[var(--color-muted-foreground)]">
           {t('schedule.assignedTo')}{' '}
-          {schedule.assignment_mode === 'everyone' ? t('schedule.anyoneInSpace') : null}
-          {schedule.assignment_mode === 'creator' ? t('schedule.assignCreator') : null}
+          <span className="text-[var(--color-foreground)]">
+            {t(
+              schedule.assignment_mode === 'creator'
+                ? 'schedule.assignCreator'
+                : schedule.assignment_mode === 'everyone'
+                  ? 'schedule.anyoneInSpace'
+                  : 'schedule.assignSpecific',
+            )}
+          </span>
         </p>
+
+        {canManage ? (
+          <form action={modeAction} className="mt-2 mb-3 flex flex-wrap items-center gap-2">
+            <input type="hidden" name="scheduleId" value={schedule.id} />
+            <span className="text-xs text-[var(--color-muted-foreground)]">
+              {t('schedule.changeTo')}
+            </span>
+            {(['creator', 'everyone'] as const)
+              .filter((mode) => mode !== schedule.assignment_mode)
+              .map((mode) => (
+                <Button key={mode} type="submit" name="mode" value={mode} size="sm" variant="outline">
+                  {mode === 'creator' ? t('schedule.assignCreator') : t('schedule.assignEveryone')}
+                </Button>
+              ))}
+          </form>
+        ) : null}
 
         {schedule.assignees.length > 0 ? (
           <ul className="mt-2 space-y-1">

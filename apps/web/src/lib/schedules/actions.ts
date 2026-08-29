@@ -346,6 +346,29 @@ export async function setAssignmentMode(
 
   const supabase = await createClient();
 
+  /*
+   * THE MODE FIRST, THEN THE NAMES. The order is the whole thing.
+   *
+   * Clearing the names first commits a schedule that still says 'specific' and
+   * names nobody — which is precisely what the deferred trigger refuses. That
+   * made these buttons impossible to use, and they are the only way out of
+   * 'specific', so the error told people to do the thing they were doing.
+   *
+   * Reversed, each transaction is valid on its own: the update leaves a
+   * schedule whose mode does not require names, and the delete then has nothing
+   * to violate.
+   *
+   * Between the two the schedule is 'everyone' with names still attached. That
+   * is harmless — the materialiser branches on the mode and never reads the
+   * list for anything but 'specific'.
+   */
+  const { error } = await supabase
+    .from('schedules')
+    .update({ assignment_mode: mode })
+    .eq('id', scheduleId);
+
+  if (error) return { formError: friendlyDatabaseError(error.message) };
+
   // Names left behind on a schedule that no longer uses them would reappear the
   // moment somebody switched back, having quietly survived a decision that
   // looked like it removed them.
@@ -355,13 +378,6 @@ export async function setAssignmentMode(
     .eq('schedule_id', scheduleId);
 
   if (clearError) return { formError: `Could not update: ${clearError.message}` };
-
-  const { error } = await supabase
-    .from('schedules')
-    .update({ assignment_mode: mode })
-    .eq('id', scheduleId);
-
-  if (error) return { formError: friendlyDatabaseError(error.message) };
 
   await supabase.rpc('materialise_schedule', {
     p_schedule_id: scheduleId,

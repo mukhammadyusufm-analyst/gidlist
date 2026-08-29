@@ -237,6 +237,7 @@ export const ru = {
   'schedule.noCandidates':
     'В этом пространстве пока никого нет. Сначала пригласите людей в разделе «Участники».',
   'schedule.pendingInvite': 'ещё не присоединился',
+  'schedule.changeTo': 'Изменить на:',
   'schedule.none': 'Расписаний пока нет. Пока его нет, заполнять никто не обязан.',
   'schedule.nextDates': 'Ближайшие даты',
   'schedule.noDates': 'В ближайшие 60 дней дат нет.',
