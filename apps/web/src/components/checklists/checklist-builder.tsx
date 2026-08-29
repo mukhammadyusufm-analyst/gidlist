@@ -1,6 +1,6 @@
 'use client';
 
-import { useOptimistic, useRef, useState, useTransition } from 'react';
+import { useActionState, useOptimistic, useRef, useState, useTransition } from 'react';
 import {
   DndContext,
   KeyboardSensor,
@@ -297,6 +297,7 @@ function SortableItem({
   });
 
   const [showAdd, setShowAdd] = useState(false);
+  const [evidenceState, evidenceAction] = useActionState(updateItem, {});
   const { t } = useT();
   const canNest = canNestUnder(item.depth);
 
@@ -338,12 +339,20 @@ function SortableItem({
               `updateItem` validates the whole item; sending only the evidence
               would blank the title.
             */}
-            <form action={async (fd: FormData) => void (await updateItem({}, fd))}>
+            {/* The result is kept, not discarded. Every other form in this
+                builder throws it away with `void (await …)`, which is why a
+                failed save here looked like the selector silently snapping back
+                to "No attachment" — the write was refused and nothing said so. */}
+            <form action={evidenceAction}>
               <input type="hidden" name="itemId" value={item.id} />
               <input type="hidden" name="title" value={item.title} />
               <input type="hidden" name="description" value={item.description ?? ''} />
               <select
                 name="evidence"
+                // Keyed on the saved value so a refused save visibly reverts
+                // rather than leaving the control showing something the
+                // database does not hold.
+                key={item.evidence}
                 defaultValue={item.evidence}
                 onChange={(e) => e.currentTarget.form?.requestSubmit()}
                 aria-label={t('checklist.evidenceLabel')}
@@ -373,6 +382,12 @@ function SortableItem({
           </div>
         ) : null}
       </div>
+
+      {evidenceState.formError ? (
+        <p className="px-2 pb-2 text-xs text-[var(--color-destructive)]">
+          {evidenceState.formError}
+        </p>
+      ) : null}
 
       {item.children.length > 0 || showAdd ? (
         // Indentation is the only cue for nesting, so it has to read clearly
