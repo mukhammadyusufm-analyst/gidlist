@@ -38,6 +38,22 @@ const BATCH = 200;
 
 export async function GET(request: NextRequest) {
   /*
+   * Everything below runs unattended at three in the morning, and the only
+   * person who ever looks is someone reading logs after the fact. A bare 500
+   * tells them nothing, so every failure path says why in the log as well as in
+   * the response — the response body is not retained anywhere.
+   */
+  try {
+    return await cleanup(request);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('[storage-cleanup] threw:', message);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+async function cleanup(request: NextRequest) {
+  /*
    * Vercel Cron sends `Authorization: Bearer <CRON_SECRET>` when that variable
    * is set. Without the check this is a public endpoint that deletes files.
    *
@@ -66,7 +82,8 @@ export async function GET(request: NextRequest) {
     .limit(BATCH);
 
   if (readError) {
-    return NextResponse.json({ error: readError.message }, { status: 500 });
+    console.error('[storage-cleanup] could not read the queue:', readError.message, readError.code);
+    return NextResponse.json({ error: readError.message, code: readError.code }, { status: 500 });
   }
 
   if (!pending?.length) {
@@ -94,6 +111,7 @@ export async function GET(request: NextRequest) {
        * failing stays visible in the queue with its reason attached, instead of
        * disappearing or being retried forever in silence.
        */
+      console.error(`[storage-cleanup] bucket "${bucket}" refused the delete:`, error.message);
       await supabase
         .from('storage_cleanup_queue')
         .update({ last_error: error.message })
@@ -117,6 +135,7 @@ export async function GET(request: NextRequest) {
       );
 
     if (markError) {
+      console.error('[storage-cleanup] deleted the files but could not mark the rows:', markError.message);
       // The files are gone but the rows still say pending. The next run will
       // ask storage to remove paths that no longer exist, which is harmless —
       // far better than the reverse.
