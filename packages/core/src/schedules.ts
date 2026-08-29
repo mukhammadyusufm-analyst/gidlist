@@ -78,12 +78,37 @@ export const scheduleConfigSchema = z.discriminatedUnion('kind', [
   }),
 ]);
 
+/**
+ * Who owns the work a schedule generates.
+ *
+ * There is no "unassigned" option, deliberately. Every mode resolves to named
+ * people — `everyone` expands to one obligation per active member, not a single
+ * record anybody may claim — which is what stopped a completed checklist being
+ * reported as filled by "Anyone".
+ */
+export const ASSIGNMENT_MODES = ['creator', 'everyone', 'specific'] as const;
+export type AssignmentMode = (typeof ASSIGNMENT_MODES)[number];
+
 export const createScheduleSchema = z
   .object({
     checklistId: z.uuid(),
     startDate: isoDate,
     endDate: isoDate.optional().nullable(),
     timezone: z.string().min(1).max(60),
+    /*
+     * Only the two modes that are valid at creation, and required with no
+     * default — a default would recreate the thing this exists to remove: an
+     * ownership decision nobody made.
+     *
+     * `specific` is absent because a schedule is written before its assignees
+     * exist, so a schedule created as `specific` would name nobody at the
+     * moment the constraint is checked. Choosing named people is done by adding
+     * them, which switches the mode. That also keeps the interface honest:
+     * there is no state where it says "specific people" and means nobody.
+     */
+    assignmentMode: z.enum(['creator', 'everyone'], {
+      error: 'Choose who this checklist is for.',
+    }),
   })
   .and(scheduleConfigSchema)
   .refine((v) => !v.endDate || v.endDate >= v.startDate, {

@@ -230,6 +230,14 @@ export const en = {
   'schedule.timezone': 'Timezone',
   'schedule.timezoneNote':
     'Decides when a day starts and ends for this schedule — so a daily checklist rolls over at local midnight, not UTC.',
+  'schedule.assignTo': 'Who is this for?',
+  'schedule.assignCreator': 'Me',
+  'schedule.assignCreatorNote': 'You get one to fill in on each date.',
+  'schedule.assignEveryone': 'Everyone in this space',
+  'schedule.assignEveryoneNote':
+    'Every active member gets their own to fill in, and the list follows who joins and leaves.',
+  'schedule.assignSpecific': 'Specific people',
+  'schedule.assignSpecificNote': 'Add someone below and this switches to them alone.',
   'schedule.none': 'No schedules yet. Until one exists, nobody is asked to fill this in.',
   'schedule.nextDates': 'Next dates',
   'schedule.noDates': 'No dates in the next 60 days.',

@@ -229,6 +229,14 @@ export const uz = {
   'schedule.timezone': 'Vaqt mintaqasi',
   'schedule.timezoneNote':
     'Bu jadval uchun kun qachon boshlanib tugashini belgilaydi — kunlik roʻyxat UTC emas, mahalliy yarim tunda yangilanadi.',
+  'schedule.assignTo': 'Bu kim uchun?',
+  'schedule.assignCreator': 'Men',
+  'schedule.assignCreatorNote': 'Har bir sanada toʻldirish uchun sizga bittadan beriladi.',
+  'schedule.assignEveryone': 'Bu makondagi hamma',
+  'schedule.assignEveryoneNote':
+    'Har bir faol aʼzoga oʻzinikidan bittadan beriladi va roʻyxat kim qoʻshilib, kim chiqqaniga qarab yangilanadi.',
+  'schedule.assignSpecific': 'Muayyan odamlar',
+  'schedule.assignSpecificNote': 'Quyida odam qoʻshsangiz, faqat oʻshalarga oʻtadi.',
   'schedule.none':
     'Hozircha jadval yoʻq. U yaratilmaguncha hech kimdan toʻldirish soʻralmaydi.',
   'schedule.nextDates': 'Keyingi sanalar',

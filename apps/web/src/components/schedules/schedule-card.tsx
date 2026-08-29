@@ -8,6 +8,7 @@ import {
   inviteAndAssign,
   deleteSchedule,
   removeAssignee,
+  setAssignmentMode,
   toggleSchedule,
   type ActionState,
 } from '@/lib/schedules/actions';
@@ -43,6 +44,7 @@ export function ScheduleCard({
   const [manageState, manageAction] = useActionState(toggleSchedule, initialState);
   const [deleteState, deleteAction] = useActionState(deleteSchedule, initialState);
   const [inviteState, inviteAction] = useActionState(inviteAndAssign, initialState);
+  const [modeState, modeAction] = useActionState(setAssignmentMode, initialState);
   const [showInvite, setShowInvite] = useState(false);
   const assignFormRef = useRef<HTMLFormElement>(null);
   const inviteFormRef = useRef<HTMLFormElement>(null);
@@ -56,8 +58,12 @@ export function ScheduleCard({
     assignState.formError ??
     inviteState.formError ??
     manageState.formError ??
+    // Included so the database's refusal to empty a "specific people" schedule
+    // reaches the person who tried, instead of the removal silently doing
+    // nothing.
+    modeState.formError ??
     deleteState.formError;
-  const notice = inviteState.notice ?? assignState.notice;
+  const notice = inviteState.notice ?? assignState.notice ?? modeState.notice;
 
   const formatDate = (iso: string) =>
     new Date(`${iso}T00:00:00`).toLocaleDateString(locale, {
@@ -140,9 +146,46 @@ export function ScheduleCard({
       )}
 
       <div className="mt-4 border-t border-[var(--color-border)] pt-3">
+        {/*
+          The mode, stated and changeable.
+
+          Reading it off `assignees.length` was the old behaviour and the source
+          of the whole problem: an empty list looked like "anyone" when nobody
+          had chosen anything. Now the schedule says which of the three it is.
+
+          Switching to specific people is not offered here — that happens by
+          naming somebody below, which is also the only way the database will
+          accept the mode. These two buttons are the way *out* of specific, and
+          without them removing your last assignee would be a dead end.
+        */}
+        {canManage ? (
+          <form action={modeAction} className="mb-3 flex flex-wrap items-center gap-2">
+            <input type="hidden" name="scheduleId" value={schedule.id} />
+            {(['creator', 'everyone'] as const).map((mode) => (
+              <Button
+                key={mode}
+                type="submit"
+                name="mode"
+                value={mode}
+                size="sm"
+                variant={schedule.assignment_mode === mode ? 'primary' : 'outline'}
+                disabled={schedule.assignment_mode === mode}
+              >
+                {mode === 'creator' ? t('schedule.assignCreator') : t('schedule.assignEveryone')}
+              </Button>
+            ))}
+            {schedule.assignment_mode === 'specific' ? (
+              <span className="text-xs text-[var(--color-muted-foreground)]">
+                {t('schedule.assignSpecific')}
+              </span>
+            ) : null}
+          </form>
+        ) : null}
+
         <p className="text-xs font-medium text-[var(--color-muted-foreground)]">
           {t('schedule.assignedTo')}{' '}
-          {schedule.assignees.length === 0 ? t('schedule.anyoneInSpace') : null}
+          {schedule.assignment_mode === 'everyone' ? t('schedule.anyoneInSpace') : null}
+          {schedule.assignment_mode === 'creator' ? t('schedule.assignCreator') : null}
         </p>
 
         {schedule.assignees.length > 0 ? (

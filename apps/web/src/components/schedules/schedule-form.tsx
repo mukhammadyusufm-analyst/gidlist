@@ -198,6 +198,48 @@ export function ScheduleForm({ checklistId }: { checklistId: string }) {
         </p>
       </div>
 
+      {/*
+        Required, with no pre-selected option — the point of asking is that
+        somebody decides. A schedule used to mean "anyone" when nobody chose,
+        which is how a completed checklist came to be reported as filled by
+        nobody in particular.
+
+        Specific people are not offered here. A schedule is created before its
+        assignees exist, so choosing them now would mean claiming named people
+        while naming none; you add them to the schedule once it exists, and that
+        is what switches it.
+      */}
+      <fieldset>
+        <legend className="mb-2 text-sm font-medium">{t('schedule.assignTo')}</legend>
+
+        <div className="space-y-2">
+          {(['creator', 'everyone'] as const).map((mode) => (
+            <label
+              key={mode}
+              className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-[var(--color-input)] p-3 transition-colors hover:bg-[var(--color-accent)]"
+            >
+              <input
+                type="radio"
+                name="assignmentMode"
+                value={mode}
+                className="mt-0.5 size-4"
+                required
+              />
+              <span className="text-sm">
+                {mode === 'creator' ? t('schedule.assignCreator') : t('schedule.assignEveryone')}
+                <span className="mt-0.5 block text-xs text-[var(--color-muted-foreground)]">
+                  {mode === 'creator'
+                    ? t('schedule.assignCreatorNote')
+                    : t('schedule.assignEveryoneNote')}
+                </span>
+              </span>
+            </label>
+          ))}
+        </div>
+
+        <FieldError messages={state.fieldErrors?.assignmentMode} />
+      </fieldset>
+
       <SubmitButton pendingLabel={t('common.creating')}>{t('schedule.create')}</SubmitButton>
     </form>
   );

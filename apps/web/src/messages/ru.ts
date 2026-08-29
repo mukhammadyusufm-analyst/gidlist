@@ -226,6 +226,14 @@ export const ru = {
   'schedule.timezone': 'Часовой пояс',
   'schedule.timezoneNote':
     'Определяет, когда для этого расписания начинается и заканчивается день — ежедневный чек-лист обновляется в местную полночь, а не по UTC.',
+  'schedule.assignTo': 'Для кого это?',
+  'schedule.assignCreator': 'Для меня',
+  'schedule.assignCreatorNote': 'На каждую дату вы получаете один чек-лист.',
+  'schedule.assignEveryone': 'Для всех в этом пространстве',
+  'schedule.assignEveryoneNote':
+    'Каждый активный участник получает свой, и список меняется вместе с составом.',
+  'schedule.assignSpecific': 'Конкретные люди',
+  'schedule.assignSpecificNote': 'Добавьте человека ниже — и чек-лист перейдёт только к нему.',
   'schedule.none': 'Расписаний пока нет. Пока его нет, заполнять никто не обязан.',
   'schedule.nextDates': 'Ближайшие даты',
   'schedule.noDates': 'В ближайшие 60 дней дат нет.',

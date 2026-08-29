@@ -70,6 +70,7 @@ export async function createSchedule(_prev: ActionState, formData: FormData): Pr
     startDate: formData.get('startDate'),
     endDate: endDateRaw || null,
     timezone: formData.get('timezone'),
+    assignmentMode: formData.get('assignmentMode'),
   });
 
   if (!parsed.success) {
@@ -93,6 +94,8 @@ export async function createSchedule(_prev: ActionState, formData: FormData): Pr
       start_date: parsed.data.startDate,
       end_date: parsed.data.endDate ?? null,
       timezone: parsed.data.timezone,
+      // Only 'creator' or 'everyone' can be chosen here — see the schema.
+      assignment_mode: parsed.data.assignmentMode,
       created_by: user.id,
     })
     .select('id')
@@ -288,6 +291,23 @@ export async function addAssignee(_prev: ActionState, formData: FormData): Promi
     return { formError: friendlyAssigneeError(error.message) };
   }
 
+  /*
+   * Naming somebody IS the choice of "specific people".
+   *
+   * Without this, adding a name to a schedule set to everyone would leave the
+   * mode untouched and the name would do nothing — the materialiser branches on
+   * the mode, not on whether names exist. Making the act of assigning switch the
+   * mode is what stops the interface offering two controls that quietly
+   * contradict each other.
+   *
+   * Safe against the deferred constraint: the row was inserted a moment ago, so
+   * by the time this commits the schedule does name someone.
+   */
+  await supabase
+    .from('schedules')
+    .update({ assignment_mode: 'specific' })
+    .eq('id', parsed.data.scheduleId);
+
   await supabase.rpc('materialise_schedule', {
     p_schedule_id: parsed.data.scheduleId,
     p_horizon_days: 45,
@@ -295,6 +315,53 @@ export async function addAssignee(_prev: ActionState, formData: FormData): Promi
 
   revalidatePath(SCHEDULES_PATH, 'page');
   return { notice: `${parsed.data.email} assigned.` };
+}
+
+/**
+ * Switch a schedule between creator and everyone.
+ *
+ * `specific` is deliberately not reachable here: it is chosen by naming
+ * somebody, and the database refuses a schedule that claims specific people
+ * while naming none. Moving *away* from specific is what this is for, and it is
+ * the way out of the block a person hits when removing their last assignee.
+ */
+export async function setAssignmentMode(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const scheduleId = String(formData.get('scheduleId') ?? '');
+  const mode = String(formData.get('mode') ?? '');
+
+  if (mode !== 'creator' && mode !== 'everyone') {
+    return { formError: 'Assign specific people by adding them by name.' };
+  }
+
+  const supabase = await createClient();
+
+  // Names left behind on a schedule that no longer uses them would reappear the
+  // moment somebody switched back, having quietly survived a decision that
+  // looked like it removed them.
+  const { error: clearError } = await supabase
+    .from('schedule_assignees')
+    .delete()
+    .eq('schedule_id', scheduleId);
+
+  if (clearError) return { formError: `Could not update: ${clearError.message}` };
+
+  const { error } = await supabase
+    .from('schedules')
+    .update({ assignment_mode: mode })
+    .eq('id', scheduleId);
+
+  if (error) return { formError: friendlyDatabaseError(error.message) };
+
+  await supabase.rpc('materialise_schedule', {
+    p_schedule_id: scheduleId,
+    p_horizon_days: 45,
+  });
+
+  revalidatePath(SCHEDULES_PATH, 'page');
+  return { notice: mode === 'creator' ? 'Assigned to you.' : 'Assigned to everyone in this space.' };
 }
 
 export async function removeAssignee(_prev: ActionState, formData: FormData): Promise<ActionState> {

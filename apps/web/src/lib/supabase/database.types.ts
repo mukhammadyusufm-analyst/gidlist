@@ -30,6 +30,15 @@ export type BoardRole = 'owner' | 'admin' | 'editor' | 'member';
 export type BoardMemberStatus = 'invited' | 'active';
 export type ChecklistVersionStatus = 'draft' | 'published';
 export type ScheduleKind = 'daily' | 'weekly' | 'monthly' | 'yearly' | 'specific_dates';
+
+/**
+ * Who owns the work a schedule generates.
+ *
+ * There is no "unassigned" member, deliberately. Every mode resolves to named
+ * people, which is what stopped a completed checklist being reported as filled
+ * by "Anyone".
+ */
+export type AssignmentMode = 'creator' | 'everyone' | 'specific';
 export type SubmissionStatus = 'upcoming' | 'draft' | 'done' | 'missed';
 
 /**
@@ -324,6 +333,17 @@ export type Database = {
           start_date: string;
           end_date: string | null;
           timezone: string;
+          /**
+           * Who owns this work. Never inferred from the absence of assignees:
+           * every mode names real people, and `everyone` expands to one
+           * obligation per active member rather than a single record anybody
+           * may claim.
+           *
+           * `specific` requires at least one `schedule_assignees` row, enforced
+           * by a deferred constraint trigger — deferred because the schedule is
+           * written before the names it is about to be given.
+           */
+          assignment_mode: AssignmentMode;
           active: boolean;
           created_by: string | null;
           created_at: string;
@@ -337,6 +357,13 @@ export type Database = {
           start_date: string;
           end_date?: string | null;
           timezone: string;
+          /**
+           * Only `creator` or `everyone` on insert. A schedule is written
+           * before its assignees exist, so `specific` would name nobody at the
+           * moment the deferred constraint is checked and the insert would be
+           * refused. Naming somebody is what switches it.
+           */
+          assignment_mode?: Exclude<AssignmentMode, 'specific'>;
           active?: boolean;
           created_by?: string | null;
         };
@@ -346,6 +373,13 @@ export type Database = {
           start_date?: string;
           end_date?: string | null;
           timezone?: string;
+          /**
+           * All three are settable here, unlike on insert: `specific` is what
+           * `addAssignee` writes immediately after inserting the name, at which
+           * point the schedule does name somebody and the deferred constraint
+           * is satisfied on commit.
+           */
+          assignment_mode?: AssignmentMode;
           active?: boolean;
         };
         Relationships: [];
@@ -370,6 +404,12 @@ export type Database = {
           checklist_version_id: string | null;
           due_date: string;
           /** Who was asked. Null means anyone on the board may fill it in. */
+          /**
+           * Who was asked. Null only on records created before assignment
+           * modes existed, when "nobody named" meant one obligation anybody
+           * could claim. Nothing produces a null here any more — every
+           * assignment mode names real people.
+           */
           assignee_id: string | null;
           assignee_email: string | null;
           status: SubmissionStatus;
