@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 
-import { BUILTIN_LOCALE_NAMES, MESSAGES, siteContentKeys } from '@app/core';
+import { BUILTIN_LOCALE_NAMES, MESSAGES, siteContentSections } from '@app/core';
 import { hasCapability } from '@/lib/platform/access';
 import { createClient } from '@/lib/supabase/server';
 import { cn } from '@/lib/utils';
@@ -53,10 +53,19 @@ export default async function SiteContentPage({
 
   const overrideMap = new Map((overrides ?? []).map((row) => [row.key, row.value]));
 
-  const rows: ContentRow[] = siteContentKeys().map((key) => ({
-    key,
-    shipped: shippedValue(editing, key),
-    override: overrideMap.get(key) ?? '',
+  // Grouped by where each string appears on the page, in page order. The flat
+  // alphabetical list this replaced was complete and unusable: changing the
+  // hero meant knowing the hero is called `headline` and `subhead`.
+  const sections = siteContentSections().map((section) => ({
+    id: section.id,
+    title: section.title,
+    rows: section.keys.map(
+      (key): ContentRow => ({
+        key,
+        shipped: shippedValue(editing, key),
+        override: overrideMap.get(key) ?? '',
+      }),
+    ),
   }));
 
   return (
@@ -101,7 +110,7 @@ export default async function SiteContentPage({
       <ContentEditor
         locale={editing}
         localeName={BUILTIN_LOCALE_NAMES[editing]}
-        rows={rows}
+        sections={sections}
       />
     </div>
   );

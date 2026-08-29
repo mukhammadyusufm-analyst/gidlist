@@ -43,7 +43,27 @@ export default function manifest(): MetadataRoute.Manifest {
     // screen during launch, so it must be the app's own background rather than
     // white, or every cold start flashes.
     theme_color: '#2961ce',
-    background_color: '#fbfbfc',
+
+    /**
+     * The brand blue, not the page background — and this is the launch screen,
+     * not a styling detail.
+     *
+     * Android builds the splash from `background_color` with an icon on top,
+     * and it picks that icon itself. Against near-white it chose the maskable
+     * one, which is a hard-edged full-bleed square by design: a sharp blue tile
+     * floating on off-white, related to nothing.
+     *
+     * Making the field the same blue means it no longer matters which icon
+     * Android picks. The maskable one dissolves into the background entirely,
+     * leaving just the white mark; the rounded `any` one shows a barely visible
+     * edge. Both read as deliberate, and the result does not depend on a
+     * heuristic outside our control.
+     *
+     * The cost is a brief blue field before the app paints its own background.
+     * That is the normal shape of a branded launch screen, and it is a better
+     * first frame than a tile on the wrong colour.
+     */
+    background_color: '#2961ce',
 
     icons: [
       { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },

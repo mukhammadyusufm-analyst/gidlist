@@ -535,3 +535,143 @@ export function applySiteOverrides(
 
   return next;
 }
+
+/* ===========================================================================
+ * Grouping, for the editor
+ * =========================================================================== */
+
+export type SiteContentSection = {
+  id: string;
+  /** English, and not translated: the editor is an internal tool. */
+  title: string;
+  keys: string[];
+};
+
+/**
+ * The order the sections appear on the page, and the order of the strings
+ * inside each one.
+ *
+ * Prefixes rather than exact keys, so adding `features.4.title` lands in the
+ * right group without anybody registering it. A key belongs to the first
+ * section that claims a prefix of it, and sorts by which prefix matched — which
+ * is how the hero reads tagline, headline, subhead, then the buttons, rather
+ * than alphabetically.
+ */
+const SECTION_DEFINITIONS: { id: string; title: string; prefixes: string[] }[] = [
+  { id: 'meta', title: 'Search results and sharing', prefixes: ['metaTitle', 'metaDescription'] },
+  { id: 'nav', title: 'Navigation', prefixes: ['navHow', 'navPricing', 'navSignIn', 'skipToContent'] },
+  {
+    id: 'hero',
+    title: 'Hero',
+    prefixes: ['tagline', 'headline', 'subhead', 'ctaPrimary', 'ctaSecondary', 'ctaNote'],
+  },
+  {
+    id: 'problem',
+    title: 'The problem',
+    prefixes: ['problemEyebrow', 'problemTitle', 'problemLead', 'problemCards', 'problemClose'],
+  },
+  {
+    id: 'features',
+    title: 'What it does',
+    prefixes: ['featuresEyebrow', 'featuresTitle', 'featuresLead', 'features.'],
+  },
+  {
+    id: 'how',
+    title: 'How it works',
+    prefixes: ['howEyebrow', 'howTitle', 'howLead', 'steps.'],
+  },
+  {
+    id: 'pricing',
+    title: 'Pricing',
+    prefixes: [
+      'pricingEyebrow',
+      'pricingTitle',
+      'pricingLead',
+      'pricingPopular',
+      'pricingFree',
+      'pricingPerMonth',
+      'pricingIncluded',
+      'pricingCtaFree',
+      'pricingCta',
+      'pricingNote',
+    ],
+  },
+  { id: 'final', title: 'Closing call to action', prefixes: ['finalTitle', 'finalLead'] },
+  { id: 'footer', title: 'Footer', prefixes: ['footerNote', 'footerRights', 'footerLanguage'] },
+];
+
+/**
+ * Every editable string, grouped by where it appears on the page.
+ *
+ * ENDS WITH A CATCH-ALL, and that is the important part. A string added to
+ * `SiteMessages` that matches no prefix appears under "Not yet grouped" rather
+ * than disappearing from the editor. Silently dropping it would be the worst
+ * outcome: the copy would exist on the site and be uneditable, with nothing to
+ * indicate why.
+ */
+/**
+ * Order two keys that matched the same prefix.
+ *
+ * Card and step keys look like `features.2.title`, and a plain alphabetical
+ * sort puts `.body` above `.title` — so every card in the editor reads bottom
+ * half first. This keeps the numeric part in order and puts the heading above
+ * its own paragraph, which is how they appear on the page.
+ */
+function compareWithinSection(a: string, b: string): number {
+  const parse = (key: string) => {
+    const parts = key.split('.');
+    return {
+      index: parts.length > 1 ? Number(parts[1]) : -1,
+      field: parts[parts.length - 1],
+    };
+  };
+
+  const left = parse(a);
+  const right = parse(b);
+
+  if (left.index !== right.index) return left.index - right.index;
+
+  const FIELD_ORDER = ['title', 'body'];
+  const rank = (field: string) => {
+    const i = FIELD_ORDER.indexOf(field);
+    return i === -1 ? FIELD_ORDER.length : i;
+  };
+
+  return rank(left.field) - rank(right.field) || a.localeCompare(b);
+}
+
+export function siteContentSections(): SiteContentSection[] {
+  const remaining = new Set(siteContentKeys());
+  const sections: SiteContentSection[] = [];
+
+  for (const definition of SECTION_DEFINITIONS) {
+    const claimed: { key: string; rank: number }[] = [];
+
+    for (const key of remaining) {
+      const rank = definition.prefixes.findIndex((prefix) => key.startsWith(prefix));
+      if (rank !== -1) claimed.push({ key, rank });
+    }
+
+    for (const { key } of claimed) remaining.delete(key);
+
+    if (claimed.length > 0) {
+      sections.push({
+        id: definition.id,
+        title: definition.title,
+        keys: claimed
+          .sort((a, b) => a.rank - b.rank || compareWithinSection(a.key, b.key))
+          .map((c) => c.key),
+      });
+    }
+  }
+
+  if (remaining.size > 0) {
+    sections.push({
+      id: 'ungrouped',
+      title: 'Not yet grouped',
+      keys: [...remaining].sort(),
+    });
+  }
+
+  return sections;
+}
