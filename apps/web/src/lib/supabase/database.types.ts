@@ -40,14 +40,6 @@ export type ScheduleKind = 'daily' | 'weekly' | 'monthly' | 'yearly' | 'specific
  */
 export type AssignmentMode = 'creator' | 'everyone' | 'specific';
 
-/**
- * What an item asks for alongside the tick.
- *
- * `photo` opens the camera directly on a phone; `file` accepts a document too.
- * Neither is proof — a photograph proves something was photographed, not that
- * it was photographed here or now — and the interface should never say it is.
- */
-export type EvidenceKind = 'none' | 'photo' | 'file';
 export type SubmissionStatus = 'upcoming' | 'draft' | 'done' | 'missed';
 
 /**
@@ -659,6 +651,30 @@ export type Database = {
        * formatter check and a provider that settles it, so it is a code change
        * rather than a form.
        */
+      /**
+       * Paths whose files are due for deletion.
+       *
+       * Written by , drained by the storage-cleanup route
+       * with the service role. RLS is enabled with **no policy at all** — the
+       * app never touches this, and an empty policy set is the strictest
+       * statement available.
+       *
+       * Rows are marked rather than removed, because deleting a file is the one
+       * operation here with no undo.
+       */
+      storage_cleanup_queue: {
+        Row: {
+          id: number;
+          bucket_id: string;
+          object_path: string;
+          queued_at: string;
+          deleted_at: string | null;
+          last_error: string | null;
+        };
+        Insert: never;
+        Update: { deleted_at?: string | null; last_error?: string | null };
+        Relationships: [];
+      };
       plan_prices: {
         Row: {
           plan_code: PlanCode;

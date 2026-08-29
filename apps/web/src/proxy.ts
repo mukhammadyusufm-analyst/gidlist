@@ -91,7 +91,36 @@ function buildCsp(nonce: string): string {
   ].join('; ');
 }
 
+/**
+ * Routes that authenticate themselves and must not be session-gated.
+ *
+ * These are called by machines, not people. A scheduler presents a shared secret
+ * in an `Authorization` header and has no cookie, so the gate below would see
+ * "no user" and redirect it to `/login` — the caller would receive a sign-in
+ * page, with status 200, and never reach the route at all. A cron job that
+ * silently does nothing forever is the worst possible failure here, because
+ * nothing reports it: the schedule keeps firing, every response looks fine, and
+ * the only symptom is a storage bill that never stops growing.
+ *
+ * Exempting a path from the session gate is only safe because each of these
+ * checks its own credential and refuses without it. Nothing belongs on this list
+ * unless it does that first.
+ */
+const SELF_AUTHENTICATING_ROUTES = ['/api/cron'];
+
+function isSelfAuthenticating(pathname: string) {
+  return SELF_AUTHENTICATING_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`),
+  );
+}
+
 export async function proxy(request: NextRequest) {
+  // Before anything else, and deliberately before the session refresh: there is
+  // no session on these requests to refresh, and no browser to send a policy to.
+  if (isSelfAuthenticating(request.nextUrl.pathname)) {
+    return NextResponse.next();
+  }
+
   const nonce = crypto.randomUUID();
   const csp = buildCsp(nonce);
 
