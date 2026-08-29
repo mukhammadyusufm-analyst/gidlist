@@ -92,10 +92,28 @@ const SECURITY_HEADERS = [
     value: 'DENY',
   },
   {
-    // The app asks for none of these. Denying them means a compromised
-    // dependency cannot start asking either.
+    /*
+     * `geolocation=(self)`, and the change is deliberate.
+     *
+     * This header used to deny geolocation outright, written when the app asked
+     * for none of these. Location requirements changed that, and the denial then
+     * defeated the feature in the most confusing way available: the browser
+     * refuses `getCurrentPosition` **without ever prompting**, so no permission
+     * request appears, the site never shows up under Chrome's Location settings,
+     * and there is nothing to grant. It looked like a permissions problem on the
+     * phone rather than a header sent by us.
+     *
+     * `(self)` allows it for this origin only — an embedded third-party frame
+     * still cannot ask, which is the part worth keeping.
+     *
+     * Camera and microphone stay denied. The photo control is
+     * `<input type="file" capture>`, which is a file picker and needs no camera
+     * permission; nothing here calls `getUserMedia`, and if something starts
+     * to, it should be a deliberate change to this line rather than a silent
+     * capability.
+     */
     key: 'Permissions-Policy',
-    value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
+    value: 'camera=(), microphone=(), geolocation=(self), interest-cohort=()',
   },
 ];
 
