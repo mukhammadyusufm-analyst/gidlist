@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { ChevronRight, Globe, History, Languages, ShieldCheck, TrendingUp } from 'lucide-react';
+import { ChevronRight, Globe, History, Languages, ShieldCheck, Tag, TrendingUp } from 'lucide-react';
 
 import { myCapabilities } from '@/lib/platform/access';
 import { JobHealth } from '@/components/admin/job-health';
@@ -34,6 +34,13 @@ export default async function AdminPage() {
       icon: Languages,
       title: 'Translations',
       description: 'The interface wording every customer reads.',
+    },
+    {
+      capability: 'billing' as const,
+      href: '/dashboard/admin/plans',
+      icon: Tag,
+      title: 'Plans and pricing',
+      description: 'What each plan costs and the capacity it carries.',
     },
     {
       capability: 'site' as const,

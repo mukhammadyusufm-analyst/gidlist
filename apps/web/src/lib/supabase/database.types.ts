@@ -442,7 +442,20 @@ export type Database = {
           created_at: string;
         };
         Insert: never;
-        Update: never;
+        /**
+         * Update, but only these columns. `code` and `is_free` are refused by a
+         * trigger — the first is a foreign key from `subscriptions` and would
+         * orphan live customers, the second decides whether checkout is offered
+         * at all. Insert and delete have no policy, so a plan cannot be created
+         * or removed through the API by anyone.
+         */
+        Update: {
+          name?: string;
+          price_minor?: number;
+          max_members?: number | null;
+          max_spaces?: number | null;
+          is_offerable?: boolean;
+        };
         Relationships: [];
       };
       plan_features: {

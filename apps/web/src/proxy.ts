@@ -20,7 +20,13 @@ import { env } from '@/lib/env';
  */
 
 /** Routes a signed-out visitor may see. Everything else requires a session. */
-const PUBLIC_ROUTES = ['/', '/login', '/signup', '/forgot-password', '/auth'];
+/**
+ * `/offline` is here because the service worker precaches it and serves it to
+ * whoever is holding the device when a navigation fails. It is static, has no
+ * data on it, and must render without a session — gating it would mean the
+ * offline fallback redirected to a sign-in page that also cannot load.
+ */
+const PUBLIC_ROUTES = ['/', '/login', '/signup', '/forgot-password', '/auth', '/offline'];
 
 function isPublicRoute(pathname: string) {
   return PUBLIC_ROUTES.some(
@@ -68,6 +74,15 @@ function buildCsp(nonce: string): string {
     `img-src 'self' data: blob: ${supabase}`,
     "font-src 'self'",
     `connect-src 'self' ${supabase} wss://*.supabase.co`,
+    /*
+     * Needed, and not obvious: `strict-dynamic` makes the browser ignore
+     * host-source expressions like 'self' in `script-src`, so a
+     * `navigator.serviceWorker.register('/sw.js')` call would be refused with
+     * nothing but a console error to show for it. Worker registration falls
+     * back through `worker-src` → `child-src` → `script-src`, so naming it
+     * here stops the fall before it reaches the strict directive.
+     */
+    "worker-src 'self'",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
@@ -169,5 +184,20 @@ export const config = {
    * would run against every CSS file, JS chunk and icon — wasted work, and a
    * redirect on those paths breaks page rendering in confusing ways.
    */
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+  /*
+   * `manifest.webmanifest` and `sw.js` are excluded, and both had to be.
+   *
+   * A browser fetches the manifest **without credentials** by default, so the
+   * proxy saw no session, decided it was a private route and redirected it to
+   * `/login` — which returns HTML. The browser then has no valid manifest and
+   * silently never offers to install the app. The same applies to the service
+   * worker script: a redirect there means registration fails.
+   *
+   * Neither is an application route and neither reveals anything, so gating
+   * them bought nothing and cost the entire feature. Found by requesting the
+   * manifest and reading what came back, which was a login page.
+   */
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
 };

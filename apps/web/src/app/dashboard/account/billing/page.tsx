@@ -31,7 +31,10 @@ export default async function AccountBillingPage() {
   if (!billing) notFound();
 
   const { usage } = billing;
-  const checkoutReady = isCheckoutAvailable();
+  // Per currency, not per deployment. A customer priced in som and one priced
+  // in dollars are served by different providers from this same build, so
+  // "can we take payment" only has an answer once you say for what.
+  const checkoutReady = isCheckoutAvailable(usage.currency);
 
   return (
     <div className="max-w-3xl space-y-6">

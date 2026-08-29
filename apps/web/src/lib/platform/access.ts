@@ -24,7 +24,12 @@ import { createClient } from '@/lib/supabase/server';
  * everyone. Trusting somebody to fix a button label is not the same as trusting
  * them to rewrite the pitch.
  */
-export type PlatformCapability = 'translations' | 'site' | 'accounts' | 'grants';
+export type PlatformCapability =
+  | 'translations'
+  | 'site'
+  | 'accounts'
+  | 'billing'
+  | 'grants';
 
 /**
  * Everything the caller holds, in one round trip.

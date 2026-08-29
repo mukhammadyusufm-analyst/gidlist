@@ -27,12 +27,12 @@ const nextConfig: NextConfig = {
  * user are not the point here — what matters is that a compromised dependency
  * cannot quietly start doing something the site never does.
  *
- * There is no Content Security Policy here yet. When the animation work lands
- * in Phase B it will need one, and it belongs in a proxy rather than this file
- * for the same reason it does in the product: a strict `script-src` needs a
- * fresh nonce per request, and a static config cannot produce one.
+ * The Content Security Policy is deliberately NOT here. A strict `script-src`
+ * needs a fresh nonce per request and a static config cannot produce one, so it
+ * is built in `src/proxy.ts` — the same arrangement as the product.
  *
- * @see apps/web/src/proxy.ts for how that is done.
+ * @see src/proxy.ts
+ * @see apps/web/src/proxy.ts
  */
 const SECURITY_HEADERS = [
   {

@@ -4,6 +4,7 @@ import { Inter, JetBrains_Mono } from 'next/font/google';
 import { getMessages } from '@/lib/i18n/server';
 import { getTheme } from '@/lib/theme/server';
 import { I18nProvider } from '@/components/i18n/provider';
+import { RegisterServiceWorker } from '@/components/pwa/register-service-worker';
 
 import './globals.css';
 
@@ -34,6 +35,9 @@ export const metadata: Metadata = {
     template: '%s · Gidlist',
   },
   description: 'Create, schedule and track operational checklists across your organisation.',
+  // iOS ignores the manifest's icons for the home screen and reads this one
+  // instead, so without it an installed app gets a screenshot of the page.
+  icons: { apple: '/apple-touch-icon.png' },
 };
 
 export const viewport: Viewport = {
@@ -64,6 +68,7 @@ export default async function RootLayout({ children }: LayoutProps<'/'>) {
         <I18nProvider locale={locale} messages={messages}>
           {children}
         </I18nProvider>
+        <RegisterServiceWorker />
       </body>
     </html>
   );
