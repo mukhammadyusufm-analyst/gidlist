@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, CreditCard, Info, Layers, Users } from 'lucide-react';
-import { formatMoney, money } from '@app/core';
+import { currencyForLocale, formatMoneyWithName, money } from '@app/core';
 
 import { getAccountBilling, listAddons, listPlans } from '@/lib/billing/queries';
 import { isCheckoutAvailable } from '@/lib/billing/provider';
@@ -21,11 +21,16 @@ import type { Allowance } from '@/lib/billing/queries';
  * the price are useful on their own — only the pay button is conditional.
  */
 export default async function AccountBillingPage() {
-  const [billing, plans, addons, { t, locale }] = await Promise.all([
-    getAccountBilling(),
-    listPlans(),
+  // The locale decides the currency, so it has to be resolved before the
+  // billing reads rather than alongside them. One extra round trip on a page
+  // nobody loads in a loop, in exchange for prices in the reader's own money.
+  const { t, locale } = await getTranslations();
+  const currency = currencyForLocale(locale);
+
+  const [billing, plans, addons] = await Promise.all([
+    getAccountBilling(currency),
+    listPlans(currency),
     listAddons(),
-    getTranslations(),
   ]);
 
   if (!billing) notFound();
@@ -64,7 +69,7 @@ export default async function AccountBillingPage() {
               {t('billing.perMonth')}
             </p>
             <p className="mt-1 text-2xl font-semibold tracking-tight tabular-nums">
-              {formatMoney(billing.price, locale)}
+              {formatMoneyWithName(billing.price, locale)}
             </p>
           </div>
         </div>
@@ -144,7 +149,7 @@ export default async function AccountBillingPage() {
                     <td className="py-2.5 tabular-nums">{plan.max_members ?? '∞'}</td>
                     <td className="py-2.5 tabular-nums">{plan.max_spaces ?? '∞'}</td>
                     <td className="py-2.5 text-right tabular-nums">
-                      {formatMoney(money(plan.price_minor, plan.currency), locale)}
+                      {formatMoneyWithName(money(plan.price_minor, plan.currency), locale)}
                     </td>
                   </tr>
                 );
@@ -172,7 +177,7 @@ export default async function AccountBillingPage() {
                 <li key={addon.code} className="flex items-center justify-between gap-4 text-sm">
                   <span>{addon.name}</span>
                   <span className="tabular-nums text-[var(--color-muted-foreground)]">
-                    {price ? formatMoney(money(price.price_minor, price.currency), locale) : '—'}
+                    {price ? formatMoneyWithName(money(price.price_minor, price.currency), locale) : '—'}
                   </span>
                 </li>
               );

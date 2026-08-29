@@ -60,36 +60,81 @@ function allowance(used: number, limit: number | null): Allowance {
   };
 }
 
-export const getAccountBilling = cache(async (): Promise<AccountBilling | null> => {
-  const supabase = await createClient();
-
-  // One round trip. The function answers only about the caller's own account —
-  // it reads auth.uid() internally rather than taking an id, so there is no
-  // argument that could make it report on somebody else.
-  const { data, error } = await supabase.rpc('my_account_usage');
-  if (error || !data?.length) return null;
-
-  const usage = data[0];
-
-  return {
-    usage,
-    price: money(usage.price_minor, usage.currency),
-    members: allowance(usage.used_members, usage.max_members),
-    spaces: allowance(usage.used_spaces, usage.max_spaces),
-    isFree: usage.price_minor === 0,
-  };
-});
-
-/** The plan ladder, for a comparison table. Readable signed out. */
-export const listPlans = cache(async (): Promise<Plan[]> => {
+/**
+ * What each plan costs in one currency.
+ *
+ * Read from `plan_prices`, which is the source of truth per currency. The
+ * `plans` table keeps a single base price, and that is what `my_account_usage()`
+ * returns — so this overrides it for display.
+ *
+ * The SQL function is deliberately left alone. It is on the billing path, and
+ * making it currency-aware means deciding where a subscription's currency is
+ * stored and frozen, which is a change worth making on its own rather than
+ * folded into a display fix. Until then the product *shows* som and still
+ * *computes* in the base currency, which is safe precisely because nothing
+ * charges anybody yet.
+ *
+ * A missing row falls back to the plan's base price, so an incomplete price
+ * list shows the old figure rather than nothing.
+ */
+const planPrices = cache(async (currency: string): Promise<Map<string, number>> => {
   const supabase = await createClient();
   const { data } = await supabase
-    .from('plans')
-    .select('*')
-    .eq('is_offerable', true)
-    .order('sort_order');
+    .from('plan_prices')
+    .select('plan_code, price_minor')
+    .eq('currency', currency.toUpperCase());
 
-  return data ?? [];
+  return new Map((data ?? []).map((row) => [row.plan_code, row.price_minor]));
+});
+
+export const getAccountBilling = cache(
+  async (currency: string): Promise<AccountBilling | null> => {
+    const supabase = await createClient();
+
+    // One round trip. The function answers only about the caller's own account —
+    // it reads auth.uid() internally rather than taking an id, so there is no
+    // argument that could make it report on somebody else.
+    const [{ data, error }, prices] = await Promise.all([
+      supabase.rpc('my_account_usage'),
+      planPrices(currency),
+    ]);
+
+    if (error || !data?.length) return null;
+
+    const usage = data[0];
+
+    // The price in the reader's currency, falling back to the base one.
+    const localised = prices.get(usage.plan_code);
+    const priceMinor = localised ?? usage.price_minor;
+    const priceCurrency = localised === undefined ? usage.currency : currency.toUpperCase();
+
+    return {
+      usage,
+      price: money(priceMinor, priceCurrency),
+      members: allowance(usage.used_members, usage.max_members),
+      spaces: allowance(usage.used_spaces, usage.max_spaces),
+      // Free is a property of the plan, not of the currency it is quoted in.
+      // Reading it off the localised figure would call a plan free the moment a
+      // price row was missing.
+      isFree: usage.price_minor === 0,
+    };
+  },
+);
+
+/** The plan ladder, for a comparison table. Readable signed out. */
+export const listPlans = cache(async (currency: string): Promise<Plan[]> => {
+  const supabase = await createClient();
+
+  const [{ data }, prices] = await Promise.all([
+    supabase.from('plans').select('*').eq('is_offerable', true).order('sort_order'),
+    planPrices(currency),
+  ]);
+
+  return (data ?? []).map((plan) => {
+    const localised = prices.get(plan.code);
+    if (localised === undefined) return plan;
+    return { ...plan, price_minor: localised, currency: currency.toUpperCase() };
+  });
 });
 
 export type AddonWithPrice = Addon & { prices: AddonPrice[] };

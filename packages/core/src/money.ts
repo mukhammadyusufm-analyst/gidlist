@@ -103,3 +103,53 @@ export function formatMoney(amount: Money, locale: string): string {
 export function billableSeats(peakSeats: number, minSeats: number): number {
   return Math.max(peakSeats, minSeats);
 }
+
+/**
+ * Which currency somebody reading in this language is shown.
+ *
+ * A HEURISTIC, and worth naming as one. Russian maps to so'm because Russian is
+ * widely used inside Uzbekistan, not because Russian speakers are Uzbek — a
+ * Russian speaker in Riga sees so'm, which is wrong for them. Guessing from an
+ * IP address is wrong differently and more often, and a visible currency switch
+ * would beat both once there is anyone to switch for.
+ *
+ * It is safe to be approximate here because this only decides what is
+ * *displayed*. Currency is frozen on the subscription when somebody actually
+ * pays, so a wrong guess costs a confusing figure, never a wrong charge.
+ *
+ * Shared rather than duplicated: the marketing site and the product both need
+ * this answer, and two copies would drift into advertising one currency and
+ * billing another.
+ */
+export function currencyForLocale(locale: string): string {
+  const base = locale.toLowerCase().split('-')[0];
+  return base === 'uz' || base === 'ru' ? 'UZS' : 'USD';
+}
+
+/** What each language calls the so'm, for the currencies Intl has no symbol for. */
+const CURRENCY_NAMES: Record<string, Record<string, string>> = {
+  UZS: { uz: 'soʻm', ru: 'сум', en: 'soʻm' },
+};
+
+/**
+ * Format for display, writing out a currency name where Intl would fall back to
+ * the ISO code.
+ *
+ * CLDR has no localised symbol for UZS in Russian, so `Intl` renders
+ * "59 250 UZS" — accurate, and it reads like a bank statement rather than a
+ * price. The NUMBER is still formatted by `Intl`, which is the part worth never
+ * hand-rolling; only the trailing word is substituted.
+ */
+export function formatMoneyWithName(amount: Money, locale: string): string {
+  const names = CURRENCY_NAMES[amount.currency.toUpperCase()];
+  if (!names) return formatMoney(amount, locale);
+
+  const digits = minorUnitDigits(amount.currency);
+  const base = locale.toLowerCase().split('-')[0];
+  const value = new Intl.NumberFormat(locale, {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(amount.minor / 10 ** digits);
+
+  return `${value} ${names[base] ?? amount.currency}`;
+}

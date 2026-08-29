@@ -458,6 +458,29 @@ export type Database = {
         };
         Relationships: [];
       };
+      /**
+       * What each plan costs in each currency.
+       *
+       * Deliberate local price lists, never conversions. Minor units follow the
+       * currency's exponent in `@app/core` — UZS is 0 because the tiyin is
+       * defunct, so 59,250 so'm is 59250, not 5925000.
+       *
+       * Update only, like `plans`: adding a currency needs a locale mapping, a
+       * formatter check and a provider that settles it, so it is a code change
+       * rather than a form.
+       */
+      plan_prices: {
+        Row: {
+          plan_code: PlanCode;
+          currency: string;
+          price_minor: number;
+          updated_by: string | null;
+          updated_at: string;
+        };
+        Insert: never;
+        Update: { price_minor?: number; updated_by?: string | null };
+        Relationships: [];
+      };
       plan_features: {
         // No row means not granted. Absence is the denial.
         Row: { plan_code: PlanCode; feature_key: FeatureKey };
