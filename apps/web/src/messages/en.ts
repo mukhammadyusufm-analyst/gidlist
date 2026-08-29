@@ -401,6 +401,7 @@ export const en = {
   'compliance.allStatuses': 'All statuses',
   'compliance.status': 'Status',
   'compliance.assignee': 'Assignee',
+  'compliance.filledBy': 'Filled by',
   'compliance.date': 'Date',
   'compliance.noTrend':
     'No checklists have come due in this period, so there is no rate to plot yet.',

@@ -400,6 +400,7 @@ export const uz = {
   'compliance.allStatuses': 'Barcha holatlar',
   'compliance.status': 'Holat',
   'compliance.assignee': 'Masʼul',
+  'compliance.filledBy': 'Kim toʻldirgan',
   'compliance.date': 'Sana',
   'compliance.noTrend':
     'Bu davrda hech qanday roʻyxatning muddati kelmagan, shuning uchun grafik uchun maʼlumot yoʻq.',

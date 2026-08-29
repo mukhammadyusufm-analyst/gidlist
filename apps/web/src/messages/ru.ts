@@ -394,6 +394,7 @@ export const ru = {
   'compliance.allStatuses': 'Все статусы',
   'compliance.status': 'Статус',
   'compliance.assignee': 'Ответственный',
+  'compliance.filledBy': 'Кто заполнил',
   'compliance.date': 'Дата',
   'compliance.noTrend':
     'В этом периоде срок ни по одному чек-листу не наступил, поэтому график пока пуст.',

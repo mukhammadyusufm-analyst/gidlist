@@ -25,7 +25,17 @@ export type ComplianceRow = {
   id: string;
   due_date: string;
   status: SubmissionStatus;
+  /** Who was asked. Null means anyone on the board could fill it in. */
   assignee_email: string | null;
+  /**
+   * Who actually did it. Deliberately separate from the assignee: they answer
+   * different questions, and reporting one as the other is what made a
+   * checklist filled in by a named person show up as "Anyone".
+   *
+   * Null for anything not yet submitted, and for records completed before the
+   * column existed — those were not back-filled.
+   */
+  submitted_by_email: string | null;
   checklist_id: string;
   checklist_title: string;
   /** Set when somebody decided this record should not count. */
@@ -109,7 +119,10 @@ export async function getComplianceData(
   // PostgREST returns the count in a header, so no extra round trip.
   let rowQuery = supabase
     .from('submissions')
-    .select('id, due_date, status, assignee_email, checklist_id, voided_at, void_reason', { count: 'exact' })
+    .select(
+      'id, due_date, status, assignee_email, submitted_by_email, checklist_id, voided_at, void_reason',
+      { count: 'exact' },
+    )
     .in(
       'checklist_id',
       filters.checklistId ? [filters.checklistId] : checklistList.map((c) => c.id),

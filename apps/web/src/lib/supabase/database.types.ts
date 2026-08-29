@@ -369,10 +369,23 @@ export type Database = {
           checklist_id: string;
           checklist_version_id: string | null;
           due_date: string;
+          /** Who was asked. Null means anyone on the board may fill it in. */
           assignee_id: string | null;
           assignee_email: string | null;
           status: SubmissionStatus;
           submitted_at: string | null;
+          /**
+           * Who actually completed it — a different question from the assignee,
+           * and the one an auditor asks first. Written only by
+           * `submit_submission()` from `auth.uid()`, never by a client.
+           *
+           * Null for anything not yet submitted, and for everything completed
+           * before this column existed. Those rows were not back-filled: nobody
+           * recorded it at the time, and a plausible guess would be invented
+           * evidence in a compliance history.
+           */
+          submitted_by: string | null;
+          submitted_by_email: string | null;
           /**
            * Voiding annotates rather than overwrites: `status` still says the
            * record was missed, and these say somebody decided it should not

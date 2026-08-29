@@ -57,6 +57,13 @@ export function SubmissionsTable({
             <th scope="col" className="px-4 py-2.5 font-medium">
               {t('compliance.assignee')}
             </th>
+            {/* Its own column, beside the assignee rather than instead of it.
+                "Who was asked" and "who did it" are different questions, and
+                answering the second with the first is what made a checklist
+                filled in by a named person read as "Anyone". */}
+            <th scope="col" className="px-4 py-2.5 font-medium">
+              {t('compliance.filledBy')}
+            </th>
             <th scope="col" className="px-4 py-2.5 font-medium">
               {t('compliance.status')}
             </th>
@@ -80,6 +87,17 @@ export function SubmissionsTable({
               </td>
               <td className="px-4 py-2.5 text-[var(--color-muted-foreground)]">
                 {row.assignee_email ?? t('common.anyone')}
+              </td>
+              {/* An em dash rather than a name for the two honest nulls: not
+                  submitted yet, and completed before this was recorded. Neither
+                  is a person, and guessing one would put invented evidence into
+                  a compliance history. */}
+              <td className="px-4 py-2.5">
+                {row.submitted_by_email ? (
+                  row.submitted_by_email
+                ) : (
+                  <span className="text-[var(--color-muted-foreground)]">—</span>
+                )}
               </td>
               <td className="px-4 py-2.5">
                 <div className="flex flex-wrap items-center gap-2">
