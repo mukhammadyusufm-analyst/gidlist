@@ -32,11 +32,12 @@ import {
   reorderItems,
 } from '@/lib/checklists/actions';
 import type { ChecklistItem } from '@/lib/supabase/database.types';
+import type { ActionState } from '@/lib/checklists/actions';
 import type { GroupWithItems } from '@/lib/checklists/queries';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { FormNotice } from '@/components/ui/field-error';
 import { useT } from '@/components/i18n/provider';
-import { cn } from '@/lib/utils';
 
 type Item = ItemNode<ChecklistItem>;
 
@@ -298,9 +299,6 @@ function SortableItem({
   });
 
   const [showAdd, setShowAdd] = useState(false);
-  // Kept for the requirements panel below, which surfaces save errors instead of
-  // discarding them the way the rest of this builder does.
-  const [evidenceState] = useActionState(updateItem, {});
   const { t } = useT();
   const canNest = canNestUnder(item.depth);
 
@@ -359,14 +357,9 @@ function SortableItem({
         parents and the interface does not offer them the choice.
       */}
       {editable && item.children.length === 0 ? (
-        <ItemRequirements item={item} evidenceState={evidenceState} />
+        <ItemRequirements item={item} />
       ) : null}
 
-      {evidenceState.formError ? (
-        <p className="px-2 pb-2 text-xs text-[var(--color-destructive)]">
-          {evidenceState.formError}
-        </p>
-      ) : null}
 
       {item.children.length > 0 || showAdd ? (
         // Indentation is the only cue for nesting, so it has to read clearly
@@ -467,30 +460,31 @@ function AddGroupForm({ versionId }: { versionId: string }) {
 }
 
 /**
- * The two conditions an item can carry: a required attachment, and a place.
+ * The three things an item can ask for, each with its own two switches.
  *
- * Behind a disclosure rather than always open, because most items have neither
- * and a builder where every row carries six inputs is unreadable. The summary
- * says which are set, so nothing is hidden — only folded.
+ * Laid out as one block per requirement rather than a grid of checkboxes. The
+ * previous version put six controls and three coordinate fields in a single
+ * column, which read as a wall — and made it impossible to see at a glance which
+ * switch belonged to which feature.
+ *
+ * Enforcement is not shown at all until its feature is on. Rendering a disabled
+ * checkbox beside an unchecked feature invited exactly the question of why it
+ * could not be ticked; there is nothing to enforce until there is something to
+ * enforce.
  *
  * The coordinate fields are numbers rather than a map. A map is the better
  * interface and a much larger one; "use where I am now" covers the common case,
  * which is somebody standing in the place they are describing.
  */
-function ItemRequirements({
-  item,
-  evidenceState,
-}: {
-  item: Item;
-  evidenceState: { fieldErrors?: Record<string, string[]> };
-}) {
+function ItemRequirements({ item }: { item: Item }) {
   const { t } = useT();
+  const [state, formAction, pending] = useActionState(updateItem, {} as ActionState);
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
-  // Held in state rather than read from the DOM so the required checkbox can
-  // enable and disable as its feature is switched on and off.
+  // Held in state so each feature's own controls appear and disappear as it is
+  // switched, rather than after a save round trip.
   const [photoEnabled, setPhotoEnabled] = useState(item.photo_enabled);
   const [fileEnabled, setFileEnabled] = useState(item.file_enabled);
   const [locationEnabled, setLocationEnabled] = useState(item.location_enabled);
@@ -544,32 +538,32 @@ function ItemRequirements({
 
   return (
     <details className="px-2 pb-2">
-      <summary className="cursor-pointer text-xs text-[var(--color-muted-foreground)]">
+      <summary className="cursor-pointer py-1 text-xs text-[var(--color-muted-foreground)]">
         {t('checklist.requirements')}
-        {/* Each enabled feature listed, and marked when it is also enforced.
-            Required and merely recorded are different states, and somebody
-            scanning the builder should not have to open every item to tell
-            them apart. */}
+        {/* Each enabled feature listed, and marked when it is also enforced —
+            required and merely recorded are different states, and somebody
+            scanning the builder should not open every item to tell them apart. */}
         {summary.length > 0 ? (
           <span className="ml-1.5 text-[var(--color-primary)]">{summary.join(' · ')}</span>
         ) : null}
       </summary>
 
+      {/* The result is kept, not discarded. Every other form in this builder
+          throws it away with `void (await …)`, which is why a refused save here
+          looked like nothing happening at all — the most common refusal being a
+          published version, which cannot be edited until a draft is started. */}
       <form
         ref={formRef}
-        action={async (fd: FormData) => void (await updateItem({}, fd))}
-        className="mt-2 space-y-3 rounded-md border border-[var(--color-border)] p-3"
+        action={formAction}
+        className="mt-2 space-y-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4"
       >
         <input type="hidden" name="itemId" value={item.id} />
         <input type="hidden" name="title" value={item.title} />
         <input type="hidden" name="description" value={item.description ?? ''} />
 
-        {/* Photo and file are independent, not alternatives — an item can want
-            a photograph of the fridge and a signed delivery note. Each has its
-            own on switch and its own enforcement, and "required" is disabled
-            until the feature is on, because enforcing something switched off is
-            a rule with nothing to apply to. */}
-        <RequirementToggle
+        {/* Photo and file are independent, not alternatives — an item can want a
+            photograph of the fridge and a signed delivery note. */}
+        <RequirementRow
           label={t('checklist.photo')}
           enabledName="photoEnabled"
           requiredName="photoRequired"
@@ -578,7 +572,7 @@ function ItemRequirements({
           defaultRequired={item.photo_required}
         />
 
-        <RequirementToggle
+        <RequirementRow
           label={t('checklist.file')}
           enabledName="fileEnabled"
           requiredName="fileRequired"
@@ -587,95 +581,103 @@ function ItemRequirements({
           defaultRequired={item.file_required}
         />
 
-        <div>
-          <RequirementToggle
-            label={t('checklist.locationTitle')}
-            enabledName="locationEnabled"
-            requiredName="locationRequired"
-            enabled={locationEnabled}
-            onEnabledChange={setLocationEnabled}
-            defaultRequired={item.location_required}
-          />
-          <div className="grid grid-cols-3 gap-2">
-            <Input
-              name="locationLat"
-              defaultValue={item.location_lat ?? ''}
-              placeholder={t('checklist.latitude')}
-              aria-label={t('checklist.latitude')}
-              inputMode="decimal"
-            />
-            <Input
-              name="locationLng"
-              defaultValue={item.location_lng ?? ''}
-              placeholder={t('checklist.longitude')}
-              aria-label={t('checklist.longitude')}
-              inputMode="decimal"
-            />
-            <Input
-              name="locationRadiusM"
-              defaultValue={item.location_radius_m ?? ''}
-              placeholder={t('checklist.radius')}
-              aria-label={t('checklist.radius')}
-              inputMode="numeric"
-            />
+        <RequirementRow
+          label={t('checklist.locationTitle')}
+          enabledName="locationEnabled"
+          requiredName="locationRequired"
+          enabled={locationEnabled}
+          onEnabledChange={setLocationEnabled}
+          defaultRequired={item.location_required}
+        >
+          <div className="grid gap-3 sm:grid-cols-3">
+            <label className="block">
+              <span className="mb-1 block text-xs text-[var(--color-muted-foreground)]">
+                {t('checklist.latitude')}
+              </span>
+              <Input name="locationLat" defaultValue={item.location_lat ?? ''} inputMode="decimal" />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs text-[var(--color-muted-foreground)]">
+                {t('checklist.longitude')}
+              </span>
+              <Input name="locationLng" defaultValue={item.location_lng ?? ''} inputMode="decimal" />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs text-[var(--color-muted-foreground)]">
+                {t('checklist.radius')}
+              </span>
+              <Input
+                name="locationRadiusM"
+                defaultValue={item.location_radius_m ?? ''}
+                inputMode="numeric"
+              />
+            </label>
           </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-3"
+            onClick={useCurrentPosition}
+            disabled={locating}
+          >
+            {locating ? t('checklist.locating') : t('checklist.useMyLocation')}
+          </Button>
 
           {/* Said plainly, because a radius chosen without knowing this will be
               too tight and the feature will look broken. */}
-          <p className="mt-1.5 text-xs text-[var(--color-muted-foreground)]">
+          <p className="mt-2 text-xs leading-relaxed text-[var(--color-muted-foreground)]">
             {t('checklist.locationAccuracyNote')}
           </p>
 
           {locationError ? (
             <p className="mt-1 text-xs text-[var(--color-destructive)]">{locationError}</p>
           ) : null}
+        </RequirementRow>
 
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="mt-2"
-            onClick={useCurrentPosition}
-            disabled={locating}
-          >
-            {locating ? t('checklist.locating') : t('checklist.useMyLocation')}
+        {state.formError ? <FormNotice kind="error">{state.formError}</FormNotice> : null}
+
+        {/* Field errors land beside the thing that caused them rather than in a
+            single list at the bottom. */}
+        {state.fieldErrors
+          ? Object.values(state.fieldErrors)
+              .flat()
+              .map((message) => (
+                <p key={message} className="text-xs text-[var(--color-destructive)]">
+                  {message}
+                </p>
+              ))
+          : null}
+
+        <div className="flex items-center gap-3 border-t border-[var(--color-border)] pt-3">
+          <Button type="submit" size="sm" disabled={pending}>
+            {pending ? t('common.saving') : t('common.save')}
           </Button>
+          {state.notice ? (
+            <span className="text-xs text-[var(--color-success)]">{state.notice}</span>
+          ) : null}
         </div>
-
-        {evidenceState.fieldErrors?.locationRadiusM ? (
-          <p className="text-xs text-[var(--color-destructive)]">
-            {evidenceState.fieldErrors.locationRadiusM[0]}
-          </p>
-        ) : null}
-
-        <Button type="submit" size="sm">
-          {t('common.save')}
-        </Button>
       </form>
     </details>
   );
 }
 
 /**
- * One feature, with its two switches.
+ * One requirement: its on switch, its enforcement, and anything it needs.
  *
- * Enabled and required are separate decisions and neither implies the other —
- * an item can demand a photograph while merely inviting a file, and record a
- * location without insisting on it. Required is disabled until the feature is
- * on, because enforcing something switched off is a rule with nothing to apply
- * to; the database refuses that combination too.
- *
- * Enabled is held in state rather than read from the DOM so the required
- * checkbox can grey out the moment its feature is switched off, instead of
- * waiting for a save to tell somebody the combination was invalid.
+ * Enforcement and the extra fields appear only once the feature is on. A
+ * disabled checkbox sitting beside an unchecked feature reads as something
+ * broken rather than as something not yet relevant.
  */
-function RequirementToggle({
+function RequirementRow({
   label,
   enabledName,
   requiredName,
   enabled,
   onEnabledChange,
   defaultRequired,
+  children,
 }: {
   label: string;
   enabledName: string;
@@ -683,12 +685,13 @@ function RequirementToggle({
   enabled: boolean;
   onEnabledChange: (next: boolean) => void;
   defaultRequired: boolean;
+  children?: React.ReactNode;
 }) {
   const { t } = useT();
 
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
-      <label className="flex items-center gap-2 text-sm font-medium">
+    <div className="rounded-md border border-[var(--color-border)] p-3">
+      <label className="flex cursor-pointer items-center gap-2.5 text-sm font-medium">
         <input
           type="checkbox"
           name={enabledName}
@@ -699,21 +702,21 @@ function RequirementToggle({
         {label}
       </label>
 
-      <label
-        className={cn(
-          'flex items-center gap-2 text-sm',
-          enabled ? '' : 'text-[var(--color-muted-foreground)]',
-        )}
-      >
-        <input
-          type="checkbox"
-          name={requiredName}
-          defaultChecked={defaultRequired}
-          disabled={!enabled}
-          className="size-4"
-        />
-        {t('checklist.enforced')}
-      </label>
+      {enabled ? (
+        <div className="mt-3 border-t border-[var(--color-border)] pt-3">
+          <label className="flex cursor-pointer items-center gap-2.5 text-sm">
+            <input
+              type="checkbox"
+              name={requiredName}
+              defaultChecked={defaultRequired}
+              className="size-4"
+            />
+            {t('checklist.enforced')}
+          </label>
+
+          {children ? <div className="mt-3">{children}</div> : null}
+        </div>
+      ) : null}
     </div>
   );
 }
