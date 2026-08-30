@@ -121,7 +121,26 @@ export function StringEditor({
         <ul className="divide-y divide-[var(--color-border)] rounded-xl border border-[var(--color-border)]">
           {filtered.map((row) => (
             <StringRow
-              key={row.key}
+              /*
+               * Locale and value both belong in this key, and neither was here.
+               *
+               * `row.key` alone is the string's identifier — `common.save` — and
+               * it is the same in every language. Switching language re-rendered
+               * with Russian rows, React matched them to the existing components
+               * by that identical key, and `useState` inside each row kept the
+               * Uzbek draft it was initialised with. The heading said Russian and
+               * the fields showed Uzbek until a full reload threw the state away.
+               *
+               * The value is here for the reason the row's own comment always
+               * claimed: a reset, or a save in another tab, changes what the
+               * field should show, and only a remount picks that up.
+               *
+               * The locale is here because the value alone is not enough. An
+               * untranslated string is empty in every language, so two locales
+               * would produce the same key and the stale draft would survive
+               * exactly where it is least obvious — a field that looks blank.
+               */
+              key={`${locale}:${row.key}:${row.override || row.shipped}`}
               row={row}
               labels={labels}
               localeName={localeName}
@@ -149,8 +168,12 @@ function StringRow({
   onSave: (key: string, value: string) => void;
 }) {
   const current = row.override || row.shipped;
-  // Keyed by the value so the field picks up a change made elsewhere (a reset,
-  // or a save from another tab) instead of holding a stale draft.
+  /*
+   * Initialised once per mount, which is only correct because the caller's key
+   * includes the locale and the value — see the note there. This state does not
+   * follow its prop, so if that key is ever reduced to `row.key` again, the
+   * field silently keeps showing the previous language.
+   */
   const [draft, setDraft] = useState(current);
 
   return (

@@ -36,8 +36,9 @@ export function PricingTable({
         return (
           <div
             key={plan.code}
+            data-reveal
             className={cn(
-              'reveal relative flex flex-col rounded-2xl border p-6',
+              'relative flex flex-col rounded-2xl border p-6',
               plan.featured
                 ? 'border-[var(--color-primary)] bg-[var(--color-card)] shadow-e2'
                 : 'border-[var(--color-border)] bg-[var(--color-card)]',

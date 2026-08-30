@@ -13,6 +13,7 @@
     "@app/core": "workspace:*",
     "@app/design": "workspace:*",
     "clsx": "^2.1.1",
+    "gsap": "^3.15.0",
     "lucide-react": "^0.549.0",
     "next": "16.3.0",
     "react": "19.2.8",

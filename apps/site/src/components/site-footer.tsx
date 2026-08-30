@@ -7,96 +7,130 @@ import { MESSAGES, type SiteMessages } from '@/lib/i18n/messages';
 import { SIGNIN_URL, SIGNUP_URL } from '@/lib/site';
 import { COMPANY_NAME, LEGAL } from '@/lib/legal';
 
-/** Copy comes in as a prop — see the note in `site-header.tsx`. */
+/**
+ * Four labelled columns rather than three unnamed lists.
+ *
+ * WHAT WAS WRONG. Every navigation down here carried an `aria-label` borrowed
+ * from an unrelated string: the section links announced themselves as "Pricing",
+ * the account links as "Sign in", and the legal pair as "Privacy Policy". A
+ * sighted reader saw three anonymous columns; a screen-reader user heard three
+ * misleading names. Each column now has a real heading, and the heading is what
+ * labels the navigation, so the two can never disagree again.
+ *
+ * The legal links still take their text from the documents' own titles rather
+ * than from catalogue keys. That is deliberate: the link and the page it points
+ * at cannot drift apart if there is only one string, and a footer link reading
+ * "Terms" above a page headed something else is exactly the small wrongness
+ * nobody gets round to fixing.
+ *
+ * Copy arrives as a prop — see the note in `site-header.tsx`.
+ */
+
+function Column({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <nav aria-label={title} className="flex flex-col gap-2.5">
+      <h2 className="font-mono text-[0.65rem] tracking-[0.09em] text-[var(--color-muted-foreground)] uppercase">
+        {title}
+      </h2>
+      {children}
+    </nav>
+  );
+}
+
+const linkClass =
+  'text-sm text-[var(--color-muted-foreground)] transition-colors hover:text-[var(--color-foreground)]';
+
 export function SiteFooter({ locale, m }: { locale: BuiltinLocale; m: SiteMessages }) {
   return (
-    <footer className="border-t border-[var(--color-border)]">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-12 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <span className="flex items-center gap-2.5">
-            <CircleCheckBig className="size-5 text-[var(--color-primary)]" aria-hidden="true" />
-            <span className="font-semibold tracking-tight">Gidlist</span>
-          </span>
-          <p className="mt-3 text-sm text-[var(--color-muted-foreground)]">{m.tagline}</p>
-        </div>
+    <footer className="border-t border-[var(--color-border)] bg-[var(--color-surface)]/40">
+      <div className="mx-auto w-full max-w-6xl px-6 py-14">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.7fr_1fr_1fr_1fr]">
+          {/* Brand. The same lockup as the header — mark in a rounded square,
+              wordmark beside it — because two different marks on one page is the
+              fastest way to look like two different companies. */}
+          <div className="max-w-xs">
+            <Link href={`/${locale}`} className="flex items-center gap-2.5">
+              <span className="grid size-8 place-items-center rounded-lg bg-[var(--color-primary)] text-[var(--color-primary-foreground)]">
+                <CircleCheckBig className="size-[1.15rem]" aria-hidden="true" />
+              </span>
+              <span className="text-lg font-semibold tracking-tight">Gidlist</span>
+            </Link>
 
-        <div className="flex flex-col gap-3 text-sm sm:flex-row sm:gap-8">
-          <nav className="flex flex-col gap-2" aria-label={m.navPricing}>
-            <a
-              href="#how"
-              className="text-[var(--color-muted-foreground)] transition-colors hover:text-[var(--color-foreground)]"
-            >
+            <p className="mt-4 text-sm leading-relaxed text-pretty text-[var(--color-muted-foreground)]">
+              {m.tagline} {m.footerNote}
+            </p>
+          </div>
+
+          <Column title={m.footerProduct}>
+            <a href={`/${locale}#how`} className={linkClass}>
               {m.navHow}
             </a>
-            <a
-              href="#pricing"
-              className="text-[var(--color-muted-foreground)] transition-colors hover:text-[var(--color-foreground)]"
-            >
+            <a href={`/${locale}#pricing`} className={linkClass}>
               {m.navPricing}
             </a>
-          </nav>
+            <a href={`/${locale}#faq`} className={linkClass}>
+              {m.navFaq}
+            </a>
+          </Column>
 
-          <nav className="flex flex-col gap-2" aria-label={m.navSignIn}>
-            <a
-              href={SIGNUP_URL}
-              className="text-[var(--color-muted-foreground)] transition-colors hover:text-[var(--color-foreground)]"
-            >
+          <Column title={m.footerAccount}>
+            <a href={SIGNUP_URL} className={linkClass}>
               {m.ctaPrimary}
             </a>
-            <a
-              href={SIGNIN_URL}
-              className="text-[var(--color-muted-foreground)] transition-colors hover:text-[var(--color-foreground)]"
-            >
+            <a href={SIGNIN_URL} className={linkClass}>
               {m.navSignIn}
             </a>
-          </nav>
+          </Column>
 
-          {/* Repeated in the footer as well as the header: somebody who reached
-              the bottom in the wrong language should not have to scroll back. */}
-          <nav className="flex flex-col gap-2" aria-label={m.footerLanguage}>
-            {SITE_LOCALES.map((code) => (
-              <Link
-                key={code}
-                href={`/${code}`}
-                hrefLang={MESSAGES[code].htmlLang}
-                aria-current={code === locale ? 'true' : undefined}
-                className={
-                  code === locale
-                    ? 'font-medium'
-                    : 'text-[var(--color-muted-foreground)] transition-colors hover:text-[var(--color-foreground)]'
-                }
-              >
-                {BUILTIN_LOCALE_NAMES[code]}
-              </Link>
-            ))}
-          </nav>
+          <Column title={m.footerLegal}>
+            <Link href={`/${locale}/privacy`} className={linkClass}>
+              {LEGAL[locale].privacy.title}
+            </Link>
+            <Link href={`/${locale}/terms`} className={linkClass}>
+              {LEGAL[locale].terms.title}
+            </Link>
+          </Column>
         </div>
-      </div>
 
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-6 pb-10 text-sm text-[var(--color-muted-foreground)] sm:flex-row sm:items-center sm:justify-between">
-        <p>
-          © {new Date().getFullYear()} {COMPANY_NAME}. {m.footerRights} {m.footerNote}
-        </p>
-
-        {/* Down here rather than in the columns above, which is where people look
-            for them, and where they stay out of the way of the actual argument.
-            The labels are the documents' own titles, so they translate with the
-            documents instead of needing two more catalogue keys that could drift
-            out of step with the page they point at. */}
-        <nav className="flex gap-6" aria-label={LEGAL[locale].privacy.title}>
-          <Link
-            href={`/${locale}/privacy`}
-            className="transition-colors hover:text-[var(--color-foreground)]"
-          >
-            {LEGAL[locale].privacy.title}
-          </Link>
-          <Link
-            href={`/${locale}/terms`}
-            className="transition-colors hover:text-[var(--color-foreground)]"
-          >
-            {LEGAL[locale].terms.title}
-          </Link>
+        {/* Repeated here as well as in the header: somebody who reached the
+            bottom in the wrong language should not have to scroll back. Full
+            names, because unlike the header this column has room for them. */}
+        <nav
+          aria-label={m.footerLanguage}
+          className="mt-12 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-[var(--color-border)] pt-6"
+        >
+          <h2 className="font-mono text-[0.65rem] tracking-[0.09em] text-[var(--color-muted-foreground)] uppercase">
+            {m.footerLanguage}
+          </h2>
+          {SITE_LOCALES.map((code) => (
+            <Link
+              key={code}
+              href={`/${code}`}
+              hrefLang={MESSAGES[code].htmlLang}
+              aria-current={code === locale ? 'true' : undefined}
+              className={
+                code === locale
+                  ? 'text-sm font-medium'
+                  : 'text-sm text-[var(--color-muted-foreground)] transition-colors hover:text-[var(--color-foreground)]'
+              }
+            >
+              {BUILTIN_LOCALE_NAMES[code]}
+            </Link>
+          ))}
         </nav>
+
+        <div className="mt-6 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-[var(--color-muted-foreground)]">
+          <p>
+            © {new Date().getFullYear()} {COMPANY_NAME}. {m.footerRights}
+          </p>
+          <p>{m.footerCompany}</p>
+        </div>
       </div>
     </footer>
   );

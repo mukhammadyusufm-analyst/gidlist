@@ -87,6 +87,17 @@ export async function generateMetadata({
       locale: m.htmlLang,
       url: `/${locale}`,
     },
+    /**
+     * A large card rather than the default thumbnail. There is no custom share
+     * image yet, so this currently renders as a text card — which is honest and
+     * legible, and better than a stretched logo. Add `images` here when there
+     * is artwork worth showing.
+     */
+    twitter: {
+      card: 'summary_large_image',
+      title: m.metaTitle,
+      description: m.metaDescription,
+    },
   };
 }
 

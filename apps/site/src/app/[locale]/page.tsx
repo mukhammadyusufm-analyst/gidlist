@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { ArrowRight, CalendarClock, FileLock2, History, TriangleAlert } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 import { isBuiltinLocale } from '@/lib/i18n/locale';
 import { getPlans, getSiteMessages } from '@/lib/content';
@@ -7,6 +7,17 @@ import { SIGNUP_URL } from '@/lib/site';
 import { SiteHeader } from '@/components/site-header';
 import { SiteFooter } from '@/components/site-footer';
 import { PricingTable } from '@/components/pricing-table';
+import { Scenes } from '@/components/scenes';
+import { Reveal } from '@/components/reveal';
+import { ClosingScenes } from '@/components/closing-scenes';
+import { CLOSING } from '@/lib/closing-copy';
+import { FrameAct } from '@/components/frame-act';
+import { DemoProvider } from '@/lib/demo/state';
+import { LedgerRail } from '@/components/demo/ledger-rail';
+import { LiveChecklist } from '@/components/demo/live-checklist';
+import { SpaceSwitcher } from '@/components/demo/space-switcher';
+import { NARRATIVE } from '@/lib/narrative-copy';
+import { StructuredData } from '@/components/structured-data';
 
 /**
  * Still statically generated — this is the window after which an edit made in
@@ -21,17 +32,27 @@ import { PricingTable } from '@/components/pricing-table';
 export const revalidate = 300;
 
 /**
- * The whole marketing page, in one file on purpose.
+ * The page is four moves: a hero, an argument, a price, and an ask.
  *
- * The sections are almost entirely markup driven by the message catalogue, and
- * splitting five of them into five files would mean opening five files to read
- * one argument. The pieces with logic or reuse — the header, the footer, the
- * pricing table — are components; the narrative is not.
+ * THE ARGUMENT IS ONE COMPONENT, NOT THREE SECTIONS. It used to be a problem
+ * section, a features section and a how-it-works section, each restating the
+ * pitch in a different layout — so a reader who understood it the first time was
+ * asked to read it twice more. `Narrative` replaces all three with six acts that
+ * each move the argument one step: nobody can say whether it happened, so write
+ * it down once, and it arrives without anybody remembering, and it comes back
+ * carrying more than a tick, and what came back cannot quietly change, so the
+ * pile of records will answer a question.
  *
- * The order is the argument: name the problem the reader already has, show what
- * is different about the answer, show that it is not much work to start, then
- * price it. Asking for the sale before making the argument is the most common
- * way a page like this fails.
+ * WHAT LIVES WHERE. The hero, the pricing lead and the closing ask stay on the
+ * message catalogue, because they are prose somebody should be able to rewrite
+ * from the admin screen without a deploy. The narrative's copy is in
+ * `lib/narrative-copy.ts` instead: those strings sit inside compositions —
+ * timestamps aligned in columns, bars labelled beneath a chart — and editable
+ * copy that can break a layout is worse than copy that needs a deploy.
+ *
+ * `problemCards`, `features` and `steps` are consequently no longer rendered.
+ * They remain in the catalogue rather than being deleted, so nothing breaks for
+ * an administrator mid-edit; removing them is a separate, deliberate change.
  */
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -42,7 +63,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   // no reason.
   const [m, plans] = await Promise.all([getSiteMessages(locale), getPlans(locale)]);
 
-  const featureIcons = [CalendarClock, TriangleAlert, FileLock2, History];
+  const n = NARRATIVE[locale];
+  const c = CLOSING[locale];
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -55,206 +77,155 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         {m.skipToContent}
       </a>
 
+      <StructuredData locale={locale} m={m} plans={plans} />
+
       <SiteHeader locale={locale} m={m} />
 
-      <main id="main" className="flex-1">
+      {/*
+        Everything below shares one demo dataset. The provider has to sit above
+        the whole page rather than around each module, because that shared state
+        is the point: a space chosen in the hero is still the space the charts
+        near the bottom are counting.
+      */}
+      <DemoProvider locale={locale}>
+        <div className="mx-auto flex w-full max-w-[88rem] flex-1 gap-8 px-0 lg:px-6">
+          <LedgerRail emptyLabel={n.demo.railEmpty} />
+
+          <main id="main" className="min-w-0 flex-1">
         {/* ---------------------------------------------------------------- */}
         {/* Hero                                                             */}
         {/* ---------------------------------------------------------------- */}
-        <section className="mx-auto w-full max-w-6xl px-6 pt-16 pb-20 sm:pt-24 sm:pb-28">
-          <div className="max-w-3xl">
-            {/* The tagline as an eyebrow rather than a headline. It is a brand
-                phrase, not the argument — the argument is the h1 beneath it. */}
-            <p className="text-sm font-medium tracking-wide text-[var(--color-primary)]">
-              {m.tagline}
-            </p>
+        {/*
+          Two columns, and the right one is the product rather than a picture of
+          it. The old hero was a headline, a paragraph and two buttons — the same
+          opening as every other software homepage, asking the reader to imagine
+          the thing from a description. A checklist they can tick explains it in
+          about two seconds, and the timestamp that appears is the argument made
+          rather than stated.
 
-            <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl">
-              {m.headline}
-            </h1>
+          Text first in the DOM, so it is also first on a phone and first to a
+          screen reader: the card is the hook, not the explanation.
+        */}
+        <section className="mx-auto w-full max-w-6xl px-6 pt-16 pb-20 sm:pt-20 sm:pb-24">
+          <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-16">
+            <div>
+              {/* The tagline as an eyebrow rather than a headline. It is a brand
+                  phrase, not the argument — the argument is the h1 beneath it. */}
+              <p className="text-sm font-medium tracking-wide text-[var(--color-primary)]">
+                {m.tagline}
+              </p>
 
-            <p className="mt-6 max-w-2xl text-lg leading-relaxed text-[var(--color-muted-foreground)]">
-              {m.subhead}
-            </p>
+              <h1 className="mt-4 text-4xl font-semibold tracking-tight text-balance sm:text-5xl lg:text-6xl">
+                {m.headline}
+              </h1>
 
-            <div className="mt-10 flex flex-wrap items-center gap-3">
-              <a
-                href={SIGNUP_URL}
-                className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-[var(--color-primary)] px-6 text-base font-medium text-[var(--color-primary-foreground)] shadow-e2 transition-transform hover:-translate-y-0.5"
-              >
-                {m.ctaPrimary}
-                <ArrowRight className="size-4" aria-hidden="true" />
-              </a>
+              <p className="mt-6 max-w-xl text-lg leading-relaxed text-pretty text-[var(--color-muted-foreground)]">
+                {m.subhead}
+              </p>
 
-              <a
-                href="#how"
-                className="inline-flex min-h-12 items-center rounded-xl border border-[var(--color-input)] px-6 text-base font-medium transition-colors hover:bg-[var(--color-accent)]"
-              >
-                {m.ctaSecondary}
-              </a>
-            </div>
-
-            <p className="mt-4 text-sm text-[var(--color-muted-foreground)]">{m.ctaNote}</p>
-          </div>
-        </section>
-
-        {/* ---------------------------------------------------------------- */}
-        {/* Problem                                                          */}
-        {/* ---------------------------------------------------------------- */}
-        <section className="border-y border-[var(--color-border)] bg-[var(--color-surface)]">
-          <div className="mx-auto w-full max-w-6xl px-6 py-20 sm:py-24">
-            <Eyebrow>{m.problemEyebrow}</Eyebrow>
-            <h2 className="reveal mt-3 max-w-2xl text-3xl font-semibold tracking-tight sm:text-4xl">
-              {m.problemTitle}
-            </h2>
-            <p className="reveal mt-5 max-w-2xl text-lg leading-relaxed text-[var(--color-muted-foreground)]">
-              {m.problemLead}
-            </p>
-
-            {/* Two cards, not three. There are exactly two rooms in the
-                argument, and padding it to three would invent one. */}
-            <div className="mt-12 grid gap-4 md:grid-cols-2">
-              {m.problemCards.map((card) => (
-                <div
-                  key={card.title}
-                  className="reveal rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] p-6"
+              <div className="mt-9 flex flex-wrap items-center gap-3">
+                <a
+                  href={SIGNUP_URL}
+                  className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-[var(--color-primary)] px-6 text-base font-medium text-[var(--color-primary-foreground)] shadow-e2 transition-transform hover:-translate-y-0.5"
                 >
-                  <h3 className="font-semibold">{card.title}</h3>
-                  <p className="mt-3 leading-relaxed text-[var(--color-muted-foreground)]">
-                    {card.body}
-                  </p>
-                </div>
-              ))}
+                  {m.ctaPrimary}
+                  <ArrowRight className="size-4" aria-hidden="true" />
+                </a>
+
+                <a
+                  href="#how"
+                  className="inline-flex min-h-12 items-center rounded-xl border border-[var(--color-input)] px-6 text-base font-medium transition-colors hover:bg-[var(--color-accent)]"
+                >
+                  {m.ctaSecondary}
+                </a>
+              </div>
+
+              <p className="mt-4 text-sm text-[var(--color-muted-foreground)]">{m.ctaNote}</p>
             </div>
 
-            <p className="reveal mt-8 max-w-2xl text-lg font-medium">{m.problemClose}</p>
+            <div className="flex flex-col gap-4">
+              <LiveChecklist
+                labels={{
+                  hint: n.demo.hint,
+                  counter: n.demo.counter,
+                  submitted: n.demo.submitted,
+                  reset: n.demo.reset,
+                  tickedEntry: n.demo.ticked,
+                  untickedEntry: n.demo.unticked,
+                }}
+              />
+
+              {/* Under the card, not above it: the checklist is the hook, and
+                  the switcher only becomes interesting once you have used one. */}
+              <SpaceSwitcher label={n.demo.spaceLabel} changedEntry={n.demo.spaceChanged} />
+            </div>
           </div>
         </section>
 
         {/* ---------------------------------------------------------------- */}
-        {/* What it does                                                     */}
+        {/* Scene 3 — the mental model                                       */}
         {/* ---------------------------------------------------------------- */}
         <section className="mx-auto w-full max-w-6xl px-6 py-20 sm:py-24">
-          <Eyebrow>{m.featuresEyebrow}</Eyebrow>
-          <h2 className="reveal mt-3 max-w-2xl text-3xl font-semibold tracking-tight sm:text-4xl">
-            {m.featuresTitle}
-          </h2>
-          <p className="reveal mt-5 max-w-2xl text-lg leading-relaxed text-[var(--color-muted-foreground)]">
-            {m.featuresLead}
-          </p>
-
-          <div className="mt-12 grid gap-x-8 gap-y-10 sm:grid-cols-2">
-            {m.features.map((feature, i) => {
-              const Icon = featureIcons[i];
-              return (
-                <div key={feature.title} className="reveal flex gap-4">
-                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[var(--color-primary)]/10 text-[var(--color-primary)]">
-                    <Icon className="size-5" aria-hidden="true" />
-                  </span>
-                  <div>
-                    <h3 className="font-semibold">{feature.title}</h3>
-                    <p className="mt-2 leading-relaxed text-[var(--color-muted-foreground)]">
-                      {feature.body}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <FrameAct m={m} />
         </section>
 
         {/* ---------------------------------------------------------------- */}
-        {/* How it works                                                     */}
+        {/* The argument, in six acts                                        */}
+        {/*                                                                  */}
+        {/* This replaced a problem section, a features section and a        */}
+        {/* how-it-works section. All three said the same thing in three     */}
+        {/* layouts, so a reader who understood it once was asked to read it */}
+        {/* twice more. The narrative moves instead of repeating, and each   */}
+        {/* act names one concrete room — a depot, an office at 09:00, a     */}
+        {/* ward — so the range shows across the page rather than inside any */}
+        {/* single sentence, which is what the brandbook asks for.           */}
         {/* ---------------------------------------------------------------- */}
-        <section
-          id="how"
-          className="border-y border-[var(--color-border)] bg-[var(--color-surface)] scroll-mt-16"
-        >
-          <div className="mx-auto w-full max-w-6xl px-6 py-20 sm:py-24">
-            <Eyebrow>{m.howEyebrow}</Eyebrow>
-            <h2 className="reveal mt-3 max-w-2xl text-3xl font-semibold tracking-tight sm:text-4xl">
-              {m.howTitle}
-            </h2>
-            <p className="reveal mt-5 max-w-2xl text-lg leading-relaxed text-[var(--color-muted-foreground)]">
-              {m.howLead}
-            </p>
-
-            {/*
-              Numbered, and here the numbers are information rather than
-              decoration: this genuinely is a sequence, and step three does not
-              work before step two. An ordered list says so to a screen reader
-              as well as to the eye.
-            */}
-            <ol className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-              {m.steps.map((step, i) => (
-                <li key={step.title} className="reveal">
-                  <span
-                    aria-hidden="true"
-                    className="font-mono text-sm font-medium text-[var(--color-primary)] tabular-nums"
-                  >
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <h3 className="mt-3 font-semibold">{step.title}</h3>
-                  <p className="mt-2 leading-relaxed text-[var(--color-muted-foreground)]">
-                    {step.body}
-                  </p>
-                </li>
-              ))}
-            </ol>
-          </div>
+        <section id="how" className="border-y border-[var(--color-border)] bg-[var(--color-surface)]/40 scroll-mt-16">
+          <Scenes m={m} labels={n.modules} />
         </section>
+
+        <ClosingScenes m={m} copy={c} signupUrl={SIGNUP_URL} ctaLabel={m.ctaPrimary} part="before-pricing" />
 
         {/* ---------------------------------------------------------------- */}
         {/* Pricing                                                          */}
         {/* ---------------------------------------------------------------- */}
         <section id="pricing" className="mx-auto w-full max-w-6xl px-6 py-20 scroll-mt-16 sm:py-24">
-          <Eyebrow>{m.pricingEyebrow}</Eyebrow>
-          <h2 className="reveal mt-3 max-w-2xl text-3xl font-semibold tracking-tight sm:text-4xl">
-            {m.pricingTitle}
-          </h2>
-          <p className="reveal mt-5 max-w-2xl text-lg leading-relaxed text-[var(--color-muted-foreground)]">
-            {m.pricingLead}
-          </p>
+          <Reveal>
+            <p
+              data-reveal
+              className="font-mono text-xs tracking-[0.09em] text-[var(--color-primary)] uppercase"
+            >
+              {m.pricingEyebrow}
+            </p>
+            <h2
+              data-reveal
+              className="mt-3 max-w-2xl text-3xl font-semibold tracking-tight text-balance sm:text-4xl"
+            >
+              {m.pricingTitle}
+            </h2>
+            <p
+              data-reveal
+              className="mt-5 max-w-2xl text-lg leading-relaxed text-pretty text-[var(--color-muted-foreground)]"
+            >
+              {m.pricingLead}
+            </p>
 
-          <PricingTable locale={locale} m={m} plans={plans} />
+            <PricingTable locale={locale} m={m} plans={plans} />
 
-          <p className="reveal mt-8 text-sm text-[var(--color-muted-foreground)]">
-            {m.pricingIncluded} {m.pricingNote}
-          </p>
+            <p data-reveal className="mt-8 text-sm text-[var(--color-muted-foreground)]">
+              {m.pricingIncluded} {m.pricingNote}
+            </p>
+          </Reveal>
         </section>
 
-        {/* ---------------------------------------------------------------- */}
-        {/* Closing call to action                                           */}
-        {/* ---------------------------------------------------------------- */}
-        <section className="border-t border-[var(--color-border)] bg-[var(--color-surface)]">
-          <div className="mx-auto w-full max-w-6xl px-6 py-20 sm:py-24">
-            <div className="reveal max-w-2xl">
-              <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">{m.finalTitle}</h2>
-              <p className="mt-5 text-lg leading-relaxed text-[var(--color-muted-foreground)]">
-                {m.finalLead}
-              </p>
-              <a
-                href={SIGNUP_URL}
-                className="mt-8 inline-flex min-h-12 items-center gap-2 rounded-xl bg-[var(--color-primary)] px-6 text-base font-medium text-[var(--color-primary-foreground)] shadow-e2 transition-transform hover:-translate-y-0.5"
-              >
-                {m.ctaPrimary}
-                <ArrowRight className="size-4" aria-hidden="true" />
-              </a>
-            </div>
-          </div>
-        </section>
-      </main>
+        <ClosingScenes m={m} copy={c} signupUrl={SIGNUP_URL} ctaLabel={m.ctaPrimary} part="after-pricing" />
+
+          </main>
+        </div>
+      </DemoProvider>
 
       <SiteFooter locale={locale} m={m} />
     </div>
   );
 }
 
-/** Section label. Uppercase needs the letter-spacing or it reads as shouting. */
-function Eyebrow({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="reveal text-xs font-medium tracking-widest text-[var(--color-muted-foreground)] uppercase">
-      {children}
-    </p>
-  );
-}

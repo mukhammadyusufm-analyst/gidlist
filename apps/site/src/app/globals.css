@@ -48,45 +48,6 @@
     outline-offset: 2px;
   }
 
-  /*
-   * Scroll reveals, with no JavaScript at all.
-   *
-   * `animation-timeline: view()` drives the animation from the element's own
-   * position in the viewport, so there is no IntersectionObserver, no client
-   * component and no hydration cost. It matters more than it sounds: the usual
-   * approach starts content at `opacity: 0` and waits for a script to reveal
-   * it, which means a failed or slow bundle leaves a blank page. Here the
-   * markup is visible by default and the animation is added only where the
-   * browser can run it.
-   *
-   * Browsers without support — Safari and Firefox at time of writing — simply
-   * show the content. That is the correct fallback, not a degraded one.
-   *
-   * Wrapped in `prefers-reduced-motion: no-preference` rather than relying on
-   * the blanket override below, because that override neutralises duration but
-   * a scroll-driven animation has no duration to neutralise.
-   */
-  @supports (animation-timeline: view()) {
-    @media (prefers-reduced-motion: no-preference) {
-      .reveal {
-        animation: reveal-in linear both;
-        animation-timeline: view();
-        animation-range: entry 5% cover 28%;
-      }
-    }
-  }
-
-  @keyframes reveal-in {
-    from {
-      opacity: 0;
-      transform: translateY(1.25rem);
-    }
-    to {
-      opacity: 1;
-      transform: none;
-    }
-  }
-
   @media (prefers-reduced-motion: reduce) {
     html {
       scroll-behavior: auto;

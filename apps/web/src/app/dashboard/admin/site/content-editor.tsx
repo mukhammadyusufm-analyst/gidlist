@@ -37,6 +37,24 @@ export type ContentSection = {
  * The grouping comes from `siteContentSections()` rather than being decided
  * here, so the site's own catalogue declares the order and this renders it.
  */
+/**
+ * Keys that are a show/hide flag rather than text.
+ *
+ * The convention is the key name: anything ending in `visible` — the section
+ * flags `faqVisible` and `tractionVisible`, and the per-item `faqItems.3.visible`.
+ * Matching on the name rather than keeping a list here means a new optional
+ * section gets its checkbox automatically, and cannot be added with a text box
+ * by accident.
+ */
+function isToggle(key: string): boolean {
+  return /visible$/i.test(key);
+}
+
+/** `no` hides; anything else shows, matching how the site reads these. */
+function showing(value: string): boolean {
+  return value.trim().toLowerCase() !== 'no';
+}
+
 export function ContentEditor({
   locale,
   localeName,
@@ -168,17 +186,41 @@ export function ContentEditor({
                       </span>
                     </div>
 
-                    <textarea
-                      key={`${row.key}:${row.override}`}
-                      defaultValue={row.override}
-                      placeholder={row.shipped}
-                      rows={Math.min(6, Math.max(2, Math.ceil(row.shipped.length / 80)))}
-                      onBlur={(e) => save(row.key, e.target.value, row.override)}
-                      className={cn(
-                        'mt-2 w-full rounded-lg border bg-[var(--color-surface)] px-3 py-2 text-sm',
-                        edited ? 'border-[var(--color-primary)]' : 'border-[var(--color-input)]',
-                      )}
-                    />
+                    {isToggle(row.key) ? (
+                      /*
+                       * A show/hide flag, not prose.
+                       *
+                       * It is stored as a string like everything else the CMS
+                       * keeps, but nobody should have to know that, let alone
+                       * type `no` correctly to hide a section. The checkbox
+                       * writes the word.
+                       */
+                      <label className="mt-2 flex cursor-pointer items-center gap-2.5 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={showing(row.override || row.shipped)}
+                          onChange={(e) =>
+                            save(row.key, e.target.checked ? 'yes' : 'no', row.override)
+                          }
+                          className="size-4 cursor-pointer accent-[var(--color-primary)]"
+                        />
+                        {showing(row.override || row.shipped)
+                          ? 'Shown on the website'
+                          : 'Hidden from the website'}
+                      </label>
+                    ) : (
+                      <textarea
+                        key={`${row.key}:${row.override}`}
+                        defaultValue={row.override}
+                        placeholder={row.shipped}
+                        rows={Math.min(6, Math.max(2, Math.ceil(row.shipped.length / 80)))}
+                        onBlur={(e) => save(row.key, e.target.value, row.override)}
+                        className={cn(
+                          'mt-2 w-full rounded-lg border bg-[var(--color-surface)] px-3 py-2 text-sm',
+                          edited ? 'border-[var(--color-primary)]' : 'border-[var(--color-input)]',
+                        )}
+                      />
+                    )}
 
                     {/* The shipped text stays visible while an override exists.
                         Otherwise the only way to compare an edit against what it
