@@ -195,19 +195,32 @@ export function ContentEditor({
                        * type `no` correctly to hide a section. The checkbox
                        * writes the word.
                        */
-                      <label className="mt-2 flex cursor-pointer items-center gap-2.5 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={showing(row.override || row.shipped)}
-                          onChange={(e) =>
-                            save(row.key, e.target.checked ? 'yes' : 'no', row.override)
-                          }
-                          className="size-4 cursor-pointer accent-[var(--color-primary)]"
-                        />
-                        {showing(row.override || row.shipped)
-                          ? 'Shown on the website'
-                          : 'Hidden from the website'}
-                      </label>
+                      <div className="mt-2">
+                        {/*
+                          The label says what the control *does* and never
+                          changes. An earlier version flipped it between "Shown"
+                          and "Hidden" to describe the current state — which the
+                          checkbox was already showing, so the row said the same
+                          thing twice and the words appeared to contradict the
+                          box every time you looked at it mid-change.
+                        */}
+                        <label className="flex cursor-pointer items-center gap-2.5 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={showing(row.override || row.shipped)}
+                            onChange={(e) =>
+                              save(row.key, e.target.checked ? 'yes' : 'no', row.override)
+                            }
+                            className="size-4 cursor-pointer accent-[var(--color-primary)]"
+                          />
+                          Show this on the website
+                        </label>
+
+                        <p className="mt-1.5 text-xs text-[var(--color-muted-foreground)]">
+                          The website is cached, so a change here can take up to
+                          five minutes to appear.
+                        </p>
+                      </div>
                     ) : (
                       <textarea
                         key={`${row.key}:${row.override}`}
@@ -225,9 +238,15 @@ export function ContentEditor({
                     {/* The shipped text stays visible while an override exists.
                         Otherwise the only way to compare an edit against what it
                         replaced would be to delete the edit. */}
+                    {/* The shipped text stays visible while an override exists.
+                        Otherwise the only way to compare an edit against what it
+                        replaced would be to delete the edit. For a toggle the
+                        raw word is meaningless, so it is worded as a default. */}
                     {edited ? (
                       <p className="mt-1.5 text-xs text-[var(--color-muted-foreground)]">
-                        Ships as: {row.shipped}
+                        {isToggle(row.key)
+                          ? `Default: ${showing(row.shipped) ? 'shown' : 'hidden'}`
+                          : `Ships as: ${row.shipped}`}
                       </p>
                     ) : null}
                   </li>

@@ -3,48 +3,65 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { SITE_LOCALES, negotiateLocale } from '@/lib/i18n/locale';
 
 /**
- * The Content Security Policy, built fresh per request.
+ * The Content Security Policy.
  *
- * Here rather than in `next.config.ts` for the same reason as the product: the
- * script nonce must be unpredictable and different every time, and a static
- * config cannot produce one. Next reads the nonce back out of the request
- * headers set below and stamps it onto its own inline scripts, which is what
- * lets `script-src` refuse everything else.
+ * NO NONCE, AND THAT IS THE CORRECTION. This file previously issued a fresh
+ * nonce per request and used `strict-dynamic`. On this site that combination
+ * cannot work, and it silently broke every interactive element on the page.
  *
- * `strict-dynamic` means: trust scripts the nonced ones load, and nothing more.
- * An injected `<script src>` has no nonce and never runs.
+ * The reason is that these pages are statically generated. Next renders them at
+ * build time and Vercel serves the result from its CDN — a real response came
+ * back with `x-vercel-cache: HIT` and `age: 66`. The HTML is therefore written
+ * once, with whatever nonce existed at build time or none at all, while this
+ * middleware attaches a *different* random nonce to every request's header. The
+ * two can never agree. And because `strict-dynamic` makes the browser ignore
+ * `'self'`, the mismatch does not degrade to "same-origin scripts still run" —
+ * it blocks all eighteen of them.
+ *
+ * It went unnoticed because until the site had interactive modules there was no
+ * JavaScript whose absence was visible. The page looked perfect and did nothing.
+ *
+ * WHAT REPLACES IT. `script-src 'self' 'unsafe-inline'`. Next's App Router emits
+ * inline scripts carrying the flight payload that hydration needs, so inline
+ * script has to be permitted somehow, and with no nonce available the only
+ * mechanism left is `'unsafe-inline'`. What is still enforced is the part that
+ * matters most here: no third-party script origin is allowed at all, so an
+ * injected `<script src>` pointing anywhere off this domain still cannot load.
+ *
+ * THE ALTERNATIVE WAS WORSE. Rendering every page per request would restore the
+ * nonce, and would also throw away static generation and CDN caching on a
+ * marketing site whose whole job is to load fast on a phone. Paying that to
+ * close an inline-injection hole on a page that renders no user-supplied
+ * content is the wrong trade — every string here comes from the message
+ * catalogue and is escaped as React text.
+ *
+ * THE PRODUCT KEEPS ITS NONCE. `apps/web` renders per request behind a login,
+ * so nonce plus `strict-dynamic` works there and stays.
  *
  * STRICTER THAN THE PRODUCT'S, in one way that matters. The product names
  * `https://*.supabase.co` in `connect-src` because its browser talks to
  * Supabase directly for auth and storage. This site's only database read is in
  * `lib/content.ts`, which is `server-only` and runs during rendering — the
  * browser never contacts Supabase at all, so naming it here would grant a
- * capability the site does not use. If that ever changes, this is the line to
- * revisit; until then, leaving it out means an injected script has nowhere to
- * send anything.
+ * capability the site does not use.
  *
  * Fonts are self-hosted. `next/font/google` downloads Inter and JetBrains Mono
  * at build time and serves them from `/_next/static`, so no Google origin needs
  * naming and none is.
  *
- * TWO DELIBERATE LOOSENINGS, both matching the product.
- *
- * `style-src` keeps 'unsafe-inline'. Next injects inline styles for font
- * loading, and a nonce cannot cover a style attribute. Note that CSP ignores
- * 'unsafe-inline' entirely once a nonce is present in the same directive, so
- * adding one here would break styling rather than tighten anything. Style
- * injection is also a far smaller problem than script injection, which stays
- * strict.
+ * `style-src` keeps 'unsafe-inline' for the same reason it always did: Next
+ * injects inline styles for font loading, and style injection is a far smaller
+ * problem than script injection.
  *
  * `'unsafe-eval'` in development only. React uses `eval` to rebuild server
  * stacks in the dev overlay; neither React nor Next uses it in production.
  */
-function buildCsp(nonce: string): string {
+function buildCsp(): string {
   const isDev = process.env.NODE_ENV === 'development';
 
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`,
+    `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     "font-src 'self'",
@@ -75,8 +92,7 @@ function buildCsp(nonce: string): string {
  * visitor's language onto every visitor sharing a proxy.
  */
 export function proxy(request: NextRequest) {
-  const nonce = crypto.randomUUID();
-  const csp = buildCsp(nonce);
+  const csp = buildCsp();
 
   const { pathname } = request.nextUrl;
 
@@ -85,15 +101,7 @@ export function proxy(request: NextRequest) {
   );
 
   if (hasLocale) {
-    // The nonce goes onto the *request* headers so Next can read it while
-    // rendering and stamp its own script tags with it. Setting it only on the
-    // response would leave those scripts unnonced, and `strict-dynamic` would
-    // then block the page's own JavaScript.
-    const requestHeaders = new Headers(request.headers);
-    requestHeaders.set('x-nonce', nonce);
-    requestHeaders.set('Content-Security-Policy', csp);
-
-    const response = NextResponse.next({ request: { headers: requestHeaders } });
+    const response = NextResponse.next();
     response.headers.set('Content-Security-Policy', csp);
     return response;
   }
