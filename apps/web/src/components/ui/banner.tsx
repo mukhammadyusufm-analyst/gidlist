@@ -1,4 +1,4 @@
-import { bannerPresetGradient, isBannerPreset, parseBannerValue } from '@app/core';
+import { bannerPresetGradient, isBannerPreset, parseBannerValue } from '@app/core/appearance';
 
 /**
  * A wide header image — either an uploaded file or one of the built-in

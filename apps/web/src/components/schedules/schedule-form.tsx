@@ -1,16 +1,17 @@
 'use client';
 
 import { useActionState, useState } from 'react';
+// Subpaths, not the `@app/core` barrel: the barrel loads Zod for its side
+// effect, which this form has no use for in the browser. See core/index.ts.
 import {
   ASSIGNMENT_MODES,
   COMMON_TIMEZONES,
   MONTHS,
-  SCHEDULE_KINDS,
   WEEKDAYS,
-  toIsoDate,
   type AssignmentMode,
-  type ScheduleKind,
-} from '@app/core';
+} from '@app/core/schedule-display';
+import { SCHEDULE_KINDS, type ScheduleKind } from '@app/core/constants';
+import { toIsoDate } from '@app/core/dates';
 
 import { createSchedule, type ActionState } from '@/lib/schedules/actions';
 import type { AssignCandidate } from '@/components/schedules/schedule-card';

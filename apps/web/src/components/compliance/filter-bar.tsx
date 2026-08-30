@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { toIsoDate } from '@app/core';
+import { toIsoDate } from '@app/core/dates';
 
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';

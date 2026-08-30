@@ -6,7 +6,7 @@ import {
   parseBannerValue,
   type BannerFit,
   type BannerFraming as Framing,
-} from '@app/core';
+} from '@app/core/appearance';
 
 import { setBannerFraming } from '@/lib/media/actions';
 import { Button } from '@/components/ui/button';

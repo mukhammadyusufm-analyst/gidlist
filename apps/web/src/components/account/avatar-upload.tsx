@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState, useTransition } from 'react';
-import { MEDIA_LIMITS, buildMediaPath, validateMediaFile } from '@app/core';
+import { MEDIA_LIMITS, buildMediaPath, validateMediaFile } from '@app/core/media';
 
 import { createClient } from '@/lib/supabase/client';
 import { removeAvatar, saveAvatar } from '@/lib/account/actions';

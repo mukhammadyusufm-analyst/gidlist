@@ -178,9 +178,6 @@ export function countItems<T>(nodes: ItemNode<T>[]): number {
  * Whether another level of nesting may be added under an item at `depth`.
  * The database enforces the same limit; this only keeps the UI honest.
  */
-export function canNestUnder(depth: number): boolean {
-  return depth < MAX_ITEM_DEPTH;
-}
 
 export type CreateChecklistInput = z.infer<typeof createChecklistSchema>;
 export type AddItemInput = z.infer<typeof addItemSchema>;

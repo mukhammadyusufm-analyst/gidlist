@@ -3,7 +3,7 @@
 import { useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
-import { addDays, fromIsoDate } from '@app/core';
+import { addDays, fromIsoDate } from '@app/core/dates';
 
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';

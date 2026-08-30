@@ -21,10 +21,23 @@ import { config } from 'zod';
  *
  * Imported for its side effect, first, before any schema is built.
  *
- * This covers the server, where module order is predictable. It is NOT enough
- * for the browser: Zod reads the setting when a schema is *constructed*, and
- * the bundler decides which chunk evaluates first, so a schema elsewhere can be
- * built before this runs. `apps/web/src/instrumentation-client.ts` is what
- * guarantees it on the client.
+ * SERVER ONLY, now — and deliberately.
+ *
+ * There used to be a companion, `apps/web/src/instrumentation-client.ts`, doing
+ * the same thing in the browser, because Zod reads the setting when a schema is
+ * *constructed* and the bundler picks the chunk order. It was removed once the
+ * client bundle was measured: importing `config` from `zod` pulled the whole
+ * library into a chunk that Next put in the first load of all 26 routes — 224 KB
+ * on every page — to guard a probe that could no longer fire, because no schema
+ * is constructed in the browser at all. Every schema in this app is used by a
+ * server action or server code. That was verified by searching the built client
+ * chunks for the schemas' own error strings: none of them appear.
+ *
+ * If that ever stops being true, the symptom is a standing CSP eval violation in
+ * the browser console. The fix is to bring the client instrumentation back —
+ * ideally without importing all of Zod for one call. The check that proves which
+ * case you are in:
+ *
+ *   grep -rl "Enter a valid email address." apps/web/.next/static
  */
 config({ jitless: true });

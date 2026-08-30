@@ -46,3 +46,16 @@ export const SCHEDULE_KINDS = [
   'specific_dates',
 ] as const;
 export type ScheduleKind = (typeof SCHEDULE_KINDS)[number];
+
+/**
+ * Whether an item at this depth may take children.
+ *
+ * Lives beside `MAX_ITEM_DEPTH` rather than in `checklists.ts` for a reason
+ * that is about bundle size, not tidiness: this module has no Zod dependency and
+ * that one does. The checklist builder is a client component and needs only this
+ * test, so keeping it here lets the browser import `@app/core/constants` and
+ * leave the schemas — and Zod — on the server.
+ */
+export function canNestUnder(depth: number): boolean {
+  return depth < MAX_ITEM_DEPTH;
+}

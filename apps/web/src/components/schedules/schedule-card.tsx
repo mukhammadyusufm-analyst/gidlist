@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState, useRef, useState } from 'react';
-import { describeSchedule } from '@app/core';
+import { describeSchedule } from '@app/core/schedule-display';
 
 import {
   addAssignee,

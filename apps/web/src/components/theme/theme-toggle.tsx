@@ -3,7 +3,7 @@
 import { useOptimistic, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Monitor, Moon, Sun } from 'lucide-react';
-import { THEMES, type Theme } from '@app/core';
+import { THEMES, type Theme } from '@app/core/theme';
 
 import { setTheme } from '@/lib/theme/actions';
 import { cn } from '@/lib/utils';

@@ -1,4 +1,4 @@
-import { avatarInitials, generatedAvatar } from '@app/core';
+import { avatarInitials, generatedAvatar } from '@app/core/appearance';
 
 import { cn } from '@/lib/utils';
 

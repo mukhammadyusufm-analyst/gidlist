@@ -19,7 +19,8 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { canNestUnder, MAX_ITEM_DEPTH, type ItemNode } from '@app/core';
+import { canNestUnder, MAX_ITEM_DEPTH } from '@app/core/constants';
+import type { ItemNode } from '@app/core';
 
 import {
   addGroup,

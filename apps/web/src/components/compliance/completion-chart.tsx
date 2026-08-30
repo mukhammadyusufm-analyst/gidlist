@@ -1,27 +1,49 @@
 'use client';
 
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import dynamic from 'next/dynamic';
 
 import { useT } from '@/components/i18n/provider';
 
 type Point = { date: string; rate: number; done: number; total: number };
 
 /**
+ * Loads the chart only when there is a chart to draw.
+ *
+ * Recharts is 361 KB — by a wide margin the largest thing this product ships to
+ * a browser — and it used to sit in the first load of the compliance route
+ * unconditionally. It is now behind a dynamic import, so the page renders its
+ * numbers immediately and the plotting library arrives afterwards.
+ *
+ * `ssr: false` costs nothing here: `ResponsiveContainer` measures its parent, so
+ * a server-rendered chart has no width to render at and is thrown away on
+ * hydration regardless.
+ */
+const CompletionChartPlot = dynamic(
+  () => import('./completion-chart-plot').then((m) => m.CompletionChartPlot),
+  {
+    ssr: false,
+    // Same height and frame as the real chart, so nothing below it moves when
+    // the library lands. A spinner would be a worse trade: it draws attention to
+    // a wait that is usually over before it is noticed.
+    loading: () => (
+      <div
+        className="rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] p-4 shadow-e1"
+        aria-hidden="true"
+      >
+        <div className="h-[240px]" />
+      </div>
+    ),
+  },
+);
+
+/**
  * Completion rate per day.
  *
- * Bars, not a line. A line asserts that the values between two points lie on
- * the path drawn between them — which is false here the moment a filter is
- * applied, because the days in between simply are not in the data. A bar per
- * day keeps each measurement discrete and lets a gap read as a gap.
- *
- * A single series, so there is deliberately no legend: the heading above the
- * chart already names what is plotted, and a one-swatch legend restates it.
+ * The empty state lives here rather than inside the plot, so a space with no
+ * trend to show never fetches the plotting library at all.
  */
 export function CompletionChart({ data }: { data: Point[] }) {
-  const { t, locale } = useT();
-
-  const shortDate = (iso: string) =>
-    new Date(`${iso}T00:00:00`).toLocaleDateString(locale, { day: 'numeric', month: 'short' });
+  const { t } = useT();
 
   if (data.length === 0) {
     return (
@@ -31,65 +53,5 @@ export function CompletionChart({ data }: { data: Point[] }) {
     );
   }
 
-  return (
-    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] p-4 shadow-e1">
-      <ResponsiveContainer width="100%" height={240}>
-        {/* `left: 0`, not a negative margin. Pulling the plot left to reclaim
-            whitespace also drags the Y axis off the edge, and the axis labels
-            get clipped — "100%" renders as "0%", "75%" as "5%". The scale was
-            always 0–100; only the leading digits were missing, which made the
-            chart look like it was reporting nonsense. */}
-        <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-          {/* Horizontal only, hairline, one step off the surface — the grid is
-              there to be read against, not to be looked at. */}
-          <CartesianGrid stroke="var(--color-border)" strokeWidth={1} vertical={false} />
-
-          <XAxis
-            dataKey="date"
-            tickFormatter={shortDate}
-            tick={{ fill: 'var(--color-muted-foreground)', fontSize: 12 }}
-            tickLine={false}
-            axisLine={{ stroke: 'var(--color-border)' }}
-            minTickGap={20}
-          />
-          <YAxis
-            domain={[0, 100]}
-            ticks={[0, 25, 50, 75, 100]}
-            tickFormatter={(v: number) => `${v}%`}
-            tick={{ fill: 'var(--color-muted-foreground)', fontSize: 12 }}
-            tickLine={false}
-            axisLine={false}
-            width={48}
-          />
-
-          <Tooltip
-            cursor={{ fill: 'var(--color-accent)' }}
-            content={({ active, payload }) => {
-              if (!active || !payload?.length) return null;
-              const point = payload[0].payload as Point;
-              return (
-                <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] px-3 py-2 text-sm shadow-e2">
-                  <p className="font-medium">{shortDate(point.date)}</p>
-                  <p className="text-[var(--color-muted-foreground)]">
-                    {point.rate}% · {point.done}/{point.total}
-                  </p>
-                </div>
-              );
-            }}
-          />
-
-          <Bar
-            dataKey="rate"
-            fill="var(--color-primary)"
-            // Rounded at the data end, square at the baseline — the bar grows
-            // from the axis, and rounding that end would detach it from zero.
-            radius={[4, 4, 0, 0]}
-            // Capped rather than filling its slot, so the band's leftover space
-            // stays as air between bars instead of a solid block.
-            maxBarSize={24}
-          />
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
-  );
+  return <CompletionChartPlot data={data} />;
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useMemo } from 'react';
-import { DEFAULT_LOCALE, translate, type Locale, type Messages } from '@app/core';
+import { DEFAULT_LOCALE, translate, type Locale, type Messages } from '@app/core/i18n';
 
 type I18nValue = {
   locale: Locale;

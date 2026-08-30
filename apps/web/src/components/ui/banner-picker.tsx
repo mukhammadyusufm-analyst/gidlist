@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { BANNER_PRESETS, BANNER_PRESET_PREFIX, isBannerPreset } from '@app/core';
+import { BANNER_PRESETS, BANNER_PRESET_PREFIX, isBannerPreset } from '@app/core/appearance';
 
 import { setBoardBanner, setChecklistBanner } from '@/lib/media/actions';
 import { Banner } from '@/components/ui/banner';

@@ -6,7 +6,7 @@ import {
   buildMediaPath,
   validateMediaFile,
   type MediaBucket,
-} from '@app/core';
+} from '@app/core/media';
 
 import { createClient } from '@/lib/supabase/client';
 import { saveBoardMedia, saveChecklistMedia } from '@/lib/media/actions';

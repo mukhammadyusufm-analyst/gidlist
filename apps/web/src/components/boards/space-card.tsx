@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
-import { bannerPresetGradient, generatedAvatar, isBannerPreset } from '@app/core';
+import { bannerPresetGradient, generatedAvatar, isBannerPreset } from '@app/core/appearance';
 
 import type { Board } from '@/lib/supabase/database.types';
 import { Avatar } from '@/components/ui/avatar';
