@@ -47,6 +47,27 @@ self.addEventListener('activate', (event) => {
     caches
       .keys()
       .then((keys) => Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key))))
+      /*
+       * Navigation preload, and it is the difference between this worker being
+       * free and being the slowest thing on the page.
+       *
+       * A service worker is not kept running. When a navigation arrives and the
+       * worker is asleep, the browser must boot it, hand it the fetch event, and
+       * only then does our `fetch(request)` even begin — so worker startup sits
+       * *in front of* the network request rather than beside it. Measured on a
+       * real device this showed as `Startup: 10.67s` followed by
+       * `Dispatch fetch: 10.84s` before the page had been asked for at all.
+       *
+       * With preload enabled the browser fires the network request itself, in
+       * parallel with waking the worker, and hands us the in-flight response as
+       * `event.preloadResponse`. The startup cost overlaps the request instead of
+       * preceding it.
+       *
+       * Wrapped because Safari did not support this until recently and the whole
+       * activation must not fail on a browser that lacks it.
+       */
+      .then(() => self.registration.navigationPreload?.enable())
+      .catch(() => {})
       .then(() => self.clients.claim()),
   );
 });
@@ -59,11 +80,24 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET' || request.mode !== 'navigate') return;
 
   event.respondWith(
-    fetch(request).catch(async () => {
-      const cached = await caches.match(OFFLINE_URL);
-      // If even the offline page is missing, let the browser show its own
-      // error rather than returning something empty.
-      return cached ?? Response.error();
-    }),
+    (async () => {
+      try {
+        /*
+         * The response the browser already started while this worker was
+         * waking. Using it is what makes the worker's startup cost free; going
+         * straight to `fetch()` here would throw that work away and start the
+         * request a second time, which is the state this file was in before.
+         */
+        const preloaded = await event.preloadResponse;
+        if (preloaded) return preloaded;
+
+        return await fetch(request);
+      } catch {
+        const cached = await caches.match(OFFLINE_URL);
+        // If even the offline page is missing, let the browser show its own
+        // error rather than returning something empty.
+        return cached ?? Response.error();
+      }
+    })(),
   );
 });
