@@ -45,7 +45,11 @@ export function SiteHeader({ locale, m }: { locale: BuiltinLocale; m: SiteMessag
       <div className="mx-auto flex w-full max-w-6xl items-center gap-4 px-6 py-3">
         {/* The lockup as the brandbook specifies it: the mark in a rounded
             square, the wordmark beside it at half the mark's width. */}
-        <Link href={`/${locale}`} className="flex shrink-0 items-center gap-2.5">
+        {/* Not prefetched: on the home page this points at the page being read,
+            so the prefetch fetches it a second time for nothing. From the two
+            legal pages it is a real destination, but one reached rarely enough
+            not to be worth the round trip on every visit to the site. */}
+        <Link href={`/${locale}`} prefetch={false} className="flex shrink-0 items-center gap-2.5">
           <span className="grid size-8 place-items-center rounded-lg bg-[var(--color-primary)] text-[var(--color-primary-foreground)]">
             <CircleCheckBig className="size-[1.15rem]" aria-hidden="true" />
           </span>
@@ -82,6 +86,12 @@ export function SiteHeader({ locale, m }: { locale: BuiltinLocale; m: SiteMessag
               <Link
                 key={code}
                 href={`/${code}`}
+                // Not prefetched, here or in the other two switchers. Next
+                // prefetches links in the viewport, so all three languages of
+                // this page were being fetched before anyone asked for one —
+                // including the language already on screen. A language switch is
+                // a rare, deliberate click; it can afford to wait for itself.
+                prefetch={false}
                 hrefLang={MESSAGES[code].htmlLang}
                 aria-label={BUILTIN_LOCALE_NAMES[code]}
                 aria-current={code === locale ? 'true' : undefined}
@@ -146,6 +156,7 @@ export function SiteHeader({ locale, m }: { locale: BuiltinLocale; m: SiteMessag
                   <Link
                     key={code}
                     href={`/${code}`}
+                prefetch={false}
                     hrefLang={MESSAGES[code].htmlLang}
                     aria-label={BUILTIN_LOCALE_NAMES[code]}
                     aria-current={code === locale ? 'true' : undefined}

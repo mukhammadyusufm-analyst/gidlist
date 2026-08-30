@@ -55,7 +55,7 @@ export function SiteFooter({ locale, m }: { locale: BuiltinLocale; m: SiteMessag
               wordmark beside it — because two different marks on one page is the
               fastest way to look like two different companies. */}
           <div className="max-w-xs">
-            <Link href={`/${locale}`} className="flex items-center gap-2.5">
+            <Link href={`/${locale}`} prefetch={false} className="flex items-center gap-2.5">
               <span className="grid size-8 place-items-center rounded-lg bg-[var(--color-primary)] text-[var(--color-primary-foreground)]">
                 <CircleCheckBig className="size-[1.15rem]" aria-hidden="true" />
               </span>
@@ -112,6 +112,7 @@ export function SiteFooter({ locale, m }: { locale: BuiltinLocale; m: SiteMessag
             <Link
               key={code}
               href={`/${code}`}
+              prefetch={false}
               hrefLang={MESSAGES[code].htmlLang}
               aria-current={code === locale ? 'true' : undefined}
               className={
