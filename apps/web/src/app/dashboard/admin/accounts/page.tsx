@@ -4,6 +4,7 @@ import { AlertTriangle, TrendingUp, Users } from 'lucide-react';
 import { formatMoney, money } from '@app/core';
 
 import { hasCapability } from '@/lib/platform/access';
+import { UnlimitedToggle } from './unlimited-toggle';
 import { createClient } from '@/lib/supabase/server';
 import { getTranslations } from '@/lib/i18n/server';
 
@@ -26,14 +27,20 @@ export default async function AccountsPage() {
   if (!(await hasCapability('accounts'))) notFound();
 
   const supabase = await createClient();
-  const [{ data: accounts }, { data: revenue }, { locale }] = await Promise.all([
+  const [{ data: accounts }, { data: revenue }, { locale }, canChangeLimits] = await Promise.all([
     supabase.rpc('platform_accounts'),
     supabase.rpc('platform_revenue'),
     getTranslations(),
+    // Reading this page needs `accounts`; changing a limit needs `billing`.
+    hasCapability('billing'),
   ]);
 
   const totals = revenue?.[0];
   const rows = accounts ?? [];
+
+  // One query for the whole page rather than one per row.
+  const { data: unlimitedRows } = await supabase.from('unlimited_accounts').select('user_id');
+  const unlimited = new Set((unlimitedRows ?? []).map((u) => u.user_id));
 
   return (
     <div className="space-y-6">
@@ -93,13 +100,14 @@ export default async function AccountsPage() {
               <th className="px-4 py-2.5 font-normal">Plan</th>
               <th className="px-4 py-2.5 font-normal">Members</th>
               <th className="px-4 py-2.5 font-normal">Spaces</th>
+              <th className="px-4 py-2.5 font-normal">Limits</th>
               <th className="px-4 py-2.5 text-right font-normal">Per month</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-[var(--color-muted-foreground)]">
+                <td colSpan={6} className="px-4 py-8 text-center text-[var(--color-muted-foreground)]">
                   No accounts with a live space yet.
                 </td>
               </tr>
@@ -121,6 +129,14 @@ export default async function AccountsPage() {
                   </td>
                   <td className="px-4 py-3">
                     <Usage used={account.used_spaces} limit={account.max_spaces} />
+                  </td>
+                  <td className="px-4 py-3">
+                    <UnlimitedToggle
+                      ownerId={account.owner_id}
+                      accountName={account.full_name ?? account.email}
+                      unlimited={unlimited.has(account.owner_id)}
+                      canChange={canChangeLimits}
+                    />
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums">
                     {formatMoney(money(account.price_minor, account.currency), locale)}

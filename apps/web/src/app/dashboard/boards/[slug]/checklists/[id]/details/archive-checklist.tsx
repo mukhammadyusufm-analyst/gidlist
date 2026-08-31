@@ -30,11 +30,14 @@ import { useT } from '@/components/i18n/provider';
  */
 export function ArchiveChecklist({
   checklistId,
+  slug,
   title,
   isArchived,
   canDelete,
 }: {
   checklistId: string;
+  /** Where to go after a delete — this page will not exist any more. */
+  slug: string;
   title: string;
   isArchived: boolean;
   /** False once any submission exists, which makes deletion impossible. */
@@ -91,6 +94,7 @@ export function ArchiveChecklist({
               </p>
               <form action={deleteAction} className="mt-3 space-y-3">
                 <input type="hidden" name="checklistId" value={checklistId} />
+                <input type="hidden" name="slug" value={slug} />
                 <label className="block text-xs text-[var(--color-muted-foreground)]">
                   {t('checklistArchive.deleteConfirm', { title })}
                   <input

@@ -436,8 +436,26 @@ function SortableItem({
         have no moment at which anybody could satisfy it; the database exempts
         parents and the interface does not offer them the choice.
       */}
+      {/* The panel below is keyed on what is actually saved, so it is rebuilt
+          whenever the database and the screen could disagree. Its toggles live
+          in `useState`, which reads its argument only on mount — without the
+          key, the switches kept their pre-save values after the row changed. */}
       {editable && item.children.length === 0 ? (
-        <ItemRequirements item={item} />
+        <ItemRequirements
+          key={[
+            item.photo_enabled,
+            item.photo_required,
+            item.file_enabled,
+            item.file_required,
+            item.location_enabled,
+            item.location_required,
+            item.window_enabled,
+            item.window_required,
+            item.window_start,
+            item.window_end,
+          ].join('|')}
+          item={item}
+        />
       ) : null}
 
 
@@ -618,6 +636,15 @@ function ItemRequirements({ item }: { item: Item }) {
   const [locationEnabled, setLocationEnabled] = useState(item.location_enabled);
   const [windowEnabled, setWindowEnabled] = useState(item.window_enabled);
 
+  /*
+   * These four follow the saved row because the caller remounts this component
+   * when any of them changes — see the `key` on <ItemRequirements>. `useState`
+   * reads its argument once, on mount, and this panel stays mounted across a
+   * save, so without that the switches went on showing what they held before
+   * the action ran: a toggle could disagree with the row that was written and
+   * there was no way to tell from looking.
+   */
+
   const summary = [
     item.photo_enabled
       ? t(item.photo_required ? 'checklist.photoRequired' : 'checklist.photoOn')
@@ -769,6 +796,10 @@ function ItemRequirements({ item }: { item: Item }) {
             what. Read in the schedule's timezone, which is why the note below
             says so — "06:00" is otherwise a question with three answers. */}
         <RequirementRow
+          // Remounted when the saved values change, so the enforcement switch
+          // and the two times are re-read from the row that was written rather
+          // than kept from before the save. Same reason as the effect above.
+          key={`window-${item.window_required}-${item.window_start}-${item.window_end}`}
           label={t('checklist.windowTitle')}
           enabledName="windowEnabled"
           requiredName="windowRequired"

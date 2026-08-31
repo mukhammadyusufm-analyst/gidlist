@@ -126,6 +126,24 @@ export type Database = {
         Update: { value?: string; updated_by?: string | null };
         Relationships: [];
       };
+      /**
+       * Accounts whose space and member ceilings are lifted, whatever plan they
+       * are on. A row, not a boolean column, so the concession records who
+       * granted it and when — the questions actually asked about it a year on.
+       * Billing is untouched: the account keeps its plan and its invoices.
+       */
+      unlimited_accounts: {
+        Row: {
+          user_id: string;
+          note: string | null;
+          granted_by: string | null;
+          granted_at: string;
+        };
+        // Written only through set_account_unlimited(), which checks `billing`.
+        Insert: { user_id: string; note?: string | null; granted_by?: string | null };
+        Update: { note?: string | null };
+        Relationships: [];
+      };
       profiles: {
         Row: {
           id: string;
@@ -817,6 +835,17 @@ export type Database = {
         Args: { p_user_id: string; p_capability: string; p_granted: boolean };
         Returns: undefined;
       };
+      /**
+       * Lift or restore one account's space and member ceilings.
+       *
+       * Gated on `billing` inside the function. Billing itself is untouched —
+       * the account keeps its plan and its invoices; only the caps move.
+       */
+      set_account_unlimited: {
+        Args: { p_user_id: string; p_unlimited: boolean; p_note?: string | null };
+        Returns: undefined;
+      };
+      account_is_unlimited: { Args: { p_owner: string }; Returns: boolean };
       // ---- platform admin views ----------------------------------------------
       // These read across every customer, so the gate is inside each function
       // rather than on a table: RLS answers "your rows", and the answer needed

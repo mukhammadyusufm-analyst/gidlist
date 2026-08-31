@@ -510,6 +510,7 @@ export async function deleteChecklist(
   formData: FormData,
 ): Promise<ActionState> {
   const checklistId = String(formData.get('checklistId') ?? '');
+  const slug = String(formData.get('slug') ?? '');
 
   const supabase = await createClient();
   const { error } = await supabase.rpc('delete_checklist_if_unused', {
@@ -525,7 +526,20 @@ export async function deleteChecklist(
   }
 
   revalidatePath('/dashboard/boards/[slug]', 'layout');
-  return { notice: 'Checklist deleted.' };
+
+  /*
+   * Leave the page before it can render.
+   *
+   * This action runs from the checklist's own details page, and that page has
+   * just been deleted out from under itself — staying put means the revalidation
+   * re-renders a route whose checklist no longer exists, which is a 404 as the
+   * result of a successful action. Redirecting to the space is both the correct
+   * destination and the only one guaranteed to still be there.
+   *
+   * redirect() throws, so it has to sit outside any try/catch and after every
+   * write — see the note on signIn().
+   */
+  redirect(slug ? `/dashboard/boards/${slug}` : '/dashboard');
 }
 
 /** Turn database exception text into something worth showing a user. */

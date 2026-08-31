@@ -137,6 +137,7 @@ export default async function ChecklistDetailsPage({
       <section className="max-w-2xl">
         <ArchiveChecklist
           checklistId={checklist.id}
+          slug={slug}
           title={checklist.title}
           isArchived={checklist.archived_at !== null}
           canDelete={deletable === true}

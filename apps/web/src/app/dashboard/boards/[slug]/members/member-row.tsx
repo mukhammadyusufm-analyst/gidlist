@@ -67,6 +67,19 @@ export function MemberRow({
             <select
               id={`manager-${member.id}`}
               name="managerId"
+              /*
+               * Keyed by the saved value, not just given it as a default.
+               *
+               * `defaultValue` is read once when the element mounts. After the
+               * action ran and the server sent fresh data, this select stayed
+               * mounted and kept displaying whatever it started with — so a
+               * reporting line that had saved correctly still read "reports to
+               * nobody", and one that failed looked identical. Keying on the
+               * saved value remounts it whenever the database disagrees with
+               * what is on screen, which makes the control tell the truth in
+               * both directions.
+               */
+              key={member.manager_id ?? 'none'}
               defaultValue={member.manager_id ?? ''}
               onChange={(e) => e.currentTarget.form?.requestSubmit()}
               className="min-h-11 rounded-md border border-[var(--color-input)] bg-transparent px-2 text-sm"

@@ -43,6 +43,47 @@ export async function setPlatformGrant(
 }
 
 /**
+ * Lift an account's space and member ceilings, or put them back.
+ *
+ * The database decides who may do this — `billing`, not `accounts` — because
+ * `accounts` is a read-only view of what customers pay and lifting a paying
+ * customer's caps is a commercial decision.
+ *
+ * Billing is untouched on purpose: the account keeps its plan and its invoices,
+ * and only the limits come off.
+ */
+export async function setAccountUnlimited(
+  _prev: GrantResult,
+  formData: FormData,
+): Promise<GrantResult> {
+  const ownerId = String(formData.get('ownerId') ?? '');
+  const unlimited = String(formData.get('unlimited') ?? '') === 'true';
+  const note = String(formData.get('note') ?? '') || null;
+
+  if (!ownerId) return { error: 'That account is not valid.' };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc('set_account_unlimited', {
+    p_user_id: ownerId,
+    p_unlimited: unlimited,
+    p_note: note,
+  });
+
+  if (error) {
+    return {
+      error: error.message.includes('do not have permission')
+        ? 'Changing account limits needs the billing capability.'
+        : error.message,
+    };
+  }
+
+  revalidatePath('/dashboard/admin/accounts');
+  return {
+    notice: unlimited ? 'Limits lifted for this account.' : 'Plan limits restored.',
+  };
+}
+
+/**
  * Grant, or remove, every capability a person can hold — except root.
  *
  * Asked for as "unlimited access". This is convenience only and confers no
