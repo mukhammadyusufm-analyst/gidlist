@@ -56,6 +56,15 @@ export default async function BoardMembersPage({ params }: { params: Promise<{ s
               boardId={board.id}
               canManage={canManage}
               viewerIsOwner={role === 'owner'}
+              // Everyone but themselves. Deeper loops are refused by the
+              // database; excluding self here just avoids offering the one
+              // mistake that is obvious from the list alone.
+              colleagues={members
+                .filter((m) => m.id !== member.id)
+                .map((m) => ({
+                  id: m.id,
+                  name: m.full_name?.trim() || m.invited_email || t('members.unknown'),
+                }))}
             />
           ))}
         </ul>

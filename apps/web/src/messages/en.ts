@@ -452,6 +452,8 @@ export const en = {
   'space.descriptionPlaceholder': 'What this space covers — a department, a site, a product line.',
   'space.saveDetails': 'Save details',
   'members.unknown': 'Unknown',
+  'members.reportsTo': 'Reports to',
+  'members.reportsToNobody': 'Reports to nobody',
   'members.sendingInvite': 'Inviting...',
   'compliance.checklist': 'Checklist',
   'compliance.previous': 'Previous',

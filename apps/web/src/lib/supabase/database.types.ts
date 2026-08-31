@@ -201,6 +201,14 @@ export type Database = {
           invited_by: string | null;
           created_at: string;
           accepted_at: string | null;
+          /**
+           * Who this member reports to, within the same space.
+           *
+           * Points at another `board_members` row rather than at a user,
+           * because a reporting line belongs to a space: the same two people
+           * can be manager and report here and peers somewhere else.
+           */
+          manager_id: string | null;
         };
         Insert: {
           id?: string;
@@ -219,6 +227,7 @@ export type Database = {
           role?: BoardRole;
           status?: BoardMemberStatus;
           accepted_at?: string | null;
+          manager_id?: string | null;
         };
         Relationships: [];
       };

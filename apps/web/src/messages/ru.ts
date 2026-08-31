@@ -448,6 +448,8 @@ export const ru = {
     'Что охватывает это пространство — отдел, площадка или линия продукции.',
   'space.saveDetails': 'Сохранить',
   'members.unknown': 'Неизвестно',
+  'members.reportsTo': 'Подчиняется',
+  'members.reportsToNobody': 'Никому не подчиняется',
   'members.sendingInvite': 'Отправка...',
   'compliance.checklist': 'Чек-лист',
   'compliance.previous': 'Назад',

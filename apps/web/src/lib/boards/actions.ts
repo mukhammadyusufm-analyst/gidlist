@@ -268,6 +268,50 @@ export async function updateMemberRole(
   return { notice: 'Role updated.' };
 }
 
+/**
+ * Set who a member reports to, or clear it.
+ *
+ * The rules — same space, no self-reference, no loops — are enforced by a
+ * trigger rather than here, because they have to hold for any writer and not
+ * just for this form. This only turns the refusals into sentences.
+ *
+ * Reporting lines are recorded but do not yet affect what anybody can see. That
+ * is deliberate and is README item 11: visibility today has two cases, and
+ * adding "mine and my reports'" touches every submission and compliance policy,
+ * which is a separate piece of work from recording the chart.
+ */
+export async function setMemberManager(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const memberId = String(formData.get('memberId') ?? '');
+  // An empty select means "reports to nobody", which is a real state — the top
+  // of a chart — and not a missing value.
+  const managerId = String(formData.get('managerId') ?? '') || null;
+
+  if (!memberId) return { formError: 'That member is not valid.' };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('board_members')
+    .update({ manager_id: managerId })
+    .eq('id', memberId);
+
+  if (error) {
+    const message = error.message.includes('loop')
+      ? 'That would make a loop in the reporting lines.'
+      : error.message.includes('same space')
+        ? 'A manager has to be a member of the same space.'
+        : error.message.includes('report to themselves')
+          ? 'Somebody cannot report to themselves.'
+          : `Could not change who this member reports to: ${error.message}`;
+    return { formError: message };
+  }
+
+  revalidatePath('/dashboard/boards/[slug]/members', 'page');
+  return { notice: 'Reporting line updated.' };
+}
+
 export async function removeMember(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const parsed = removeMemberSchema.safeParse({
     memberId: formData.get('memberId'),

@@ -2,7 +2,7 @@
 
 import { useActionState } from 'react';
 
-import { removeMember, updateMemberRole, type ActionState } from '@/lib/boards/actions';
+import { removeMember, setMemberManager, updateMemberRole, type ActionState } from '@/lib/boards/actions';
 import type { MemberWithProfile } from '@/lib/boards/queries';
 import { Button } from '@/components/ui/button';
 import { useT } from '@/components/i18n/provider';
@@ -14,14 +14,18 @@ export function MemberRow({
   boardId,
   canManage,
   viewerIsOwner,
+  colleagues,
 }: {
   member: MemberWithProfile;
   boardId: string;
   canManage: boolean;
   viewerIsOwner: boolean;
+  /** Everyone else in the space, as candidate managers. */
+  colleagues: { id: string; name: string }[];
 }) {
   const [roleState, roleAction] = useActionState(updateMemberRole, initialState);
   const [removeState, removeAction] = useActionState(removeMember, initialState);
+  const [managerState, managerAction] = useActionState(setMemberManager, initialState);
   const { t } = useT();
 
   const isOwner = member.role === 'owner';
@@ -33,7 +37,7 @@ export function MemberRow({
   // is certain to fail.
   const editable = canManage && !isOwner && (viewerIsOwner || member.role !== 'admin');
 
-  const error = roleState.formError ?? removeState.formError;
+  const error = roleState.formError ?? removeState.formError ?? managerState.formError;
 
   return (
     <li className="flex flex-wrap items-center justify-between gap-3 p-4">
@@ -51,6 +55,32 @@ export function MemberRow({
       </div>
 
       <div className="flex items-center gap-2">
+        {/* Who they report to. Recorded now, and not yet used to decide what
+            anybody can see — that is a separate change to every submission and
+            compliance policy. See README item 11. */}
+        {canManage ? (
+          <form action={managerAction}>
+            <input type="hidden" name="memberId" value={member.id} />
+            <label className="sr-only" htmlFor={`manager-${member.id}`}>
+              {t('members.reportsTo')}
+            </label>
+            <select
+              id={`manager-${member.id}`}
+              name="managerId"
+              defaultValue={member.manager_id ?? ''}
+              onChange={(e) => e.currentTarget.form?.requestSubmit()}
+              className="min-h-11 rounded-md border border-[var(--color-input)] bg-transparent px-2 text-sm"
+            >
+              <option value="">{t('members.reportsToNobody')}</option>
+              {colleagues.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </form>
+        ) : null}
+
         {editable ? (
           <form action={roleAction}>
             <input type="hidden" name="memberId" value={member.id} />

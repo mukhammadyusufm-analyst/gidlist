@@ -454,6 +454,8 @@ export const uz = {
     'Bu maydon nimani qamrab oladi — boʻlim, obyekt yoki mahsulot liniyasi.',
   'space.saveDetails': 'Maʼlumotlarni saqlash',
   'members.unknown': 'Nomaʼlum',
+  'members.reportsTo': 'Kimga hisobot beradi',
+  'members.reportsToNobody': 'Hech kimga hisobot bermaydi',
   'members.sendingInvite': 'Taklif yuborilmoqda...',
   'compliance.checklist': 'Nazorat roʻyxati',
   'compliance.previous': 'Oldingi',
