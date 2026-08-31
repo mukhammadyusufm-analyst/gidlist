@@ -346,6 +346,18 @@ function ItemRow({
                 {t('fill.autoCompletes')}
               </span>
             ) : null}
+
+            {/* Said before the tick, not after it is refused. The database
+                enforces the window regardless, but discovering the rule from an
+                error message is discovering it too late to act on. */}
+            {item.window_enabled && item.window_start && item.window_end ? (
+              <span className="mt-0.5 block text-xs text-[var(--color-muted-foreground)]">
+                {t(item.window_required ? 'fill.windowRequired' : 'fill.windowExpected', {
+                  from: item.window_start.slice(0, 5),
+                  to: item.window_end.slice(0, 5),
+                })}
+              </span>
+            ) : null}
           </span>
         </label>
 

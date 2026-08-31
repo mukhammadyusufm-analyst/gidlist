@@ -344,6 +344,16 @@ export type Database = {
           location_lng: number | null;
           location_radius_m: number | null;
           /**
+           * The time of day this item may be ticked within, as HH:MM:SS.
+           *
+           * Read in the schedule's timezone. window_start after window_end is
+           * legal and means the window wraps midnight — a night shift.
+           */
+          window_enabled: boolean;
+          window_required: boolean;
+          window_start: string | null;
+          window_end: string | null;
+          /**
            * Whether being inside the radius is a condition of ticking, or only
            * recorded.
            *
@@ -384,6 +394,10 @@ export type Database = {
           location_lat?: number | null;
           location_lng?: number | null;
           location_radius_m?: number | null;
+          window_enabled?: boolean;
+          window_required?: boolean;
+          window_start?: string | null;
+          window_end?: string | null;
         };
         Relationships: [];
       };

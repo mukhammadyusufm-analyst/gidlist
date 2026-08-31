@@ -56,6 +56,17 @@ type Item = ItemNode<ChecklistItem>;
 const ROOT_DEPTH = 1;
 
 /**
+ * Postgres hands back `HH:MM:SS`; `<input type="time">` wants `HH:MM`.
+ *
+ * Passing the seconds through makes the field render empty in some browsers
+ * rather than erroring, so the saved window silently disappears from the form
+ * while still being enforced — the worst of both.
+ */
+function toTimeInput(value: string | null): string {
+  return value ? value.slice(0, 5) : '';
+}
+
+/**
  * Shared drag sensors.
  *
  * A distance threshold keeps a tap on a button from registering as a drag, and
@@ -605,6 +616,7 @@ function ItemRequirements({ item }: { item: Item }) {
   const [photoEnabled, setPhotoEnabled] = useState(item.photo_enabled);
   const [fileEnabled, setFileEnabled] = useState(item.file_enabled);
   const [locationEnabled, setLocationEnabled] = useState(item.location_enabled);
+  const [windowEnabled, setWindowEnabled] = useState(item.window_enabled);
 
   const summary = [
     item.photo_enabled
@@ -751,6 +763,36 @@ function ItemRequirements({ item }: { item: Item }) {
           {locationError ? (
             <p className="mt-1 text-xs text-[var(--color-destructive)]">{locationError}</p>
           ) : null}
+        </RequirementRow>
+
+        {/* The fourth requirement, and the only one about *when* rather than
+            what. Read in the schedule's timezone, which is why the note below
+            says so — "06:00" is otherwise a question with three answers. */}
+        <RequirementRow
+          label={t('checklist.windowTitle')}
+          enabledName="windowEnabled"
+          requiredName="windowRequired"
+          enabled={windowEnabled}
+          onEnabledChange={setWindowEnabled}
+          defaultRequired={item.window_required}
+        >
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block">
+              <span className="mb-1 block text-xs text-[var(--color-muted-foreground)]">
+                {t('checklist.windowFrom')}
+              </span>
+              <Input type="time" name="windowStart" defaultValue={toTimeInput(item.window_start)} />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs text-[var(--color-muted-foreground)]">
+                {t('checklist.windowTo')}
+              </span>
+              <Input type="time" name="windowEnd" defaultValue={toTimeInput(item.window_end)} />
+            </label>
+          </div>
+          <p className="mt-1 text-xs text-[var(--color-muted-foreground)]">
+            {t('checklist.windowNote')}
+          </p>
         </RequirementRow>
 
         {state.formError ? <FormNotice kind="error">{state.formError}</FormNotice> : null}

@@ -94,6 +94,42 @@ export const updateItemSchema = z
     locationLat: z.number().min(-90).max(90).nullable().default(null),
     locationLng: z.number().min(-180).max(180).nullable().default(null),
     locationRadiusM: z.number().int().min(25).max(100_000).nullable().default(null),
+
+    /**
+     * The time of day this may be ticked within, as `HH:MM` wall clock.
+     *
+     * Interpreted in the schedule's timezone, never the device's — the rule
+     * exists so that "ticked at opening" means opening, and a rule the person
+     * being checked can satisfy by changing their phone's clock is not a rule.
+     *
+     * `windowStart` after `windowEnd` is legal and means the window wraps
+     * midnight, which is how a night shift is expressed.
+     */
+    windowEnabled: z.boolean().default(false),
+    windowRequired: z.boolean().default(false),
+    windowStart: z
+      .string()
+      .regex(/^\d{2}:\d{2}$/, { error: 'Use the time picker.' })
+      .nullable()
+      .default(null),
+    windowEnd: z
+      .string()
+      .regex(/^\d{2}:\d{2}$/, { error: 'Use the time picker.' })
+      .nullable()
+      .default(null),
+  })
+  .refine((v) => !v.windowEnabled || (v.windowStart !== null && v.windowEnd !== null), {
+    error: 'A time window needs both a start and an end.',
+    path: ['windowEnd'],
+  })
+  // Equal ends would describe a single instant, which nothing could satisfy.
+  .refine((v) => !v.windowEnabled || v.windowStart !== v.windowEnd, {
+    error: 'The start and end cannot be the same time.',
+    path: ['windowEnd'],
+  })
+  .refine((v) => v.windowEnabled || !v.windowRequired, {
+    error: 'Turn the time window on before making it required.',
+    path: ['windowRequired'],
   })
   .refine(
     (v) =>

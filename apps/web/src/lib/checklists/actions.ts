@@ -206,6 +206,12 @@ export async function updateItem(_prev: ActionState, formData: FormData): Promis
     locationLat: numberOrNull(formData.get('locationLat')),
     locationLng: numberOrNull(formData.get('locationLng')),
     locationRadiusM: numberOrNull(formData.get('locationRadiusM')),
+    windowEnabled: formData.get('windowEnabled') === 'on',
+    windowRequired: formData.get('windowRequired') === 'on',
+    // A cleared time input submits an empty string, which means "not set" —
+    // distinct from a time, and not something to coerce.
+    windowStart: String(formData.get('windowStart') ?? '') || null,
+    windowEnd: String(formData.get('windowEnd') ?? '') || null,
   });
   if (!parsed.success) return { fieldErrors: parsed.error.flatten().fieldErrors };
 
@@ -224,6 +230,10 @@ export async function updateItem(_prev: ActionState, formData: FormData): Promis
       location_lat: parsed.data.locationLat,
       location_lng: parsed.data.locationLng,
       location_radius_m: parsed.data.locationRadiusM,
+      window_enabled: parsed.data.windowEnabled,
+      window_required: parsed.data.windowRequired,
+      window_start: parsed.data.windowStart,
+      window_end: parsed.data.windowEnd,
     })
     .eq('id', parsed.data.itemId);
 
