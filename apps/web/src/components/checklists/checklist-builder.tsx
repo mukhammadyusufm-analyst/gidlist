@@ -1,6 +1,7 @@
 'use client';
 
-import { useActionState, useOptimistic, useRef, useState, useTransition } from 'react';
+import { useActionState, useEffect, useOptimistic, useRef, useState, useTransition } from 'react';
+import { Plus } from 'lucide-react';
 import {
   DndContext,
   KeyboardSensor,
@@ -41,6 +42,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FormNotice } from '@/components/ui/field-error';
 import { useT } from '@/components/i18n/provider';
+import { cn } from '@/lib/utils';
 
 type Item = ItemNode<ChecklistItem>;
 
@@ -499,9 +501,47 @@ function AddItemForm({
   );
 }
 
+/**
+ * Adding a section, hidden behind a plus until it is wanted.
+ *
+ * This used to be a permanently open text field sitting under the last section.
+ * On a finished checklist — which is the state it spends almost all of its life
+ * in — that is an empty box asking to be filled in, below content nobody is
+ * editing, and it read as part of the checklist rather than as a control.
+ *
+ * Collapsed it is one clearly-a-button row. It stays open after a section is
+ * added, because sections are usually created in a run of three or four, and
+ * closing after each would mean clicking the plus every time.
+ */
 function AddGroupForm({ versionId }: { versionId: string }) {
   const formRef = useRef<HTMLFormElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [open, setOpen] = useState(false);
   const { t } = useT();
+
+  // Focus follows the click that opened it, so the keyboard is already in the
+  // right place and the plus does not need a second click to be useful.
+  useEffect(() => {
+    if (open) inputRef.current?.focus();
+  }, [open]);
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className={cn(
+          'flex w-full items-center justify-center gap-2 rounded-lg border border-dashed',
+          'border-[var(--color-border)] py-3 text-sm text-[var(--color-muted-foreground)]',
+          'transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-foreground)]',
+          'focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:outline-none',
+        )}
+      >
+        <Plus className="size-4" aria-hidden="true" />
+        {t('checklist.addSection')}
+      </button>
+    );
+  }
 
   return (
     <form
@@ -509,18 +549,28 @@ function AddGroupForm({ versionId }: { versionId: string }) {
       action={async (fd: FormData) => {
         await addGroup({}, fd);
         formRef.current?.reset();
+        inputRef.current?.focus();
+      }}
+      onKeyDown={(event) => {
+        // Escape closes without adding — the way out for somebody who opened it
+        // by accident, and the one people try first.
+        if (event.key === 'Escape') setOpen(false);
       }}
       className="flex gap-2"
     >
       <input type="hidden" name="versionId" value={versionId} />
       <Input
+        ref={inputRef}
         name="title"
         required
         placeholder={t('checklist.newSectionName')}
         className="flex-1"
       />
       <Button type="submit" variant="outline">
-        {t('checklist.addSection')}
+        {t('common.add')}
+      </Button>
+      <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+        {t('common.cancel')}
       </Button>
     </form>
   );

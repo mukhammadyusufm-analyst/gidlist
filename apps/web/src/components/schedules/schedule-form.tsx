@@ -16,6 +16,7 @@ import { toIsoDate } from '@app/core/dates';
 import { createSchedule, type ActionState } from '@/lib/schedules/actions';
 import type { AssignCandidate } from '@/components/schedules/schedule-card';
 import { Input } from '@/components/ui/input';
+import { DateField } from '@/components/ui/date-field';
 import { Label } from '@/components/ui/label';
 import { FieldError, FormNotice } from '@/components/ui/field-error';
 import { SubmitButton } from '@/components/ui/submit-button';
@@ -35,6 +36,20 @@ const KIND_KEYS: Record<ScheduleKind, string> = {
 
 const selectClass =
   'min-h-11 w-full rounded-md border border-[var(--color-input)] bg-transparent px-3 py-2 text-base sm:text-sm';
+
+/** Weekday names in the app language. 2024-01-01 was a Monday, anchoring this. */
+function weekdayName(locale: string, isoWeekday: number): string {
+  return new Intl.DateTimeFormat(locale, { weekday: 'short', timeZone: 'UTC' }).format(
+    new Date(Date.UTC(2024, 0, isoWeekday)),
+  );
+}
+
+/** Month names in the app language. 2024 is arbitrary; only the month matters. */
+function monthName(locale: string, month: number): string {
+  return new Intl.DateTimeFormat(locale, { month: 'long', timeZone: 'UTC' }).format(
+    new Date(Date.UTC(2024, month - 1, 1)),
+  );
+}
 
 function today(): string {
   // Local calendar parts, never toISOString — that converts to UTC and hands
@@ -69,7 +84,7 @@ export function ScheduleForm({
   // Null until somebody picks, so nothing is chosen on their behalf — the whole
   // point of asking.
   const [assignmentMode, setAssignmentMode] = useState<AssignmentMode | null>(null);
-  const { t } = useT();
+  const { t, locale } = useT();
 
   return (
     <form action={formAction} className="space-y-4" noValidate>
@@ -105,7 +120,7 @@ export function ScheduleForm({
                 className="flex min-h-11 cursor-pointer items-center gap-2 rounded-md border border-[var(--color-border)] px-3"
               >
                 <input type="checkbox" name="weekdays" value={day.value} className="size-4" />
-                <span className="text-sm">{day.short}</span>
+                <span className="text-sm">{weekdayName(locale, day.value)}</span>
               </label>
             ))}
           </div>
@@ -140,10 +155,14 @@ export function ScheduleForm({
         <div className="flex gap-3">
           <div className="flex-1">
             <Label htmlFor="yearlyMonth">{t('schedule.month')}</Label>
+            {/* Month names from `Intl`, not from the English MONTHS constant
+                this used to render — that constant is a stable key list, not
+                display text, and showing it left the one dropdown in the form
+                permanently in English whatever language the app was in. */}
             <select id="yearlyMonth" name="yearlyMonth" className={selectClass} defaultValue="1">
               {MONTHS.map((month, index) => (
                 <option key={month} value={index + 1}>
-                  {month}
+                  {monthName(locale, index + 1)}
                 </option>
               ))}
             </select>
@@ -161,17 +180,17 @@ export function ScheduleForm({
           <div className="space-y-2">
             {specificDates.map((value, index) => (
               <div key={index} className="flex gap-2">
-                <Input
-                  type="date"
-                  name="specificDates"
-                  value={value}
-                  onChange={(e) => {
-                    const next = [...specificDates];
-                    next[index] = e.target.value;
-                    setSpecificDates(next);
-                  }}
-                  className="flex-1"
-                />
+                <div className="flex-1">
+                  <DateField
+                    name="specificDates"
+                    value={value}
+                    onChange={(iso) => {
+                      const next = [...specificDates];
+                      next[index] = iso;
+                      setSpecificDates(next);
+                    }}
+                  />
+                </div>
                 {specificDates.length > 1 ? (
                   <Button
                     type="button"
@@ -201,12 +220,12 @@ export function ScheduleForm({
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="flex-1">
           <Label htmlFor="startDate">{t('schedule.starts')}</Label>
-          <Input id="startDate" name="startDate" type="date" required defaultValue={today()} />
+          <DateField id="startDate" name="startDate" required defaultValue={today()} />
           <FieldError messages={state.fieldErrors?.startDate} />
         </div>
         <div className="flex-1">
           <Label htmlFor="endDate">{t('schedule.ends')}</Label>
-          <Input id="endDate" name="endDate" type="date" />
+          <DateField id="endDate" name="endDate" />
           <FieldError messages={state.fieldErrors?.endDate} />
         </div>
       </div>
