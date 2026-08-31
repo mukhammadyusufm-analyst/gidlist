@@ -7,6 +7,9 @@ import { ChecklistPreview } from '@/components/checklists/checklist-preview';
 import { Avatar } from '@/components/ui/avatar';
 import { getTranslations } from '@/lib/i18n/server';
 import { canEditContent } from '@app/core';
+
+import { createClient } from '@/lib/supabase/server';
+import { ArchiveChecklist } from './archive-checklist';
 import { BannerPicker } from '@/components/ui/banner-picker';
 import { ImageUploadForm } from '@/components/ui/image-upload-form';
 
@@ -44,6 +47,16 @@ export default async function ChecklistDetailsPage({
    * published version means the preview is never empty on a checklist that is
    * already in use.
    */
+  /*
+   * Whether delete is still on the table. Asked before rendering rather than
+   * discovered by attempting it, so the page can explain the restriction
+   * instead of showing a control that would fail.
+   */
+  const supabase = await createClient();
+  const { data: deletable } = await supabase.rpc('checklist_is_deletable', {
+    p_checklist_id: checklist.id,
+  });
+
   const previewVersion = checklist.draft ?? checklist.latestPublished;
   const preview = previewVersion ? await getVersionContent(previewVersion.id) : null;
 
@@ -120,6 +133,15 @@ export default async function ChecklistDetailsPage({
           />
         </section>
       ) : null}
+
+      <section className="max-w-2xl">
+        <ArchiveChecklist
+          checklistId={checklist.id}
+          title={checklist.title}
+          isArchived={checklist.archived_at !== null}
+          canDelete={deletable === true}
+        />
+      </section>
     </div>
   );
 }

@@ -916,6 +916,15 @@ export type Database = {
       };
       // Refuses once any submission exists. For "I made this by mistake" only.
       delete_board_if_unused: { Args: { p_board_id: string }; Returns: undefined };
+      /** The same rule one level down: refuses once the checklist has been filled in. */
+      delete_checklist_if_unused: { Args: { p_checklist_id: string }; Returns: undefined };
+      /**
+       * Whether `delete_checklist_if_unused` would succeed, asked before offering it.
+       * Without this the only way to find out is to attempt the delete and read
+       * the error, which tells somebody their checklist is protected only after
+       * they have asked to destroy it.
+       */
+      checklist_is_deletable: { Args: { p_checklist_id: string }; Returns: boolean };
       /** Resolves a space to whoever pays for it. Safe inside RLS policies. */
       board_has_feature: {
         Args: { p_board_id: string; p_feature_key: FeatureKey };

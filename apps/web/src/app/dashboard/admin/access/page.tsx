@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/server';
 import { ListFilter, Pagination } from '@/components/ui/list-controls';
 
 import { GrantToggle } from './grant-toggle';
+import { GrantAllToggle } from './grant-all-toggle';
 
 export const metadata: Metadata = { title: 'Access' };
 
@@ -53,6 +54,9 @@ export default async function AccessPage({
   ]);
 
   const caps = capabilities ?? [];
+  // What "all" means for the grant-all control: everything except root, which
+  // stays SQL-only. Derived from is_root in the data, never from a name list.
+  const grantableCodes = caps.filter((c) => !c.is_root).map((c) => c.code);
   const rows = people ?? [];
   const total = rows[0]?.total_count ?? 0;
 
@@ -116,13 +120,15 @@ export default async function AccessPage({
                   {cap.name}
                 </th>
               ))}
+              <th className="px-4 py-2.5 font-normal">Everything</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
+                {/* Person, one column per capability, and the grant-all column. */}
                 <td
-                  colSpan={caps.length + 1}
+                  colSpan={caps.length + 2}
                   className="px-4 py-8 text-center text-[var(--color-muted-foreground)]"
                 >
                   {search || filter ? 'Nobody matches that.' : 'No accounts yet.'}
@@ -155,6 +161,13 @@ export default async function AccessPage({
                     />
                   </td>
                 ))}
+                <td className="px-4 py-3">
+                  <GrantAllToggle
+                    userId={person.user_id}
+                    personName={person.full_name ?? person.email}
+                    hasAll={grantableCodes.every((code) => person.capabilities.includes(code))}
+                  />
+                </td>
               </tr>
             ))}
           </tbody>

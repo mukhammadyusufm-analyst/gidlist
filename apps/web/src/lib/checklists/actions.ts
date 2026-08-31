@@ -458,6 +458,66 @@ export async function publishVersion(_prev: ActionState, formData: FormData): Pr
   return { notice: 'Published. This version is now frozen and can no longer be edited.' };
 }
 
+/**
+ * Retire a checklist, or bring it back.
+ *
+ * Archiving is the primary action and the one that is always available: the
+ * checklist stops appearing on the board and stops being schedulable, while
+ * everything it has already produced stays readable. Nothing is destroyed, so
+ * there is nothing here to confirm twice.
+ */
+export async function setChecklistArchived(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const checklistId = String(formData.get('checklistId') ?? '');
+  const archived = String(formData.get('archived') ?? '') === 'true';
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc('set_checklist_archived', {
+    p_checklist_id: checklistId,
+    p_archived: archived,
+  });
+
+  if (error) {
+    return { formError: `Could not ${archived ? 'archive' : 'restore'}: ${error.message}` };
+  }
+
+  revalidatePath('/dashboard/boards/[slug]', 'layout');
+  return { notice: archived ? 'Checklist archived.' : 'Checklist restored.' };
+}
+
+/**
+ * Delete a checklist outright.
+ *
+ * The database decides whether this is allowed, not this function — it refuses
+ * once any submission exists. That check belongs there because it is the rule,
+ * not a courtesy: a client that skipped this action entirely must still be
+ * refused. Here it only turns the refusal into a sentence.
+ */
+export async function deleteChecklist(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const checklistId = String(formData.get('checklistId') ?? '');
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc('delete_checklist_if_unused', {
+    p_checklist_id: checklistId,
+  });
+
+  if (error) {
+    return {
+      formError: error.message.includes('cannot be deleted')
+        ? 'This checklist has been filled in, so it can only be archived — the record has to stay.'
+        : `Could not delete: ${error.message}`,
+    };
+  }
+
+  revalidatePath('/dashboard/boards/[slug]', 'layout');
+  return { notice: 'Checklist deleted.' };
+}
+
 /** Turn database exception text into something worth showing a user. */
 function friendlyError(message: string): string {
   if (message.includes('5 levels deep')) {
