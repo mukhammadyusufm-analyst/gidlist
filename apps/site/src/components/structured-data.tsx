@@ -1,4 +1,4 @@
-import type { SiteMessages } from '@app/core';
+import { isVisible, type SiteMessages } from '@app/core';
 
 import type { Plan } from '@/lib/pricing';
 import { SITE_LOCALES, type BuiltinLocale } from '@/lib/i18n/locale';
@@ -21,10 +21,6 @@ import { COMPANY_NAME } from '@/lib/legal';
  * Prices come from the database, so what is published here is what a customer
  * is actually charged.
  */
-
-function isVisible(value: string): boolean {
-  return value.trim().toLowerCase() !== 'no';
-}
 
 export function StructuredData({
   locale,

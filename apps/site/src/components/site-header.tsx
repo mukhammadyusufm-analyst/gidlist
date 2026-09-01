@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { CircleCheckBig, Menu } from 'lucide-react';
 
-import { BUILTIN_LOCALE_NAMES } from '@app/core';
+import { BUILTIN_LOCALE_NAMES, isVisible } from '@app/core';
 import { SITE_LOCALES, type BuiltinLocale } from '@/lib/i18n/locale';
 import { MESSAGES, type SiteMessages } from '@/lib/i18n/messages';
 import { SIGNIN_URL, SIGNUP_URL } from '@/lib/site';
@@ -34,10 +34,18 @@ import { SIGNIN_URL, SIGNUP_URL } from '@/lib/site';
  * copy and are deliberately not editable.
  */
 export function SiteHeader({ locale, m }: { locale: BuiltinLocale; m: SiteMessages }) {
+  /*
+   * A link only appears when the section it points at does.
+   *
+   * "Questions" was listed unconditionally, so hiding the FAQ in the editor left
+   * a nav item that jumped to an anchor no longer on the page — the reader ends
+   * up at the bottom of the document with no explanation. Anything hideable has
+   * to be checked here as well as where it renders.
+   */
   const sections: [string, string][] = [
     [`/${locale}#how`, m.navHow],
     [`/${locale}#pricing`, m.navPricing],
-    [`/${locale}#faq`, m.navFaq],
+    ...(isVisible(m.faqVisible) ? [[`/${locale}#faq`, m.navFaq] as [string, string]] : []),
   ];
 
   return (

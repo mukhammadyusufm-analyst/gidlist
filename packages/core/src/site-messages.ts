@@ -232,7 +232,7 @@ export const MESSAGES: Record<BuiltinLocale, SiteMessages> = {
 
     footerNote: 'Built in Uzbekistan.',
     footerRights: 'All rights reserved.',
-    frameEyebrow: '03 \u00b7 The idea',
+    frameEyebrow: '01 \u00b7 The idea',
     frameTitle: 'Trello for recurring tasks',
     frameLead:
       'For running a team, the two feel much the same \u2014 lists, tasks, who is doing what, and a clear view of where things stand. The difference shows up with work that comes back.',
@@ -243,39 +243,39 @@ export const MESSAGES: Record<BuiltinLocale, SiteMessages> = {
     frameReturnsBody:
       'Tomorrow the same list is back, empty, waiting for whoever is on shift. What builds up is not a column of finished cards but a history of every time it was done, and by whom.',
 
-    spacesEyebrow: '04 \u00b7 Structure',
+    spacesEyebrow: '02 \u00b7 Structure',
     spacesTitle: 'A space for the team, checklists for the work',
     spacesLead:
       'Most companies need one space, or a handful \u2014 a branch, a site, a department. Inside it you can write as many checklists as the work has kinds: opening and closing, weekly cleaning, monthly counts, daily attendance. Grouping by task rather than by unit is what keeps it manageable as you grow.',
 
-    depthEyebrow: '05 \u00b7 Depth',
+    depthEyebrow: '03 \u00b7 Depth',
     depthTitle: 'Real procedures are nested, and flat lists hide that',
     depthLead:
       'Sections hold tasks, and any task can hold its own sub-tasks, five levels down. Open the branches below \u2014 the deepest one ends at a photograph, which is where the checking actually happens.',
     depthNote: 'Five levels is the limit, and this branch uses all of them.',
 
-    proofEyebrow: '06 \u00b7 Proof',
+    proofEyebrow: '04 \u00b7 Proof',
     proofTitle: 'A tick is a claim. This turns it into evidence.',
     proofLead:
       'Decide what a task has to come back with \u2014 a photo, a document, the place it was ticked \u2014 then try to submit without it. Each of the three is set separately, so a photo can be required while a file is merely offered.',
 
-    rhythmEyebrow: '07 \u00b7 Rhythm',
+    rhythmEyebrow: '05 \u00b7 Rhythm',
     rhythmTitle: 'It comes back on its own',
     rhythmLead:
       'Every day, on the weekdays you pick, on chosen days of the month, once a year, or on a list of specific dates. Set it once and nobody has to remember it again.',
 
-    peopleEyebrow: '08 \u00b7 People',
+    peopleEyebrow: '06 \u00b7 People',
     peopleTitle: 'Everyone in the space, or exactly the people who should',
     peopleLead:
       'You choose who a checklist lands on. And whoever fills it in can leave a note on a single task, so an exception gets explained next to the thing it happened to \u2014 not in a message somebody has to go looking for.',
 
-    insightsEyebrow: '09 \u00b7 Payoff',
+    insightsEyebrow: '07 \u00b7 Payoff',
     insightsTitle: 'A month of ticks becomes a picture',
     insightsLead:
       'Every tick carries a name and a time, so the reports show patterns nobody had spotted. The last bar is today, and it moves when you tick something in the checklist at the top of this page.',
     insightsCaption: 'The last bar is counted from your ticks.',
 
-    walkEyebrow: '10 \u00b7 One morning',
+    walkEyebrow: '08 \u00b7 One morning',
     walkTitle: 'Clock-in, verified',
     walkLead:
       'Attendance is where a signature on paper has always been worth least. Follow one employee through one morning \u2014 the whole flow, in five steps.',
@@ -307,7 +307,7 @@ export const MESSAGES: Record<BuiltinLocale, SiteMessages> = {
       },
     ],
 
-    casesEyebrow: '11 \u00b7 Elsewhere',
+    casesEyebrow: '09 \u00b7 Elsewhere',
     casesTitle: 'Same shape, different room',
     casesLead: 'Anywhere work repeats and somebody has to show it happened.',
     casesEnforced: 'What gets enforced',
@@ -345,7 +345,7 @@ export const MESSAGES: Record<BuiltinLocale, SiteMessages> = {
     tractionMembersValue: '\u2014',
 
     faqVisible: 'yes',
-    faqEyebrow: '13 \u00b7 Before you ask',
+    faqEyebrow: '10 \u00b7 Before you ask',
     faqTitle: 'The questions worth asking us',
     faqLead: 'The ones that decide whether this works where you work.',
     faqItems: [
@@ -408,7 +408,7 @@ export const MESSAGES: Record<BuiltinLocale, SiteMessages> = {
 
     footerNote: 'Oʻzbekistonda yaratilgan.',
     footerRights: 'Barcha huquqlar himoyalangan.',
-    frameEyebrow: '03 \u00b7 G\u02bboya',
+    frameEyebrow: '01 \u00b7 G\u02bboya',
     frameTitle: 'Takrorlanuvchi ishlar uchun Trello',
     frameLead:
       'Jamoani boshqarish nuqtai nazaridan ikkisi bir-biriga juda o\u02bbxshaydi \u2014 ro\u02bbyxatlar, vazifalar, kim nima qilayotgani va ishlar qay ahvolda ekani. Farq esa qaytib keladigan ishlarda ko\u02bbrinadi.',
@@ -419,39 +419,39 @@ export const MESSAGES: Record<BuiltinLocale, SiteMessages> = {
     frameReturnsBody:
       'Ertaga o\u02bbsha ro\u02bbyxat yana bo\u02bbsh holda qaytadi va smenadagi odamni kutadi. To\u02bbplanadigan narsa tugallangan kartalar ustuni emas \u2014 u har safar kim va qanday bajargani tarixi.',
 
-    spacesEyebrow: '04 \u00b7 Tuzilma',
+    spacesEyebrow: '02 \u00b7 Tuzilma',
     spacesTitle: 'Jamoa uchun maydon, ish uchun ro\u02bbyxatlar',
     spacesLead:
       'Ko\u02bbpchilik kompaniyaga bitta maydon yoki bir nechtasi yetadi \u2014 filial, obyekt yoki bo\u02bblim. Uning ichida esa ish qancha turga bo\u02bblinsa, shuncha ro\u02bbyxat yozishingiz mumkin: ochilish va yopilish, haftalik tozalash, oylik sanoq, kunlik davomat. Bo\u02bblinmalar bo\u02bbyicha emas, vazifa turlari bo\u02bbyicha guruhlash o\u02bbsganda ham boshqaruvni yengil saqlaydi.',
 
-    depthEyebrow: '05 \u00b7 Chuqurlik',
+    depthEyebrow: '03 \u00b7 Chuqurlik',
     depthTitle: 'Haqiqiy tartiblar ichma-ich, tekis ro\u02bbyxat esa buni yashiradi',
     depthLead:
       'Bo\u02bblimlar vazifalarni saqlaydi, har bir vazifa esa o\u02bbz kichik vazifalariga ega bo\u02bblishi mumkin \u2014 besh darajagacha. Quyidagi shoxlarni oching: eng chuquri surat bilan tugaydi, chunki tekshiruv aynan o\u02bbsha yerda bo\u02bbladi.',
     depthNote: 'Chegara \u2014 besh daraja, va bu shox hammasini ishlatadi.',
 
-    proofEyebrow: '06 \u00b7 Isbot',
+    proofEyebrow: '04 \u00b7 Isbot',
     proofTitle: 'Belgi \u2014 bu da\u02bcvo. Bu esa uni dalilga aylantiradi.',
     proofLead:
       'Vazifa nima bilan qaytishini belgilang \u2014 surat, hujjat yoki belgilangan joy \u2014 so\u02bbng usiz yuborishga urinib ko\u02bbring. Uchalasi alohida sozlanadi: surat majburiy bo\u02bblib, fayl shunchaki taklif etilishi mumkin.',
 
-    rhythmEyebrow: '07 \u00b7 Ritm',
+    rhythmEyebrow: '05 \u00b7 Ritm',
     rhythmTitle: 'U o\u02bbzi qaytib keladi',
     rhythmLead:
       'Har kuni, siz tanlagan hafta kunlarida, oyning belgilangan sanalarida, yiliga bir marta yoki aniq sanalar ro\u02bbyxati bo\u02bbyicha. Bir marta sozlaysiz \u2014 keyin hech kim eslab yurishi shart emas.',
 
-    peopleEyebrow: '08 \u00b7 Odamlar',
+    peopleEyebrow: '06 \u00b7 Odamlar',
     peopleTitle: 'Maydondagi hamma yoki aynan kerakli odamlar',
     peopleLead:
       'Ro\u02bbyxat kimga tushishini siz tanlaysiz. To\u02bbldirgan odam esa bitta vazifaga izoh qoldirishi mumkin \u2014 shunda istisno kimdir izlab yuradigan xabarda emas, aynan o\u02bbzi sodir bo\u02bblgan joyda tushuntiriladi.',
 
-    insightsEyebrow: '09 \u00b7 Natija',
+    insightsEyebrow: '07 \u00b7 Natija',
     insightsTitle: 'Bir oylik belgilar manzaraga aylanadi',
     insightsLead:
       'Har bir belgi ism va vaqtni saqlaydi, shuning uchun hisobotlar hech kim sezmagan qonuniyatlarni ko\u02bbrsatadi. Oxirgi ustun \u2014 bugun; sahifaning yuqorisidagi ro\u02bbyxatda biror narsani belgilasangiz, u o\u02bbzgaradi.',
     insightsCaption: 'Oxirgi ustun sizning belgilaringizdan hisoblangan.',
 
-    walkEyebrow: '10 \u00b7 Bir tong',
+    walkEyebrow: '08 \u00b7 Bir tong',
     walkTitle: 'Tasdiqlangan davomat',
     walkLead:
       'Davomat \u2014 qog\u02bbozdagi imzo eng kam qiymatga ega bo\u02bblgan holat. Bitta xodimning bitta tongini kuzating: butun jarayon besh qadamda.',
@@ -483,7 +483,7 @@ export const MESSAGES: Record<BuiltinLocale, SiteMessages> = {
       },
     ],
 
-    casesEyebrow: '11 \u00b7 Boshqa joylarda',
+    casesEyebrow: '09 \u00b7 Boshqa joylarda',
     casesTitle: 'O\u02bbsha shakl, boshqa xona',
     casesLead: 'Ish takrorlanadigan va uni bajarilganini ko\u02bbrsatish kerak bo\u02bblgan har qanday joyda.',
     casesEnforced: 'Nima talab qilinadi',
@@ -521,7 +521,7 @@ export const MESSAGES: Record<BuiltinLocale, SiteMessages> = {
     tractionMembersValue: '\u2014',
 
     faqVisible: 'yes',
-    faqEyebrow: '13 \u00b7 Savol berishdan oldin',
+    faqEyebrow: '10 \u00b7 Savol berishdan oldin',
     faqTitle: 'Bizga berishga arziydigan savollar',
     faqLead: 'Bu sizning ish joyingizda ishlaydimi \u2014 shuni hal qiladigan savollar.',
     faqItems: [
@@ -587,7 +587,7 @@ export const MESSAGES: Record<BuiltinLocale, SiteMessages> = {
 
     footerNote: 'Сделано в Узбекистане.',
     footerRights: 'Все права защищены.',
-    frameEyebrow: '03 \u00b7 \u0418\u0434\u0435\u044f',
+    frameEyebrow: '01 \u00b7 \u0418\u0434\u0435\u044f',
     frameTitle: 'Trello \u0434\u043b\u044f \u043f\u043e\u0432\u0442\u043e\u0440\u044f\u044e\u0449\u0438\u0445\u0441\u044f \u0437\u0430\u0434\u0430\u0447',
     frameLead:
       '\u0414\u043b\u044f \u0443\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u0438\u044f \u043a\u043e\u043c\u0430\u043d\u0434\u043e\u0439 \u044d\u0442\u043e \u043e\u0447\u0435\u043d\u044c \u043f\u043e\u0445\u043e\u0436\u0438\u0435 \u0432\u0435\u0449\u0438 \u2014 \u0441\u043f\u0438\u0441\u043a\u0438, \u0437\u0430\u0434\u0430\u0447\u0438, \u043a\u0442\u043e \u0447\u0435\u043c \u0437\u0430\u043d\u044f\u0442 \u0438 \u043f\u043e\u043d\u044f\u0442\u043d\u0430\u044f \u043a\u0430\u0440\u0442\u0438\u043d\u0430 \u0441\u043e\u0441\u0442\u043e\u044f\u043d\u0438\u044f \u0434\u0435\u043b. \u0420\u0430\u0437\u043d\u0438\u0446\u0430 \u043f\u043e\u044f\u0432\u043b\u044f\u0435\u0442\u0441\u044f \u0442\u0430\u043c, \u0433\u0434\u0435 \u0440\u0430\u0431\u043e\u0442\u0430 \u0432\u043e\u0437\u0432\u0440\u0430\u0449\u0430\u0435\u0442\u0441\u044f.',
@@ -598,39 +598,39 @@ export const MESSAGES: Record<BuiltinLocale, SiteMessages> = {
     frameReturnsBody:
       '\u0417\u0430\u0432\u0442\u0440\u0430 \u0442\u043e\u0442 \u0436\u0435 \u0441\u043f\u0438\u0441\u043e\u043a \u0432\u0435\u0440\u043d\u0451\u0442\u0441\u044f \u043f\u0443\u0441\u0442\u044b\u043c \u0438 \u0431\u0443\u0434\u0435\u0442 \u0436\u0434\u0430\u0442\u044c \u0442\u043e\u0433\u043e, \u043a\u0442\u043e \u043d\u0430 \u0441\u043c\u0435\u043d\u0435. \u041d\u0430\u043a\u0430\u043f\u043b\u0438\u0432\u0430\u0435\u0442\u0441\u044f \u043d\u0435 \u043a\u043e\u043b\u043e\u043d\u043a\u0430 \u0433\u043e\u0442\u043e\u0432\u044b\u0445 \u043a\u0430\u0440\u0442\u043e\u0447\u0435\u043a, \u0430 \u0438\u0441\u0442\u043e\u0440\u0438\u044f \u043a\u0430\u0436\u0434\u043e\u0433\u043e \u0440\u0430\u0437\u0430, \u043a\u043e\u0433\u0434\u0430 \u044d\u0442\u043e \u0431\u044b\u043b\u043e \u0441\u0434\u0435\u043b\u0430\u043d\u043e, \u0438 \u043a\u0435\u043c.',
 
-    spacesEyebrow: '04 \u00b7 \u0421\u0442\u0440\u0443\u043a\u0442\u0443\u0440\u0430',
+    spacesEyebrow: '02 \u00b7 \u0421\u0442\u0440\u0443\u043a\u0442\u0443\u0440\u0430',
     spacesTitle: '\u041f\u0440\u043e\u0441\u0442\u0440\u0430\u043d\u0441\u0442\u0432\u043e \u0434\u043b\u044f \u043a\u043e\u043c\u0430\u043d\u0434\u044b, \u0447\u0435\u043a-\u043b\u0438\u0441\u0442\u044b \u0434\u043b\u044f \u0440\u0430\u0431\u043e\u0442\u044b',
     spacesLead:
       '\u0411\u043e\u043b\u044c\u0448\u0438\u043d\u0441\u0442\u0432\u0443 \u043a\u043e\u043c\u043f\u0430\u043d\u0438\u0439 \u0445\u0432\u0430\u0442\u0430\u0435\u0442 \u043e\u0434\u043d\u043e\u0433\u043e \u043f\u0440\u043e\u0441\u0442\u0440\u0430\u043d\u0441\u0442\u0432\u0430 \u0438\u043b\u0438 \u043d\u0435\u0441\u043a\u043e\u043b\u044c\u043a\u0438\u0445 \u2014 \u0444\u0438\u043b\u0438\u0430\u043b, \u043e\u0431\u044a\u0435\u043a\u0442, \u043e\u0442\u0434\u0435\u043b. \u0410 \u0432\u043d\u0443\u0442\u0440\u0438 \u043c\u043e\u0436\u043d\u043e \u0437\u0430\u0432\u0435\u0441\u0442\u0438 \u0441\u0442\u043e\u043b\u044c\u043a\u043e \u0447\u0435\u043a-\u043b\u0438\u0441\u0442\u043e\u0432, \u0441\u043a\u043e\u043b\u044c\u043a\u043e \u0443 \u0440\u0430\u0431\u043e\u0442\u044b \u0432\u0438\u0434\u043e\u0432: \u043e\u0442\u043a\u0440\u044b\u0442\u0438\u0435 \u0438 \u0437\u0430\u043a\u0440\u044b\u0442\u0438\u0435, \u0435\u0436\u0435\u043d\u0435\u0434\u0435\u043b\u044c\u043d\u0430\u044f \u0443\u0431\u043e\u0440\u043a\u0430, \u043c\u0435\u0441\u044f\u0447\u043d\u044b\u0439 \u043f\u0435\u0440\u0435\u0441\u0447\u0451\u0442, \u0435\u0436\u0435\u0434\u043d\u0435\u0432\u043d\u0430\u044f \u044f\u0432\u043a\u0430. \u0413\u0440\u0443\u043f\u043f\u0438\u0440\u043e\u0432\u043a\u0430 \u043f\u043e \u0442\u0438\u043f\u0430\u043c \u0437\u0430\u0434\u0430\u0447, \u0430 \u043d\u0435 \u043f\u043e \u043f\u043e\u0434\u0440\u0430\u0437\u0434\u0435\u043b\u0435\u043d\u0438\u044f\u043c, \u0438 \u0434\u0435\u0440\u0436\u0438\u0442 \u0432\u0441\u0451 \u0443\u043f\u0440\u0430\u0432\u043b\u044f\u0435\u043c\u044b\u043c \u043f\u043e \u043c\u0435\u0440\u0435 \u0440\u043e\u0441\u0442\u0430.',
 
-    depthEyebrow: '05 \u00b7 \u0413\u043b\u0443\u0431\u0438\u043d\u0430',
+    depthEyebrow: '03 \u00b7 \u0413\u043b\u0443\u0431\u0438\u043d\u0430',
     depthTitle: '\u0420\u0435\u0430\u043b\u044c\u043d\u044b\u0435 \u043f\u0440\u043e\u0446\u0435\u0434\u0443\u0440\u044b \u0432\u043b\u043e\u0436\u0435\u043d\u044b, \u0430 \u043f\u043b\u043e\u0441\u043a\u0438\u0439 \u0441\u043f\u0438\u0441\u043e\u043a \u044d\u0442\u043e \u0441\u043a\u0440\u044b\u0432\u0430\u0435\u0442',
     depthLead:
       '\u0420\u0430\u0437\u0434\u0435\u043b\u044b \u0441\u043e\u0434\u0435\u0440\u0436\u0430\u0442 \u0437\u0430\u0434\u0430\u0447\u0438, \u0430 \u043b\u044e\u0431\u0430\u044f \u0437\u0430\u0434\u0430\u0447\u0430 \u043c\u043e\u0436\u0435\u0442 \u0438\u043c\u0435\u0442\u044c \u0441\u0432\u043e\u0438 \u043f\u043e\u0434\u0437\u0430\u0434\u0430\u0447\u0438 \u2014 \u0434\u043e \u043f\u044f\u0442\u0438 \u0443\u0440\u043e\u0432\u043d\u0435\u0439. \u041e\u0442\u043a\u0440\u043e\u0439\u0442\u0435 \u0432\u0435\u0442\u043a\u0438 \u043d\u0438\u0436\u0435: \u0441\u0430\u043c\u0430\u044f \u0433\u043b\u0443\u0431\u043e\u043a\u0430\u044f \u0437\u0430\u043a\u0430\u043d\u0447\u0438\u0432\u0430\u0435\u0442\u0441\u044f \u0444\u043e\u0442\u043e\u0433\u0440\u0430\u0444\u0438\u0435\u0439 \u2014 \u0438\u043c\u0435\u043d\u043d\u043e \u0442\u0430\u043c \u0438 \u043f\u0440\u043e\u0438\u0441\u0445\u043e\u0434\u0438\u0442 \u043f\u0440\u043e\u0432\u0435\u0440\u043a\u0430.',
     depthNote: '\u041f\u0440\u0435\u0434\u0435\u043b \u2014 \u043f\u044f\u0442\u044c \u0443\u0440\u043e\u0432\u043d\u0435\u0439, \u0438 \u044d\u0442\u0430 \u0432\u0435\u0442\u043a\u0430 \u0438\u0441\u043f\u043e\u043b\u044c\u0437\u0443\u0435\u0442 \u0432\u0441\u0435.',
 
-    proofEyebrow: '06 \u00b7 \u041f\u043e\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043d\u0438\u0435',
+    proofEyebrow: '04 \u00b7 \u041f\u043e\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043d\u0438\u0435',
     proofTitle: '\u041e\u0442\u043c\u0435\u0442\u043a\u0430 \u2014 \u044d\u0442\u043e \u0443\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043d\u0438\u0435. \u0417\u0434\u0435\u0441\u044c \u043e\u043d\u0430 \u0441\u0442\u0430\u043d\u043e\u0432\u0438\u0442\u0441\u044f \u0434\u043e\u043a\u0430\u0437\u0430\u0442\u0435\u043b\u044c\u0441\u0442\u0432\u043e\u043c.',
     proofLead:
       '\u0423\u043a\u0430\u0436\u0438\u0442\u0435, \u0441 \u0447\u0435\u043c \u0437\u0430\u0434\u0430\u0447\u0430 \u0434\u043e\u043b\u0436\u043d\u0430 \u0432\u0435\u0440\u043d\u0443\u0442\u044c\u0441\u044f \u2014 \u0444\u043e\u0442\u043e, \u0434\u043e\u043a\u0443\u043c\u0435\u043d\u0442 \u0438\u043b\u0438 \u043c\u0435\u0441\u0442\u043e \u043e\u0442\u043c\u0435\u0442\u043a\u0438 \u2014 \u0430 \u043f\u043e\u0442\u043e\u043c \u043f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u043e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c \u0431\u0435\u0437 \u044d\u0442\u043e\u0433\u043e. \u041a\u0430\u0436\u0434\u043e\u0435 \u0438\u0437 \u0442\u0440\u0451\u0445 \u043d\u0430\u0441\u0442\u0440\u0430\u0438\u0432\u0430\u0435\u0442\u0441\u044f \u043e\u0442\u0434\u0435\u043b\u044c\u043d\u043e: \u0444\u043e\u0442\u043e \u043c\u043e\u0436\u0435\u0442 \u0431\u044b\u0442\u044c \u043e\u0431\u044f\u0437\u0430\u0442\u0435\u043b\u044c\u043d\u044b\u043c, \u0430 \u0444\u0430\u0439\u043b \u2014 \u043f\u0440\u043e\u0441\u0442\u043e \u043f\u0440\u0435\u0434\u043b\u043e\u0436\u0435\u043d\u043d\u044b\u043c.',
 
-    rhythmEyebrow: '07 \u00b7 \u0420\u0438\u0442\u043c',
+    rhythmEyebrow: '05 \u00b7 \u0420\u0438\u0442\u043c',
     rhythmTitle: '\u041e\u043d \u0432\u043e\u0437\u0432\u0440\u0430\u0449\u0430\u0435\u0442\u0441\u044f \u0441\u0430\u043c',
     rhythmLead:
       '\u041a\u0430\u0436\u0434\u044b\u0439 \u0434\u0435\u043d\u044c, \u043f\u043e \u0432\u044b\u0431\u0440\u0430\u043d\u043d\u044b\u043c \u0434\u043d\u044f\u043c \u043d\u0435\u0434\u0435\u043b\u0438, \u043f\u043e \u0443\u043a\u0430\u0437\u0430\u043d\u043d\u044b\u043c \u0447\u0438\u0441\u043b\u0430\u043c \u043c\u0435\u0441\u044f\u0446\u0430, \u0440\u0430\u0437 \u0432 \u0433\u043e\u0434 \u0438\u043b\u0438 \u043f\u043e \u0441\u043f\u0438\u0441\u043a\u0443 \u043a\u043e\u043d\u043a\u0440\u0435\u0442\u043d\u044b\u0445 \u0434\u0430\u0442. \u041d\u0430\u0441\u0442\u0440\u043e\u0438\u043b\u0438 \u043e\u0434\u0438\u043d \u0440\u0430\u0437 \u2014 \u0438 \u0431\u043e\u043b\u044c\u0448\u0435 \u043d\u0438\u043a\u043e\u043c\u0443 \u043d\u0435 \u043d\u0443\u0436\u043d\u043e \u043e\u0431 \u044d\u0442\u043e\u043c \u043f\u043e\u043c\u043d\u0438\u0442\u044c.',
 
-    peopleEyebrow: '08 \u00b7 \u041b\u044e\u0434\u0438',
+    peopleEyebrow: '06 \u00b7 \u041b\u044e\u0434\u0438',
     peopleTitle: '\u0412\u0441\u0435 \u0432 \u043f\u0440\u043e\u0441\u0442\u0440\u0430\u043d\u0441\u0442\u0432\u0435 \u0438\u043b\u0438 \u0438\u043c\u0435\u043d\u043d\u043e \u0442\u0435, \u043a\u043e\u043c\u0443 \u043d\u0443\u0436\u043d\u043e',
     peopleLead:
       '\u0412\u044b \u0432\u044b\u0431\u0438\u0440\u0430\u0435\u0442\u0435, \u043a\u043e\u043c\u0443 \u043f\u043e\u043f\u0430\u0434\u0451\u0442 \u0447\u0435\u043a-\u043b\u0438\u0441\u0442. \u0410 \u0442\u043e\u0442, \u043a\u0442\u043e \u0435\u0433\u043e \u0437\u0430\u043f\u043e\u043b\u043d\u044f\u0435\u0442, \u043c\u043e\u0436\u0435\u0442 \u043e\u0441\u0442\u0430\u0432\u0438\u0442\u044c \u043f\u0440\u0438\u043c\u0435\u0447\u0430\u043d\u0438\u0435 \u043a \u043e\u0442\u0434\u0435\u043b\u044c\u043d\u043e\u0439 \u0437\u0430\u0434\u0430\u0447\u0435 \u2014 \u0438\u0441\u043a\u043b\u044e\u0447\u0435\u043d\u0438\u0435 \u043e\u0431\u044a\u044f\u0441\u043d\u044f\u0435\u0442\u0441\u044f \u0440\u044f\u0434\u043e\u043c \u0441 \u0442\u0435\u043c, \u0433\u0434\u0435 \u043e\u043d\u043e \u0441\u043b\u0443\u0447\u0438\u043b\u043e\u0441\u044c, \u0430 \u043d\u0435 \u0432 \u0441\u043e\u043e\u0431\u0449\u0435\u043d\u0438\u0438, \u043a\u043e\u0442\u043e\u0440\u043e\u0435 \u043d\u0430\u0434\u043e \u0438\u0441\u043a\u0430\u0442\u044c.',
 
-    insightsEyebrow: '09 \u00b7 \u0420\u0435\u0437\u0443\u043b\u044c\u0442\u0430\u0442',
+    insightsEyebrow: '07 \u00b7 \u0420\u0435\u0437\u0443\u043b\u044c\u0442\u0430\u0442',
     insightsTitle: '\u041c\u0435\u0441\u044f\u0446 \u043e\u0442\u043c\u0435\u0442\u043e\u043a \u0441\u043a\u043b\u0430\u0434\u044b\u0432\u0430\u0435\u0442\u0441\u044f \u0432 \u043a\u0430\u0440\u0442\u0438\u043d\u0443',
     insightsLead:
       '\u041a\u0430\u0436\u0434\u0430\u044f \u043e\u0442\u043c\u0435\u0442\u043a\u0430 \u0445\u0440\u0430\u043d\u0438\u0442 \u0438\u043c\u044f \u0438 \u0432\u0440\u0435\u043c\u044f, \u043f\u043e\u044d\u0442\u043e\u043c\u0443 \u043e\u0442\u0447\u0451\u0442\u044b \u043f\u043e\u043a\u0430\u0437\u044b\u0432\u0430\u044e\u0442 \u0437\u0430\u043a\u043e\u043d\u043e\u043c\u0435\u0440\u043d\u043e\u0441\u0442\u0438, \u043a\u043e\u0442\u043e\u0440\u044b\u0445 \u043d\u0438\u043a\u0442\u043e \u043d\u0435 \u0437\u0430\u043c\u0435\u0447\u0430\u043b. \u041f\u043e\u0441\u043b\u0435\u0434\u043d\u0438\u0439 \u0441\u0442\u043e\u043b\u0431\u0435\u0446 \u2014 \u0441\u0435\u0433\u043e\u0434\u043d\u044f, \u0438 \u043e\u043d \u0434\u0432\u0438\u0433\u0430\u0435\u0442\u0441\u044f, \u043a\u043e\u0433\u0434\u0430 \u0432\u044b \u043e\u0442\u043c\u0435\u0447\u0430\u0435\u0442\u0435 \u0437\u0430\u0434\u0430\u0447\u0443 \u0432 \u0447\u0435\u043a-\u043b\u0438\u0441\u0442\u0435 \u0432\u0432\u0435\u0440\u0445\u0443 \u0441\u0442\u0440\u0430\u043d\u0438\u0446\u044b.',
     insightsCaption: '\u041f\u043e\u0441\u043b\u0435\u0434\u043d\u0438\u0439 \u0441\u0442\u043e\u043b\u0431\u0435\u0446 \u043f\u043e\u0441\u0447\u0438\u0442\u0430\u043d \u043f\u043e \u0432\u0430\u0448\u0438\u043c \u043e\u0442\u043c\u0435\u0442\u043a\u0430\u043c.',
 
-    walkEyebrow: '10 \u00b7 \u041e\u0434\u043d\u043e \u0443\u0442\u0440\u043e',
+    walkEyebrow: '08 \u00b7 \u041e\u0434\u043d\u043e \u0443\u0442\u0440\u043e',
     walkTitle: '\u041e\u0442\u043c\u0435\u0442\u043a\u0430 \u043e \u043f\u0440\u0438\u0445\u043e\u0434\u0435, \u043f\u043e\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0451\u043d\u043d\u0430\u044f',
     walkLead:
       '\u042f\u0432\u043a\u0430 \u2014 \u0442\u043e\u0442 \u0441\u043b\u0443\u0447\u0430\u0439, \u0433\u0434\u0435 \u043f\u043e\u0434\u043f\u0438\u0441\u044c \u043d\u0430 \u0431\u0443\u043c\u0430\u0433\u0435 \u0432\u0441\u0435\u0433\u0434\u0430 \u0441\u0442\u043e\u0438\u043b\u0430 \u043c\u0435\u043d\u044c\u0448\u0435 \u0432\u0441\u0435\u0433\u043e. \u041f\u0440\u043e\u0439\u0434\u0438\u0442\u0435 \u043e\u0434\u043d\u043e \u0443\u0442\u0440\u043e \u043e\u0434\u043d\u043e\u0433\u043e \u0441\u043e\u0442\u0440\u0443\u0434\u043d\u0438\u043a\u0430 \u2014 \u0432\u0435\u0441\u044c \u043f\u0440\u043e\u0446\u0435\u0441\u0441 \u0437\u0430 \u043f\u044f\u0442\u044c \u0448\u0430\u0433\u043e\u0432.',
@@ -662,7 +662,7 @@ export const MESSAGES: Record<BuiltinLocale, SiteMessages> = {
       },
     ],
 
-    casesEyebrow: '11 \u00b7 \u0412 \u0434\u0440\u0443\u0433\u0438\u0445 \u043c\u0435\u0441\u0442\u0430\u0445',
+    casesEyebrow: '09 \u00b7 \u0412 \u0434\u0440\u0443\u0433\u0438\u0445 \u043c\u0435\u0441\u0442\u0430\u0445',
     casesTitle: '\u0422\u0430 \u0436\u0435 \u0444\u043e\u0440\u043c\u0430, \u0434\u0440\u0443\u0433\u0430\u044f \u043a\u043e\u043c\u043d\u0430\u0442\u0430',
     casesLead: '\u0412\u0435\u0437\u0434\u0435, \u0433\u0434\u0435 \u0440\u0430\u0431\u043e\u0442\u0430 \u043f\u043e\u0432\u0442\u043e\u0440\u044f\u0435\u0442\u0441\u044f \u0438 \u043a\u0442\u043e-\u0442\u043e \u0434\u043e\u043b\u0436\u0435\u043d \u043f\u043e\u043a\u0430\u0437\u0430\u0442\u044c, \u0447\u0442\u043e \u043e\u043d\u0430 \u0441\u0434\u0435\u043b\u0430\u043d\u0430.',
     casesEnforced: '\u0427\u0442\u043e \u0442\u0440\u0435\u0431\u0443\u0435\u0442\u0441\u044f',
@@ -700,7 +700,7 @@ export const MESSAGES: Record<BuiltinLocale, SiteMessages> = {
     tractionMembersValue: '\u2014',
 
     faqVisible: 'yes',
-    faqEyebrow: '13 \u00b7 \u041f\u0440\u0435\u0436\u0434\u0435 \u0447\u0435\u043c \u0441\u043f\u0440\u043e\u0441\u0438\u0442\u044c',
+    faqEyebrow: '10 \u00b7 \u041f\u0440\u0435\u0436\u0434\u0435 \u0447\u0435\u043c \u0441\u043f\u0440\u043e\u0441\u0438\u0442\u044c',
     faqTitle: '\u0412\u043e\u043f\u0440\u043e\u0441\u044b, \u043a\u043e\u0442\u043e\u0440\u044b\u0435 \u0441\u0442\u043e\u0438\u0442 \u043d\u0430\u043c \u0437\u0430\u0434\u0430\u0442\u044c',
     faqLead: '\u0422\u0435, \u0447\u0442\u043e \u0440\u0435\u0448\u0430\u044e\u0442, \u0440\u0430\u0431\u043e\u0442\u0430\u0435\u0442 \u043b\u0438 \u044d\u0442\u043e \u0442\u0430\u043c, \u0433\u0434\u0435 \u0440\u0430\u0431\u043e\u0442\u0430\u0435\u0442\u0435 \u0432\u044b.',
     faqItems: [
@@ -1030,4 +1030,21 @@ export function siteContentSections(): SiteContentSection[] {
   }
 
   return sections;
+}
+
+/**
+ * Whether a hideable section is drawn.
+ *
+ * Fails safe on purpose: a typo, an empty value or an unexpected word leaves the
+ * content on the page. The failure mode of a hide-flag should be "still there",
+ * never "silently gone from the site with nothing to indicate why".
+ *
+ * Lives here, beside the `Visible` type it reads, because it was copied into two
+ * components and then needed by a third — and a rule about what counts as hidden
+ * that exists in three places is a rule that will eventually disagree with
+ * itself. The header has to ask the same question the section does, or a nav
+ * link survives its own destination.
+ */
+export function isVisible(value: Visible): boolean {
+  return value.trim().toLowerCase() !== 'no';
 }

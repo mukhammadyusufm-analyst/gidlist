@@ -1,6 +1,6 @@
 import { ShieldCheck } from 'lucide-react';
 
-import type { SiteMessages } from '@app/core';
+import { isVisible, type SiteMessages } from '@app/core';
 
 import type { ClosingCopy } from '@/lib/closing-copy';
 import { Reveal } from '@/components/reveal';
@@ -16,17 +16,6 @@ import { AttendanceWalkthrough } from '@/components/demo/attendance-walkthrough'
  * traction hidden, because empty numbers help nobody, and the objections shown,
  * because they answer real questions from the first day.
  */
-
-/**
- * Drawn unless the key says `no`.
- *
- * Fails safe on purpose: a typo, an empty value or an unexpected word leaves the
- * content on the page. The failure mode of a hide-flag should be "still there",
- * never "silently gone from the site with nothing to indicate why".
- */
-function isVisible(value: string): boolean {
-  return value.trim().toLowerCase() !== 'no';
-}
 
 function Header({
   eyebrow,
