@@ -16,7 +16,24 @@ export type AuthState = {
   formError?: string;
   fieldErrors?: Record<string, string[]>;
   notice?: string;
+  /**
+   * When this result was produced, set on every failure.
+   *
+   * The CAPTCHA widget keys itself on this. A Turnstile token is single use, so
+   * after a refused submission the widget is still holding one Supabase will
+   * reject — and the second attempt fails on the challenge rather than on
+   * whatever was actually wrong. A value that changes per failure remounts the
+   * widget and fetches a fresh token, including when somebody mistypes the same
+   * password twice and the error text is identical.
+   */
+  at?: number;
 };
+
+/** Read the challenge token, if the form carried one. */
+function captchaToken(formData: FormData): string | undefined {
+  const token = String(formData.get('captchaToken') ?? '');
+  return token || undefined;
+}
 
 /**
  * Only allow redirects to a path inside this app.
@@ -44,12 +61,31 @@ export async function signIn(_prev: AuthState, formData: FormData): Promise<Auth
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword(parsed.data);
+  const { error } = await supabase.auth.signInWithPassword({
+    ...parsed.data,
+    options: { captchaToken: captchaToken(formData) },
+  });
 
   if (error) {
+    /*
+     * A refused challenge is reported as itself. Folding it into the credentials
+     * message would tell somebody their password is wrong when it is not, and
+     * they would keep retyping a correct password — the one case where the vague
+     * message below does harm rather than good.
+     */
+    if (/captcha/i.test(error.message)) {
+      return {
+        formError: 'The verification check did not pass. Try again in a moment.',
+        at: Date.now(),
+      };
+    }
+
     // Deliberately vague. Distinguishing "no such account" from "wrong
     // password" would let anyone test whether a given email is registered.
-    return { formError: 'That email and password combination is not correct.' };
+    return {
+      formError: 'That email and password combination is not correct.',
+      at: Date.now(),
+    };
   }
 
   // redirect() works by throwing, so it must sit outside any try/catch that
@@ -84,11 +120,12 @@ export async function signUp(_prev: AuthState, formData: FormData): Promise<Auth
       // Read by the handle_new_user() trigger to populate profiles.full_name.
       data: { full_name: fullName },
       emailRedirectTo: `${origin}/auth/callback`,
+      captchaToken: captchaToken(formData),
     },
   });
 
   if (error) {
-    return { formError: error.message };
+    return { formError: error.message, at: Date.now() };
   }
 
   // With email confirmation on (the default, and what you want), Supabase
@@ -119,6 +156,7 @@ export async function requestPasswordReset(
 
   await supabase.auth.resetPasswordForEmail(parsed.data.email, {
     redirectTo: `${origin}/auth/callback?next=/account/password`,
+    captchaToken: captchaToken(formData),
   });
 
   // Always the same reply, sent whether or not the address exists — otherwise

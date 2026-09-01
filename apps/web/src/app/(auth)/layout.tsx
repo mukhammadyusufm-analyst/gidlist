@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import Script from 'next/script';
+import { headers } from 'next/headers';
 import { CalendarClock, CircleCheckBig, Smartphone } from 'lucide-react';
 
 import { getAvailableLocales, getTranslations } from '@/lib/i18n/server';
@@ -20,6 +22,20 @@ import { LanguageSwitcher } from '@/components/i18n/language-switcher';
 export default async function AuthLayout({ children }: { children: React.ReactNode }) {
   const [locales, { t }] = await Promise.all([getAvailableLocales(), getTranslations()]);
 
+  /*
+   * The nonce `proxy.ts` minted for this request, read exactly as the Next
+   * CSP guide prescribes. It has to be on this tag: `script-src` uses
+   * `strict-dynamic`, which makes the browser ignore host allowlists entirely,
+   * so naming challenges.cloudflare.com in the policy would achieve nothing.
+   * A nonced script is trusted, and anything it goes on to load inherits that
+   * trust — which is how Turnstile's own bundle gets in.
+   *
+   * Loaded once for the whole auth group rather than per form, because all
+   * three forms need it and the script is happy to be present with no widget.
+   */
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
+  const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
+
   const points = [
     { icon: CalendarClock, text: t('auth.pitchPointSchedule') },
     { icon: CircleCheckBig, text: t('auth.pitchPointRecord') },
@@ -32,6 +48,14 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
     // noticeable on a laptop and looks abandoned on a large monitor or when
     // somebody zooms out.
     <div className="auth-backdrop auth-shell flex min-h-dvh items-center justify-center">
+      {turnstileEnabled ? (
+        <Script
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+          strategy="afterInteractive"
+          nonce={nonce}
+        />
+      ) : null}
+
       <div className="w-full max-w-4xl">
         {/* Above the grid rather than inside the left column. In the left
             column it would follow the form on a phone, so the first thing on

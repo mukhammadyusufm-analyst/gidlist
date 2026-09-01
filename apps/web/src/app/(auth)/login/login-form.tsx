@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { FieldError, FormNotice } from '@/components/ui/field-error';
 import { SubmitButton } from '@/components/ui/submit-button';
+import { CaptchaField } from '@/components/auth/captcha-field';
 import { useT } from '@/components/i18n/provider';
 
 const initialState: AuthState = {};
@@ -48,6 +49,8 @@ export function LoginForm({ next }: { next: string }) {
         />
         <FieldError messages={state.fieldErrors?.password} />
       </div>
+
+      <CaptchaField at={state.at} />
 
       <SubmitButton pendingLabel={t('auth.signingIn')}>{t('auth.signIn')}</SubmitButton>
     </form>

@@ -67,13 +67,29 @@ function buildCsp(nonce: string): string {
   // which the per-checklist discussion (README item 6) will need.
   const supabase = 'https://*.supabase.co';
 
+  // Cloudflare Turnstile, which guards the auth endpoints against the automated
+  // sign-ups that were arriving before it existed.
+  const turnstile = 'https://challenges.cloudflare.com';
+
   return [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`,
     "style-src 'self' 'unsafe-inline'",
     `img-src 'self' data: blob: ${supabase}`,
     "font-src 'self'",
-    `connect-src 'self' ${supabase} wss://*.supabase.co`,
+    `connect-src 'self' ${supabase} wss://*.supabase.co ${turnstile}`,
+    /*
+     * Turnstile draws its challenge in an iframe. There was no `frame-src` at
+     * all, so `default-src 'self'` governed it and the widget was refused with
+     * nothing on screen to say why — the form simply never produced a token and
+     * every sign-in failed. Naming the one host is narrower than it looks:
+     * `frame-ancestors 'none'` below still forbids anyone framing this app.
+     *
+     * The script itself is NOT listed here on purpose. `strict-dynamic` makes
+     * the browser ignore host expressions in `script-src`, so the allowance has
+     * to come from the nonce on the tag in the auth layout, not from a hostname.
+     */
+    `frame-src ${turnstile}`,
     /*
      * Needed, and not obvious: `strict-dynamic` makes the browser ignore
      * host-source expressions like 'self' in `script-src`, so a
