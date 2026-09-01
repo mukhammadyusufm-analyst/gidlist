@@ -3,7 +3,7 @@ import { isVisible, type SiteMessages } from '@app/core';
 import type { Plan } from '@/lib/pricing';
 import { SITE_LOCALES, type BuiltinLocale } from '@/lib/i18n/locale';
 import { SITE_URL } from '@/lib/site';
-import { COMPANY_NAME } from '@/lib/legal';
+import { COMPANY_NAME, COMPANY_URL } from '@/lib/legal';
 
 /**
  * JSON-LD: what this is, who makes it, and the questions it answers.
@@ -38,6 +38,14 @@ export function StructuredData({
     '@id': `${SITE_URL}/#organisation`,
     name: COMPANY_NAME,
     url: SITE_URL,
+    /*
+     * `sameAs` is the property that says "this organisation is also found at
+     * that address". Without it the company's own site and this one are two
+     * unrelated names to a crawler; with it, whatever reputation either has
+     * counts toward the other. It takes a list, so more profiles can be added
+     * here later.
+     */
+    sameAs: [COMPANY_URL],
     // Registered address deliberately omitted — see lib/legal.ts.
   };
 

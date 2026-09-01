@@ -5,7 +5,41 @@ import { BUILTIN_LOCALE_NAMES } from '@app/core';
 import { SITE_LOCALES, type BuiltinLocale } from '@/lib/i18n/locale';
 import { MESSAGES, type SiteMessages } from '@/lib/i18n/messages';
 import { SIGNIN_URL, SIGNUP_URL } from '@/lib/site';
-import { COMPANY_NAME, LEGAL } from '@/lib/legal';
+import { COMPANY_NAME, COMPANY_URL, LEGAL } from '@/lib/legal';
+
+/** The company name as a link, styled to sit inside running footer text. */
+function CompanyLink() {
+  return (
+    <a
+      href={COMPANY_URL}
+      className="underline underline-offset-2 transition-colors hover:text-[var(--color-foreground)]"
+    >
+      {COMPANY_NAME}
+    </a>
+  );
+}
+
+/**
+ * Linkify the company name inside a translated sentence.
+ *
+ * The three translations of `footerCompany` differ in every word except the
+ * company name, which stays Latin and identical in all of them — so splitting
+ * on it is reliable in a way that splitting on anything else here would not be.
+ * If the string somehow lacks the name, the sentence renders unchanged rather
+ * than disappearing.
+ */
+function LinkedCompany({ text }: { text: string }) {
+  const parts = text.split(COMPANY_NAME);
+  if (parts.length !== 2) return <>{text}</>;
+
+  return (
+    <>
+      {parts[0]}
+      <CompanyLink />
+      {parts[1]}
+    </>
+  );
+}
 
 /**
  * Four labelled columns rather than three unnamed lists.
@@ -126,11 +160,16 @@ export function SiteFooter({ locale, m }: { locale: BuiltinLocale; m: SiteMessag
           ))}
         </nav>
 
+        {/* The company is named twice down here and was linked neither time.
+            Both are now real links to unumis.com: a mention tells a reader who
+            makes this, a link tells a search engine the two are one company. */}
         <div className="mt-6 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-[var(--color-muted-foreground)]">
           <p>
-            © {new Date().getFullYear()} {COMPANY_NAME}. {m.footerRights}
+            © {new Date().getFullYear()} <CompanyLink />. {m.footerRights}
           </p>
-          <p>{m.footerCompany}</p>
+          <p>
+            <LinkedCompany text={m.footerCompany} />
+          </p>
         </div>
       </div>
     </footer>

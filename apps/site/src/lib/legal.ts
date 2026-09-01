@@ -16,6 +16,17 @@ import type { BuiltinLocale } from '@/lib/i18n/locale';
  */
 
 export const COMPANY_NAME = 'UNUMIS LTD';
+
+/**
+ * The company's own site.
+ *
+ * Rendered as a real link wherever the company is named, and published in the
+ * JSON-LD organisation as `sameAs`. That is the property search engines read as
+ * "these two addresses are the same entity" — a plain mention establishes
+ * nothing, whereas a link plus `sameAs` connects Gidlist's reputation to the
+ * company's and back again.
+ */
+export const COMPANY_URL = 'https://unumis.com';
 export const COMPANY_COUNTRY_EN = 'the Republic of Uzbekistan';
 export const LEGAL_CONTACT_EMAIL = 'gidlist.operations@gmail.com';
 
