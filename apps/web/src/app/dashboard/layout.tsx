@@ -2,7 +2,8 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { CircleCheckBig, LogOut, ShieldCheck } from 'lucide-react';
 
-import { createClient, getUser } from '@/lib/supabase/server';
+import { getUser } from '@/lib/supabase/server';
+import { getMyProfile } from '@/lib/account/profile';
 import { signOut } from '@/lib/auth/actions';
 import { getAvailableLocales, getTranslations } from '@/lib/i18n/server';
 import { hasAnyCapability } from '@/lib/platform/access';
@@ -26,7 +27,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
     getTimezone(),
   ]);
 
-  const supabase = await createClient();
   const user = await getUser();
 
   // proxy.ts already redirects signed-out visitors away from /dashboard. This
@@ -37,12 +37,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
     redirect('/login?next=/dashboard');
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name, avatar_url')
-    .eq('id', user.id)
-    .maybeSingle();
-
+  // Shared with getLocale() and the account page — see lib/account/profile.ts.
+  const profile = await getMyProfile();
   const displayName = profile?.full_name?.trim() || user.email;
 
   return (

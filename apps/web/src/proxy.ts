@@ -176,16 +176,55 @@ export async function proxy(request: NextRequest) {
     },
   );
 
-  // Do not replace this with getSession(). getUser() revalidates the token with
-  // Supabase; getSession() trusts the cookie, which the client controls.
-  // This call is also what triggers the refresh above as a side effect.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  /*
+   * getClaims(), not getUser() — and NOT getSession().
+   *
+   * This ran on every single request that is not a static asset, and every one
+   * of them made a network call from Frankfurt to the auth server in Dublin
+   * before any page code started. Measured against production, the proxy leg
+   * was ~41ms of a ~452ms page; a round trip is most of that.
+   *
+   * `getClaims()` verifies the token **cryptographically, in process**. Both
+   * databases publish ES256 keys at `/.well-known/jwks.json` (checked, 3 Sep
+   * 2026), so it fetches the public key once, verifies the signature with
+   * WebCrypto, and makes no further network call. The key cache is
+   * `GLOBAL_JWKS` — module-level in auth-js, keyed by storage key — so it
+   * survives this file building a fresh client per request and is warm for
+   * every request a Lambda instance serves after its first.
+   *
+   * WHY THIS IS NOT THE getSession() THE OLD COMMENT WARNED ABOUT. That
+   * objection was right and still is: `getSession()` returns whatever is in the
+   * cookie, which the client controls, so a forged cookie would walk straight
+   * past it. `getClaims()` checks the signature against Supabase's own public
+   * key — a forged or tampered token fails verification, and an expired one is
+   * rejected on `exp`. It is a real verification, just not a remote one.
+   *
+   * CALLED WITH NO ARGUMENT, DELIBERATELY. With no token passed it goes through
+   * `getSession()` internally, which is what refreshes an expiring token and
+   * therefore what triggers the `setAll` above. Passing the token in by hand
+   * would skip that and sign everyone out roughly every hour — job 1 of this
+   * file. So the network call still happens on a refresh; it just stops
+   * happening on every request in between.
+   *
+   * WHAT IS GIVEN UP, STATED PLAINLY. `getUser()` also asks the auth server
+   * whether the account still exists and is not banned; a signature check
+   * cannot know that, so a token issued to an account deleted a minute ago
+   * still satisfies the proxy until it expires. That is acceptable *here*
+   * because this gate is not the control and never was — the comment in the
+   * dashboard layout says so, and the authoritative `getUser()` still runs once
+   * per render beside the data. Underneath both, RLS decides every row against
+   * the database's own view of who this is. What the proxy owes the request is
+   * "is this a valid session, cheaply", and that is now what it answers.
+   *
+   * It also degrades safely: on a symmetric key, or where WebCrypto is missing,
+   * auth-js falls back to `getUser()` by itself.
+   */
+  const { data: verified } = await supabase.auth.getClaims();
+  const userId = verified?.claims?.sub ?? null;
 
   const { pathname } = request.nextUrl;
 
-  if (!user && !isPublicRoute(pathname)) {
+  if (!userId && !isPublicRoute(pathname)) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = '/login';
     // Remember where they were headed so login can return them there. Only the
@@ -203,7 +242,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // Signed-in users have no reason to see the auth screens.
-  if (user && (pathname === '/login' || pathname === '/signup')) {
+  if (userId && (pathname === '/login' || pathname === '/signup')) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = '/dashboard';
     redirectUrl.search = '';

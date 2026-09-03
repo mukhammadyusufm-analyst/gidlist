@@ -12,7 +12,7 @@ import {
   type Messages,
 } from '@app/core';
 
-import { createClient, getUser } from '@/lib/supabase/server';
+import { getMyProfile } from '@/lib/account/profile';
 import { createPublicClient } from '@/lib/supabase/public-client';
 import { CATALOGUE } from './catalogue';
 import { I18N_CACHE_TAG } from './cache-tags';
@@ -98,13 +98,12 @@ export const getLocale = cache(async (): Promise<Locale> => {
   const fromCookie = store.get(LOCALE_COOKIE)?.value;
   if (fromCookie && codes.has(fromCookie)) return fromCookie;
 
-  const supabase = await createClient();
-  const user = await getUser();
-  if (!user) return DEFAULT_LOCALE;
+  // Through getMyProfile(), not a `locale` select of its own. The dashboard
+  // layout and the account page already read this row, and this was a third
+  // round trip for one more column of it.
+  const profile = await getMyProfile();
 
-  const { data } = await supabase.from('profiles').select('locale').eq('id', user.id).maybeSingle();
-
-  return data?.locale && codes.has(data.locale) ? data.locale : DEFAULT_LOCALE;
+  return profile?.locale && codes.has(profile.locale) ? profile.locale : DEFAULT_LOCALE;
 });
 
 /**

@@ -3,7 +3,8 @@ import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import { Check, ChevronRight, CreditCard, KeyRound, Mail } from 'lucide-react';
 
-import { createClient, getUser } from '@/lib/supabase/server';
+import { getUser } from '@/lib/supabase/server';
+import { getMyProfile } from '@/lib/account/profile';
 import { getTranslations } from '@/lib/i18n/server';
 import { AvatarUpload } from '@/components/account/avatar-upload';
 import { EmailForm, NameForm, PasswordForm } from '@/components/account/account-forms';
@@ -17,14 +18,12 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function AccountPage() {
-  const supabase = await createClient();
   const user = await getUser();
   if (!user) redirect('/login?next=/dashboard/account');
 
-  const [{ data: profile }, { t }] = await Promise.all([
-    supabase.from('profiles').select('full_name, avatar_url').eq('id', user.id).maybeSingle(),
-    getTranslations(),
-  ]);
+  // The dashboard layout above has already read this row this render; through
+  // getMyProfile() both share one lookup. See lib/account/profile.ts.
+  const [profile, { t }] = await Promise.all([getMyProfile(), getTranslations()]);
 
   /**
    * Which sign-in methods this account actually has.
