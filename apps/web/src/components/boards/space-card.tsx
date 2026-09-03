@@ -26,8 +26,14 @@ export function SpaceCard({ board }: { board: Board }) {
     <Card interactive className="group overflow-hidden">
       {/* `outline-none` alone would leave keyboard users with no focus cue at
           all; the ring is inset because the card clips its own overflow. */}
+      {/* Straight to /fill, not to the space root that redirects there.
+          This is the most-travelled link in the product, and the root's
+          redirect costs a whole extra function invocation — measured at
+          ~220ms of server rendering per request. The redirect stays for
+          bookmarks and typed addresses; it just should not be on the path
+          somebody takes twenty times a day. */}
       <Link
-        href={`/dashboard/boards/${board.slug}`}
+        href={`/dashboard/boards/${board.slug}/fill`}
         className="block rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-inset"
       >
         <div

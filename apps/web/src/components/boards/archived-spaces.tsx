@@ -41,9 +41,12 @@ export function ArchivedSpaces({ boards }: { boards: Board[] }) {
           >
             <div className="min-w-0">
               {/* Still openable: the space is hidden, not gone, and its
-                  compliance history is often the reason someone kept it. */}
+                  compliance history is often the reason someone kept it —
+                  so this opens Compliance rather than following the root's
+                  redirect to Fill in, which is the one tab an archived space
+                  has nothing left to offer. */}
               <Link
-                href={`/dashboard/boards/${board.slug}`}
+                href={`/dashboard/boards/${board.slug}/compliance`}
                 className="truncate text-sm font-medium underline-offset-4 hover:underline"
               >
                 {board.name}
