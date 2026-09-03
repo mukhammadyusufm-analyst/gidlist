@@ -711,9 +711,36 @@ export type Database = {
           queued_at: string;
           deleted_at: string | null;
           last_error: string | null;
+          // Null while the off-site copy still exists. Only ever set for
+          // objects retention expired deliberately — see the migration.
+          backup_pruned_at: string | null;
         };
         Insert: never;
-        Update: { deleted_at?: string | null; last_error?: string | null };
+        Update: {
+          deleted_at?: string | null;
+          last_error?: string | null;
+          backup_pruned_at?: string | null;
+        };
+        Relationships: [];
+      };
+      /**
+       * What has been copied off-site, and at what size.
+       *
+       * RLS is on with no policies, so this is unreachable by anon and
+       * authenticated; only the backup job, as service_role, touches it.
+       * Insert and update go through `storage_backup_record`, so both are
+       * `never` here — the job deletes rows directly when retention prunes
+       * one, which is the only direct write.
+       */
+      storage_backup_log: {
+        Row: {
+          bucket_id: string;
+          object_path: string;
+          size: number;
+          mirrored_at: string;
+        };
+        Insert: never;
+        Update: never;
         Relationships: [];
       };
       plan_prices: {
@@ -1027,6 +1054,16 @@ export type Database = {
           p_assignee?: string | null;
         };
         Returns: { day: string; done: number; total: number }[];
+      };
+      // Off-site backup of Storage objects. Both are service-role only —
+      // execute is revoked from anon and authenticated in the migration.
+      storage_backup_pending: {
+        Args: { p_limit: number };
+        Returns: { bucket_id: string; object_path: string; size: number }[];
+      };
+      storage_backup_record: {
+        Args: { p_bucket: string; p_path: string; p_size: number };
+        Returns: undefined;
       };
       compliance_assignees: {
         Args: { p_board_id: string; p_from: string; p_to: string };
