@@ -335,6 +335,160 @@ end;
 $$;
 
 -- =============================================================================
+-- Member hierarchy visibility (phase B)
+--
+-- The riskiest change in the schema, because it is the first time anything
+-- other than "your own" or "everything" decides who reads a submission. The
+-- shape being tested:
+--
+--   Alice   owner of Acme, sees everything
+--   Carol   plain member, manages Dave
+--   Dave    plain member, reports to Carol
+--   Erin    plain member, reports to nobody — the control that proves Carol's
+--           new sight is bounded rather than blanket
+--
+-- Each negative is paired with the positive that proves the fixture exists, per
+-- the note at the top of this file.
+-- =============================================================================
+do $$
+declare
+  f          record;
+  v_dave     uuid := gen_random_uuid();
+  v_erin     uuid := gen_random_uuid();
+  v_carol_bm uuid;
+  v_dave_bm  uuid;
+  v_list     uuid;
+  v_sched    uuid;
+  v_sub_dave uuid;
+  v_sub_erin uuid;
+  n          integer;
+  ok         boolean;
+begin
+  select * into f from fixture;
+
+  insert into auth.users (id, instance_id, aud, role, email, created_at, updated_at)
+  values
+    (v_dave, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'dave@test.invalid', now(), now()),
+    (v_erin, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'erin@test.invalid', now(), now());
+
+  insert into public.profiles (id, full_name)
+  values (v_dave, 'Dave'), (v_erin, 'Erin')
+  on conflict (id) do nothing;
+
+  insert into public.board_members (board_id, user_id, invited_email, role, status, accepted_at)
+  values
+    (f.acme, v_dave, 'dave@test.invalid', 'member', 'active', now()),
+    (f.acme, v_erin, 'erin@test.invalid', 'member', 'active', now());
+
+  select id into v_carol_bm from public.board_members where board_id = f.acme and user_id = f.carol;
+  select id into v_dave_bm  from public.board_members where board_id = f.acme and user_id = v_dave;
+
+  -- The reporting line under test. Erin deliberately gets none.
+  update public.board_members set manager_id = v_carol_bm where id = v_dave_bm;
+
+  insert into public.checklists (board_id, title, created_by)
+  values (f.acme, 'Opening checks', f.alice) returning id into v_list;
+
+  insert into public.schedules (checklist_id, kind, config, created_by)
+  values (v_list, 'daily', '{}'::jsonb, f.alice) returning id into v_sched;
+
+  insert into public.submissions (schedule_id, checklist_id, due_date, assignee_id, assignee_email, status)
+  values
+    (v_sched, v_list, current_date, v_dave, 'dave@test.invalid', 'missed'),
+    (v_sched, v_list, current_date, v_erin, 'erin@test.invalid', 'missed');
+
+  select id into v_sub_dave from public.submissions where assignee_id = v_dave;
+  select id into v_sub_erin from public.submissions where assignee_id = v_erin;
+
+  -- CONTROL: Dave sees his own record. If this fails nothing below means much.
+  perform pg_temp.act_as(v_dave);
+  select count(*) into n from public.submissions where id = v_sub_dave;
+  perform pg_temp.act_as_postgres();
+  perform pg_temp.check('control: assignee sees their own record', n = 1, format('saw %s', n));
+
+  -- THE FEATURE: Carol manages Dave, so she sees his record.
+  perform pg_temp.act_as(f.carol);
+  select count(*) into n from public.submissions where id = v_sub_dave;
+  perform pg_temp.act_as_postgres();
+  perform pg_temp.check('manager sees a report''s record', n = 1, format('saw %s', n));
+
+  -- THE BOUND: Erin reports to nobody, so Carol must not see hers. This is the
+  -- check that separates "my team" from "everybody", and the one that would
+  -- catch a policy accidentally widened to every member.
+  perform pg_temp.act_as(f.carol);
+  select count(*) into n from public.submissions where id = v_sub_erin;
+  perform pg_temp.act_as_postgres();
+  perform pg_temp.check('manager cannot see a non-report''s record', n = 0, format('saw %s', n));
+
+  -- Sideways, not upward: a report must not gain sight of their manager's peers.
+  perform pg_temp.act_as(v_dave);
+  select count(*) into n from public.submissions where id = v_sub_erin;
+  perform pg_temp.act_as_postgres();
+  perform pg_temp.check('a report cannot see a colleague''s record', n = 0, format('saw %s', n));
+
+  -- And none of it crosses the tenant boundary.
+  perform pg_temp.act_as(f.bob);
+  select count(*) into n from public.submissions where id in (v_sub_dave, v_sub_erin);
+  perform pg_temp.act_as_postgres();
+  perform pg_temp.check('outsider sees no records at all', n = 0, format('saw %s', n));
+
+  -- manages_member itself, both directions.
+  perform pg_temp.act_as(f.carol);
+  select public.manages_member(f.acme, v_dave) into ok;
+  perform pg_temp.act_as_postgres();
+  perform pg_temp.check('manages_member: true for a report', ok, format('got %s', ok));
+
+  perform pg_temp.act_as(f.carol);
+  select public.manages_member(f.acme, v_erin) into ok;
+  perform pg_temp.act_as_postgres();
+  perform pg_temp.check('manages_member: false for a non-report', not ok, format('got %s', ok));
+
+  -- Voiding: permitted for a report, refused for a stranger's record. Both
+  -- asserted by outcome rather than by reading the error text, so a reworded
+  -- message does not fail the suite.
+  perform pg_temp.act_as(f.carol);
+  begin
+    perform public.set_submission_void(v_sub_dave, 'covered by the deep clean');
+    ok := true;
+  exception when others then
+    ok := false;
+  end;
+  perform pg_temp.act_as_postgres();
+  perform pg_temp.check('manager may void a report''s record', ok, format('allowed = %s', ok));
+
+  perform pg_temp.act_as(f.carol);
+  begin
+    perform public.set_submission_void(v_sub_erin, 'should not be allowed');
+    ok := true;
+  exception when others then
+    ok := false;
+  end;
+  perform pg_temp.act_as_postgres();
+  perform pg_temp.check('manager may NOT void a non-report''s record', not ok, format('allowed = %s', ok));
+
+  -- CONTROL: the owner can still void anything. Widening the check must not
+  -- have replaced the admin case with the manager one.
+  perform pg_temp.act_as(f.alice);
+  begin
+    perform public.set_submission_void(v_sub_erin, 'admin still governs');
+    ok := true;
+  exception when others then
+    ok := false;
+  end;
+  perform pg_temp.act_as_postgres();
+  perform pg_temp.check('control: admin may still void any record', ok, format('allowed = %s', ok));
+
+  -- The reporting line is the only thing granting this, so removing it removes
+  -- the access — decision 3, that visibility follows the current chart.
+  update public.board_members set manager_id = null where id = v_dave_bm;
+  perform pg_temp.act_as(f.carol);
+  select count(*) into n from public.submissions where id = v_sub_dave;
+  perform pg_temp.act_as_postgres();
+  perform pg_temp.check('access ends when the reporting line does', n = 0, format('saw %s', n));
+end;
+$$;
+
+-- =============================================================================
 -- Results
 -- =============================================================================
 -- One result set, with the verdict as its last row. The SQL Editor shows a
