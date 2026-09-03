@@ -1,14 +1,29 @@
 'use client';
 
-import { useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { addDays, fromIsoDate } from '@app/core/dates';
 
-import { Input } from '@/components/ui/input';
+import { DateField } from '@/components/ui/date-field';
 import { Button } from '@/components/ui/button';
 import { useT } from '@/components/i18n/provider';
 
+/**
+ * Which day's checklists to show.
+ *
+ * THE CALENDAR IS OURS, NOT THE BROWSER'S. This used to be `<input type="date">`,
+ * whose picker is drawn by the browser and labelled from the *browser's* locale
+ * — so somebody running the product in Uzbek on an English-language phone got
+ * an English calendar, with no API to change it. That is the same reason
+ * `DateField` exists, and this page is the one place that had not adopted it,
+ * which meant the fill page and the scheduling screen disagreed about what
+ * language the product is in.
+ *
+ * `today` comes from the server, resolved in the space's timezone, and is
+ * handed down rather than left to the browser. A night shift working at 01:00
+ * in Tashkent is still on the previous day's list, and the browser's own
+ * calendar would have moved on without them.
+ */
 export function DatePicker({
   slug,
   value,
@@ -20,28 +35,9 @@ export function DatePicker({
 }) {
   const router = useRouter();
   const { t, locale } = useT();
-  const inputRef = useRef<HTMLInputElement>(null);
 
   function go(date: string) {
     router.push(`/dashboard/boards/${slug}/fill?date=${date}`);
-  }
-
-  /**
-   * Open the native calendar.
-   *
-   * `showPicker()` is the only way to open it programmatically — the browser's
-   * own indicator is the sole built-in trigger, and clicking the text part of
-   * the field does nothing. It throws when unsupported or when not called from
-   * a user gesture, so focusing the field is the fallback.
-   */
-  function openCalendar() {
-    const input = inputRef.current;
-    if (!input) return;
-    try {
-      input.showPicker();
-    } catch {
-      input.focus();
-    }
   }
 
   // Formatted from local calendar parts. Round-tripping through UTC shifted
@@ -55,7 +51,7 @@ export function DatePicker({
   return (
     <div className="flex items-center gap-2">
       {/* Arrows as well as the calendar: stepping a day at a time is the common
-          case on a phone, where opening the native picker is a detour. */}
+          case on a phone, where opening any picker is a detour. */}
       <Button
         type="button"
         variant="outline"
@@ -66,29 +62,26 @@ export function DatePicker({
         <ChevronLeft aria-hidden="true" />
       </Button>
 
-      <div className="relative min-w-0 flex-1">
-        {/* A real button, not decoration. The previous version rendered this
-            icon with `pointer-events-none`, so it looked like the way to open
-            the calendar and did nothing when tapped. */}
-        <button
-          type="button"
-          onClick={openCalendar}
-          aria-label={t('compliance.date')}
-          className="absolute top-1/2 left-1 flex size-9 -translate-y-1/2 items-center justify-center rounded-md text-[var(--color-muted-foreground)] transition-colors hover:bg-[var(--color-accent)] hover:text-[var(--color-foreground)] focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:outline-none"
-        >
-          <CalendarDays className="size-4" aria-hidden="true" />
-        </button>
+      <div className="min-w-0 flex-1">
+        {/*
+          Controlled, and navigating rather than storing: the selected day is
+          the URL, so it survives a reload and can be sent to somebody.
 
-        <Input
-          ref={inputRef}
-          type="date"
+          `name` is required by DateField for its hidden input. There is no form
+          here and nothing ever submits it, but a name it never uses is cheaper
+          than making the prop optional for one caller.
+        */}
+        <DateField
+          name="date"
           value={value}
-          onChange={(e) => e.target.value && go(e.target.value)}
-          // Clicking anywhere in the field opens the calendar too, which is what
-          // people expect from a date field on a touchscreen.
-          onClick={openCalendar}
-          className="native-date-plain cursor-pointer pl-11"
-          aria-label={t('compliance.date')}
+          onChange={(iso) => {
+            // Clearing is not offered — `required` hides that control — but the
+            // guard costs nothing and an empty date here would navigate to a
+            // page with no day at all.
+            if (iso) go(iso);
+          }}
+          today={today}
+          required
         />
       </div>
 
@@ -108,6 +101,9 @@ export function DatePicker({
         </Button>
       ) : null}
 
+      {/* The weekday, for a screen reader. The field itself reads the date but
+          not the day of the week, and "is this Monday's list" is the question
+          somebody opening this page is usually asking. */}
       <span className="sr-only">{label}</span>
     </div>
   );

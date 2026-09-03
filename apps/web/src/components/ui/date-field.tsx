@@ -37,6 +37,7 @@ export function DateField({
   min,
   value: controlledValue,
   onChange,
+  today,
 }: {
   name: string;
   id?: string;
@@ -47,6 +48,16 @@ export function DateField({
   /** Pass both to drive the field from outside; omit both to let it keep its own. */
   value?: string;
   onChange?: (iso: string) => void;
+  /**
+   * What "today" is, when the caller knows better than the browser does.
+   *
+   * The fill page resolves it in the *space's* timezone on the server, because
+   * a night shift in Tashkent working at 01:00 is still on the previous day's
+   * list and the browser's own calendar would disagree. Left unset, the
+   * browser's local date is used, which is right for a form where the person
+   * filling it in is the only frame of reference.
+   */
+  today?: string;
 }) {
   const { t, locale } = useT();
   const generatedId = useId();
@@ -63,7 +74,12 @@ export function DateField({
   const [open, setOpen] = useState(false);
   // The month on screen, which is not the same as the selection: someone
   // browsing to March has not chosen anything in March yet.
-  const [cursor, setCursor] = useState(() => startOfMonth(value || toIsoDate(new Date())));
+  // `today` before the browser's own, same as todayIso below — this is only
+  // the first render's month, since opening the calendar resets it, but the
+  // two disagreeing would be a bug waiting for someone to move the reset.
+  const [cursor, setCursor] = useState(() =>
+    startOfMonth(value || today || toIsoDate(new Date())),
+  );
 
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -124,7 +140,10 @@ export function DateField({
       }).format(fromIsoDate(value))
     : '';
 
-  const todayIso = toIsoDate(new Date());
+  // The caller's answer wins — see the `today` prop. Falling back to the
+  // browser's local parts, never toISOString, which converts to UTC and hands
+  // back yesterday anywhere east of Greenwich.
+  const todayIso = today ?? toIsoDate(new Date());
 
   function choose(iso: string) {
     if (min && iso < min) return;

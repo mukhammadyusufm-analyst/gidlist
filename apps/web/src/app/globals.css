@@ -65,27 +65,6 @@
   }
 
   /*
-   * Suppress the browser's built-in calendar indicator on a date field.
-   *
-   * Used where we supply our own calendar button. Two calendar icons on one
-   * field is confusing, and the native one cannot be styled to match. The field
-   * is still fully operable: our button calls showPicker(), and clicking the
-   * field itself does the same.
-   *
-   * Removed only from the visual layer — the input keeps its native type, so
-   * keyboard entry, validation and mobile date UI all behave normally.
-   */
-  .native-date-plain::-webkit-calendar-picker-indicator {
-    opacity: 0;
-    /* Not `display: none` — Chrome then ignores showPicker() on some versions.
-       Hiding it while leaving it in the layout keeps the API working. */
-    position: absolute;
-    right: 0;
-    width: 0;
-    pointer-events: none;
-  }
-
-  /*
    * The sign-in page's padding.
    *
    * `env(safe-area-inset-*)` rather than a fixed value, because the root layout
