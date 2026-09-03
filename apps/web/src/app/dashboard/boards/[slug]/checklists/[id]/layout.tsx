@@ -3,10 +3,12 @@ import { notFound } from 'next/navigation';
 
 import { getBoardBySlug, getMyRole } from '@/lib/boards/queries';
 import { getChecklist } from '@/lib/checklists/queries';
+import { getTranslations } from '@/lib/i18n/server';
 import { VersionBadge } from '@/components/checklists/version-badge';
 import { VersionActions } from '@/components/checklists/version-actions';
 import { ChecklistTabs } from '@/components/checklists/checklist-tabs';
 import { Avatar } from '@/components/ui/avatar';
+import { Banner } from '@/components/ui/banner';
 import { canEditContent } from '@app/core';
 
 export default async function ChecklistLayout({
@@ -25,7 +27,7 @@ export default async function ChecklistLayout({
   // board's slug in the URL, and the page would render under the wrong heading.
   if (!board || !checklist || checklist.board_id !== board.id) notFound();
 
-  const role = await getMyRole(board.id);
+  const [role, { t }] = await Promise.all([getMyRole(board.id), getTranslations()]);
   const canManage = canEditContent(role);
 
   // Every page under here — the builder, schedules, details — is editor work.
@@ -41,11 +43,22 @@ export default async function ChecklistLayout({
     <div className="space-y-6">
       <div>
         <Link
-          href={`/dashboard/boards/${slug}`}
+          href={`/dashboard/boards/${slug}/checklists`}
           className="text-sm text-[var(--color-muted-foreground)] underline underline-offset-4"
         >
-          Back to checklists
+          {t('checklist.backToList')}
         </Link>
+
+        {/* The checklist's own banner, shown where it is edited.
+            Without this the framing controls on the Details tab wrote to a
+            row nothing on screen rendered, so adjusting the crop looked like
+            it did nothing — the image only appeared on the fill sheet, which
+            is not where the person adjusting it is standing. */}
+        {checklist.banner_url ? (
+          <div className="mt-3">
+            <Banner value={checklist.banner_url} alt={t('checklist.bannerAlt', { title: checklist.title })} />
+          </div>
+        ) : null}
 
         <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
           <div className="flex min-w-0 gap-3">

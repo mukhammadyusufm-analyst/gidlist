@@ -91,7 +91,7 @@ export async function createChecklist(
     return { formError: `Could not create the checklist: ${error?.message ?? 'unknown error'}` };
   }
 
-  revalidatePath(`/dashboard/boards/${slug}`);
+  revalidatePath(`/dashboard/boards/${slug}/checklists`);
   redirect(`/dashboard/boards/${slug}/checklists/${data.id}`);
 }
 
@@ -533,13 +533,14 @@ export async function deleteChecklist(
    * This action runs from the checklist's own details page, and that page has
    * just been deleted out from under itself — staying put means the revalidation
    * re-renders a route whose checklist no longer exists, which is a 404 as the
-   * result of a successful action. Redirecting to the space is both the correct
-   * destination and the only one guaranteed to still be there.
+   * result of a successful action. The checklist library is both the correct
+   * destination — it is where the deleted checklist's neighbours are — and one
+   * guaranteed to still be there.
    *
    * redirect() throws, so it has to sit outside any try/catch and after every
    * write — see the note on signIn().
    */
-  redirect(slug ? `/dashboard/boards/${slug}` : '/dashboard');
+  redirect(slug ? `/dashboard/boards/${slug}/checklists` : '/dashboard');
 }
 
 /** Turn database exception text into something worth showing a user. */

@@ -497,4 +497,42 @@ export const uz = {
   'compliance.date': 'Sana',
   'compliance.noTrend':
     'Bu davrda hech qanday roʻyxatning muddati kelmagan, shuning uchun grafik uchun maʼlumot yoʻq.',
+
+  // --- ilgari ingliz tilida qattiq yozilgan matnlar ---------------------
+  'checklist.backToList': 'Roʻyxatlarga qaytish',
+  'checklist.bannerAlt': '«{title}» banneri',
+  'space.bannerAlt': '«{name}» banneri',
+  'space.logoIntro': 'Makon nomi yonida koʻrinadigan kichik kvadrat belgi.',
+  'space.bannerIntro': 'Makonning yuqori qismidagi keng rasm.',
+
+  'media.currentBanner': 'Hozirgi banner',
+  'media.presetSelected': '{name} (tanlangan)',
+  'media.hintLogo': 'PNG, JPEG, WebP yoki SVG, {mb} MB gacha.',
+  'media.hintBanner': 'PNG, JPEG yoki WebP, {mb} MB gacha. Taxminan 3:1 eng mos keladi.',
+  'media.hintSquare': 'PNG, JPEG yoki WebP, {mb} MB gacha. Kvadrat eng mos keladi.',
+  'media.errEmpty': 'Bu fayl boʻsh.',
+  'media.errTooLarge': 'Bu rasm {mb} MB dan katta. Kichikroq faylni tanlang.',
+  'media.errWrongType': 'Quyidagilardan birini ishlating: {types}.',
+  'media.uploadFailed': 'Yuklab boʻlmadi: {message}',
+
+  'media.preset.dawn': 'Tong',
+  'media.preset.harbour': 'Bandargoh',
+  'media.preset.dusk': 'Shom',
+  'media.preset.moss': 'Yoʻsin',
+  'media.preset.ember': 'Choʻgʻ',
+  'media.preset.slate': 'Slanets',
+  'media.preset.tide': 'Qalqish',
+  'media.preset.plum': 'Olxoʻri',
+  'media.preset.sand': 'Qum',
+  'media.preset.steel': 'Poʻlat',
+  'media.preset.forest': 'Oʻrmon',
+  'media.preset.rose': 'Atirgul',
+
+  'members.remove': 'Oʻchirish',
+  'members.removeName': '{name}ni oʻchirish',
+  'members.roleFor': '{name} uchun rol',
+
+  'compliance.filterBy': '«{column}» boʻyicha filtr',
+  'compliance.rangeAbove': 'Yuqorida belgilanadi',
+  'compliance.filledByNobody': 'Toʻldirilmagan',
 } satisfies Messages;

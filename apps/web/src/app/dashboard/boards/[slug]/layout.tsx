@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { getBoardBySlug, getMyRole } from '@/lib/boards/queries';
+import { getTranslations } from '@/lib/i18n/server';
 import { Avatar } from '@/components/ui/avatar';
 import { canEditContent, canGovern } from '@app/core';
 import { BoardTabs } from '@/components/boards/board-tabs';
@@ -22,7 +23,7 @@ export default async function BoardLayout({
   // outsider that a given board exists.
   if (!board) notFound();
 
-  const role = await getMyRole(board.id);
+  const [role, { t }] = await Promise.all([getMyRole(board.id), getTranslations()]);
   // Governance, not content: the Settings tab is space branding and people.
   const canManage = canGovern(role);
 
@@ -30,7 +31,7 @@ export default async function BoardLayout({
     <div>
       {board.banner_url ? (
         <div className="mb-4">
-          <Banner value={board.banner_url} alt={`${board.name} banner`} />
+          <Banner value={board.banner_url} alt={t('space.bannerAlt', { name: board.name })} />
         </div>
       ) : null}
 
@@ -40,7 +41,7 @@ export default async function BoardLayout({
           <h1 className="truncate text-2xl font-semibold tracking-tight">{board.name}</h1>
           <p className="text-xs text-[var(--color-muted-foreground)]">
             <Link href="/dashboard" className="underline underline-offset-4">
-              Spaces
+              {t('space.spaces')}
             </Link>
             <span className="mx-1.5">/</span>
             <span>{board.slug}</span>

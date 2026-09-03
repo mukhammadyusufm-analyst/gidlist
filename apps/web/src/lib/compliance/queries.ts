@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { createClient } from '@/lib/supabase/server';
+import { FILLED_BY_NOBODY } from '@/lib/compliance/filters';
 import type { SubmissionStatus } from '@/lib/supabase/database.types';
 
 export type ComplianceFilters = {
@@ -9,6 +10,13 @@ export type ComplianceFilters = {
   checklistId?: string;
   status?: SubmissionStatus;
   assigneeEmail?: string;
+  /**
+   * Who filled it in. The literal `NONE` means "not filled in by anybody",
+   * which is a genuine thing to look for — every missed and upcoming record is
+   * in it — and cannot be expressed by an email address or by an empty string,
+   * since an empty parameter is indistinguishable from no filter at all.
+   */
+  filledBy?: string;
   page?: number;
 };
 
@@ -54,6 +62,8 @@ export type ComplianceData = {
   trend: { date: string; rate: number; done: number; total: number }[];
   checklists: { id: string; title: string }[];
   assignees: string[];
+  /** Distinct people who actually submitted something in the range. */
+  submitters: string[];
 };
 
 const EMPTY_COUNTS: Record<SubmissionStatus, number> = {
@@ -100,6 +110,7 @@ export async function getComplianceData(
       trend: [],
       checklists: [],
       assignees: [],
+      submitters: [],
     };
   }
 
@@ -136,11 +147,32 @@ export async function getComplianceData(
   if (filters.status) rowQuery = rowQuery.eq('status', filters.status);
   if (filters.assigneeEmail) rowQuery = rowQuery.eq('assignee_email', filters.assigneeEmail);
 
-  const [rowResult, countResult, trendResult, assigneeResult] = await Promise.all([
+  /*
+   * Filled by narrows the table only, and deliberately not the tiles or chart.
+   *
+   * The summary figures answer "how is this space doing", which is a question
+   * about the space and not about one person — scoping them to one filler would
+   * report a completion rate over only the records they touched, so anything
+   * they never got to would silently leave the denominator and the rate would
+   * rise the less they did. The assignee filter is passed to the aggregates for
+   * the opposite reason: an obligation exists whether or not it was met.
+   */
+  if (filters.filledBy === FILLED_BY_NOBODY) {
+    rowQuery = rowQuery.is('submitted_by_email', null);
+  } else if (filters.filledBy) {
+    rowQuery = rowQuery.eq('submitted_by_email', filters.filledBy);
+  }
+
+  const [rowResult, countResult, trendResult, assigneeResult, submitterResult] = await Promise.all([
     rowQuery,
     supabase.rpc('compliance_counts', shared),
     supabase.rpc('compliance_trend', { ...shared, p_status: filters.status ?? null }),
     supabase.rpc('compliance_assignees', {
+      p_board_id: boardId,
+      p_from: filters.from,
+      p_to: filters.to,
+    }),
+    supabase.rpc('compliance_submitters', {
       p_board_id: boardId,
       p_from: filters.from,
       p_to: filters.to,
@@ -180,5 +212,15 @@ export async function getComplianceData(
     trend,
     checklists: checklistList,
     assignees: (assigneeResult.data ?? []).map((a) => a.email).filter(Boolean),
+    /*
+     * An error here is swallowed rather than thrown, unlike the row query.
+     *
+     * This feeds one dropdown's options. If the function is missing — which is
+     * exactly the state of a database that has not had the migration applied
+     * yet — the compliance report should still render, with one filter offering
+     * nothing, instead of the whole page failing. The rows are the report; this
+     * is a convenience for narrowing them.
+     */
+    submitters: (submitterResult.data ?? []).map((s) => s.email).filter(Boolean),
   };
 }

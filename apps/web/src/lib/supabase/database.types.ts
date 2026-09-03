@@ -1032,6 +1032,12 @@ export type Database = {
         Args: { p_board_id: string; p_from: string; p_to: string };
         Returns: { email: string }[];
       };
+      // Who filled things in, as against who was asked to. Same shape as the
+      // line above and a different question — see the migration.
+      compliance_submitters: {
+        Args: { p_board_id: string; p_from: string; p_to: string };
+        Returns: { email: string }[];
+      };
       accept_invitation: { Args: { p_membership_id: string }; Returns: undefined };
       decline_invitation: { Args: { p_membership_id: string }; Returns: undefined };
       invited_board_names: {

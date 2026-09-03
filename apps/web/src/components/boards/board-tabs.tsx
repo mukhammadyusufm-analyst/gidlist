@@ -46,7 +46,9 @@ export function BoardTabs({
     // The Checklists tab leads to the builder, schedules and checklist details
     // — all editor work. Someone who only fills checklists in has no use for
     // it, and a tab whose every page refuses them is worse than no tab.
-    ...(canEdit ? [{ href: base, label: t('space.checklists'), icon: ListChecks }] : []),
+    ...(canEdit
+      ? [{ href: `${base}/checklists`, label: t('space.checklists'), icon: ListChecks }]
+      : []),
     { href: `${base}/compliance`, label: t('space.compliance'), icon: BarChart3 },
     // The staff list is not a member's business. They still see their own role
     // and their own record; the roster belongs to whoever runs the space.
@@ -62,7 +64,18 @@ export function BoardTabs({
     <nav className="-mx-4 mt-6 overflow-x-auto px-4">
       <div className="flex min-w-max gap-1 border-b border-[var(--color-border)]">
         {tabs.map((tab) => {
-          const active = pathname === tab.href;
+          /*
+           * A tab is current for its whole subtree, not just its own address.
+           *
+           * Both Fill in and Checklists lead somewhere deeper — a submission,
+           * a checklist's builder and schedules — and on those pages an exact
+           * comparison left no tab marked at all, so the bar stopped saying
+           * where you were exactly when you had navigated furthest.
+           *
+           * Prefixed with a slash so `/fill` cannot claim a sibling that
+           * merely starts with the same letters.
+           */
+          const active = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
           const Icon = tab.icon;
 
           return (

@@ -496,6 +496,51 @@ export const en = {
   'compliance.date': 'Date',
   'compliance.noTrend':
     'No checklists have come due in this period, so there is no rate to plot yet.',
+
+  // --- strings that used to be hard-coded in English -------------------
+  // Each of these rendered the same words in all three languages until
+  // 3 Sep 2026. They are grouped rather than filed by surface so the batch is
+  // reviewable; wording still belongs to Admin → Translations.
+  'checklist.backToList': 'Back to checklists',
+  'checklist.bannerAlt': '{title} banner',
+  'space.bannerAlt': '{name} banner',
+  'space.logoIntro': 'A small square mark, shown beside the space name.',
+  'space.bannerIntro': 'A wide image across the top of the space.',
+
+  'media.currentBanner': 'Current banner',
+  'media.presetSelected': '{name} (selected)',
+  'media.hintLogo': 'PNG, JPEG, WebP or SVG, up to {mb} MB.',
+  'media.hintBanner': 'PNG, JPEG or WebP, up to {mb} MB. Roughly 3:1 works best.',
+  'media.hintSquare': 'PNG, JPEG or WebP, up to {mb} MB. Square works best.',
+  'media.errEmpty': 'That file is empty.',
+  'media.errTooLarge': 'That image is larger than {mb} MB. Choose a smaller one.',
+  'media.errWrongType': 'Use one of: {types}.',
+  // The library's own text is interpolated and stays in whatever language it
+  // came in — usually English. It is a detail for whoever is asked to look
+  // into the failure, and a translated copy would be harder to search for.
+  'media.uploadFailed': 'Upload failed: {message}',
+
+  // Banner presets. Names, but names of colours, so they translate.
+  'media.preset.dawn': 'Dawn',
+  'media.preset.harbour': 'Harbour',
+  'media.preset.dusk': 'Dusk',
+  'media.preset.moss': 'Moss',
+  'media.preset.ember': 'Ember',
+  'media.preset.slate': 'Slate',
+  'media.preset.tide': 'Tide',
+  'media.preset.plum': 'Plum',
+  'media.preset.sand': 'Sand',
+  'media.preset.steel': 'Steel',
+  'media.preset.forest': 'Forest',
+  'media.preset.rose': 'Rose',
+
+  'members.remove': 'Remove',
+  'members.removeName': 'Remove {name}',
+  'members.roleFor': 'Role for {name}',
+
+  'compliance.filterBy': 'Filter by {column}',
+  'compliance.rangeAbove': 'Set above',
+  'compliance.filledByNobody': 'Not filled in',
 } satisfies Messages;
 
 export type MessageKey = keyof typeof en;

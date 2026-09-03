@@ -490,4 +490,42 @@ export const ru = {
   'compliance.date': 'Дата',
   'compliance.noTrend':
     'В этом периоде срок ни по одному чек-листу не наступил, поэтому график пока пуст.',
+
+  // --- строки, которые ранее были жёстко заданы на английском -----------
+  'checklist.backToList': 'Назад к чек-листам',
+  'checklist.bannerAlt': 'Баннер «{title}»',
+  'space.bannerAlt': 'Баннер «{name}»',
+  'space.logoIntro': 'Небольшой квадратный знак рядом с названием пространства.',
+  'space.bannerIntro': 'Широкое изображение в верхней части пространства.',
+
+  'media.currentBanner': 'Текущий баннер',
+  'media.presetSelected': '{name} (выбрано)',
+  'media.hintLogo': 'PNG, JPEG, WebP или SVG, до {mb} МБ.',
+  'media.hintBanner': 'PNG, JPEG или WebP, до {mb} МБ. Лучше всего подходит примерно 3:1.',
+  'media.hintSquare': 'PNG, JPEG или WebP, до {mb} МБ. Лучше всего подходит квадрат.',
+  'media.errEmpty': 'Этот файл пустой.',
+  'media.errTooLarge': 'Изображение больше {mb} МБ. Выберите файл меньшего размера.',
+  'media.errWrongType': 'Используйте один из форматов: {types}.',
+  'media.uploadFailed': 'Не удалось загрузить: {message}',
+
+  'media.preset.dawn': 'Рассвет',
+  'media.preset.harbour': 'Гавань',
+  'media.preset.dusk': 'Сумерки',
+  'media.preset.moss': 'Мох',
+  'media.preset.ember': 'Угли',
+  'media.preset.slate': 'Сланец',
+  'media.preset.tide': 'Прилив',
+  'media.preset.plum': 'Слива',
+  'media.preset.sand': 'Песок',
+  'media.preset.steel': 'Сталь',
+  'media.preset.forest': 'Лес',
+  'media.preset.rose': 'Роза',
+
+  'members.remove': 'Удалить',
+  'members.removeName': 'Удалить {name}',
+  'members.roleFor': 'Роль для {name}',
+
+  'compliance.filterBy': 'Фильтр по полю «{column}»',
+  'compliance.rangeAbove': 'Задаётся выше',
+  'compliance.filledByNobody': 'Не заполнено',
 } satisfies Messages;

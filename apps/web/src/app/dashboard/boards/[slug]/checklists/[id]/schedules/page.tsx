@@ -7,6 +7,7 @@ import { listSchedules } from '@/lib/schedules/queries';
 import { ScheduleForm } from '@/components/schedules/schedule-form';
 import { ScheduleCard } from '@/components/schedules/schedule-card';
 import { getTranslations } from '@/lib/i18n/server';
+import { getToday } from '@/lib/timezone/server';
 import { canEditContent } from '@app/core';
 
 // Translated, so the browser tab matches the language the app is being read in.
@@ -27,11 +28,14 @@ export default async function SchedulesPage({
   const [board, checklist] = await Promise.all([getBoardBySlug(slug), getChecklist(id)]);
   if (!board || !checklist || checklist.board_id !== board.id) notFound();
 
-  const [role, schedules, members, { t }] = await Promise.all([
+  const [role, schedules, members, { t }, today] = await Promise.all([
     getMyRole(board.id),
     listSchedules(checklist.id),
     listBoardMembers(board.id),
     getTranslations(),
+    // Resolved here, from the viewer's timezone, rather than inside the form
+    // from the browser's clock — see the note on ScheduleForm's `today` prop.
+    getToday(),
   ]);
   const canManage = canEditContent(role);
 
@@ -66,7 +70,7 @@ export default async function SchedulesPage({
           <p className="mt-1 mb-4 text-sm text-[var(--color-muted-foreground)]">
             {t('schedule.addIntro')}
           </p>
-          <ScheduleForm checklistId={checklist.id} candidates={candidates} />
+          <ScheduleForm checklistId={checklist.id} candidates={candidates} today={today} />
         </section>
       ) : null}
 

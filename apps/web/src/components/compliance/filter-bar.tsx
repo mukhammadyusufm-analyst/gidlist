@@ -1,20 +1,23 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
 import { toIsoDate } from '@app/core/dates';
 
-import { Input } from '@/components/ui/input';
+import { DateField } from '@/components/ui/date-field';
 import { Button } from '@/components/ui/button';
+import { useComplianceFilters } from '@/components/compliance/use-filters';
 import { useT } from '@/components/i18n/provider';
 
 const selectClass =
   'min-h-11 w-full rounded-md border border-[var(--color-input)] bg-transparent px-3 py-2 text-base sm:text-sm';
 
-const PRESETS = [
-  { label: 'Last 7 days', days: 7 },
-  { label: 'Last 30 days', days: 30 },
-  { label: 'Last 90 days', days: 90 },
-];
+/**
+ * The ranges worth one tap, in days.
+ *
+ * Wording lives in PRESET_KEYS below rather than here — an English label beside
+ * each number was carried for a while after the catalogue took over, and a dead
+ * string that looks live is one somebody eventually edits expecting an effect.
+ */
+const PRESET_DAYS = [7, 30, 90];
 
 // Local calendar parts. toISOString would convert to UTC and shift the range by
 // a day for anyone east of Greenwich.
@@ -39,8 +42,7 @@ export function FilterBar({
   checklists: { id: string; title: string }[];
   assignees: string[];
 }) {
-  const router = useRouter();
-  const params = useSearchParams();
+  const { update } = useComplianceFilters(slug);
   const { t } = useT();
 
   const PRESET_KEYS: Record<number, string> = {
@@ -48,15 +50,6 @@ export function FilterBar({
     30: 'compliance.last30',
     90: 'compliance.last90',
   };
-
-  function update(changes: Record<string, string | undefined>) {
-    const next = new URLSearchParams(params.toString());
-    for (const [key, value] of Object.entries(changes)) {
-      if (value) next.set(key, value);
-      else next.delete(key);
-    }
-    router.push(`/dashboard/boards/${slug}/compliance?${next.toString()}`);
-  }
 
   function applyPreset(days: number) {
     const end = new Date();
@@ -70,28 +63,48 @@ export function FilterBar({
       {/* Presets first: picking "last 30 days" is far more common than typing
           two dates, and putting them ahead of the custom range says so. */}
       <div className="flex flex-wrap gap-2">
-        {PRESETS.map((preset) => (
+        {PRESET_DAYS.map((days) => (
           <Button
-            key={preset.days}
+            key={days}
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => applyPreset(preset.days)}
+            onClick={() => applyPreset(days)}
           >
-            {t(PRESET_KEYS[preset.days])}
+            {t(PRESET_KEYS[days])}
           </Button>
         ))}
       </div>
 
+      {/* DateField, not `<input type="date">`.
+          The native control draws its own calendar and labels it from the
+          *browser's* locale, with no API to change it — so somebody running the
+          app in Uzbek on an English phone picked dates from an English
+          calendar. These two were the last native date inputs on a translated
+          screen. */}
       <div className="grid gap-3 sm:grid-cols-2">
-        <label className="block">
-          <span className="mb-1.5 block text-sm font-medium">{t('compliance.from')}</span>
-          <Input type="date" value={from} onChange={(e) => update({ from: e.target.value })} />
-        </label>
-        <label className="block">
-          <span className="mb-1.5 block text-sm font-medium">{t('compliance.to')}</span>
-          <Input type="date" value={to} onChange={(e) => update({ to: e.target.value })} />
-        </label>
+        <div className="block">
+          <label htmlFor="compliance-from" className="mb-1.5 block text-sm font-medium">
+            {t('compliance.from')}
+          </label>
+          <DateField
+            id="compliance-from"
+            name="from"
+            value={from}
+            onChange={(iso) => update({ from: iso || undefined })}
+          />
+        </div>
+        <div className="block">
+          <label htmlFor="compliance-to" className="mb-1.5 block text-sm font-medium">
+            {t('compliance.to')}
+          </label>
+          <DateField
+            id="compliance-to"
+            name="to"
+            value={to}
+            onChange={(iso) => update({ to: iso || undefined })}
+          />
+        </div>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">

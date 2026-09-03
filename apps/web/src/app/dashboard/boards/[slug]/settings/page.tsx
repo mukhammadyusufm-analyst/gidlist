@@ -57,10 +57,13 @@ export default async function BoardSettingsPage({
     <div className="max-w-lg space-y-10">
       <section>
         <h2 className="text-lg font-semibold tracking-tight">{t('space.details')}</h2>
+        {/* The sentence is translated; the address itself is data, so it sits
+            beside the sentence in a code chip rather than being interpolated
+            into it — a placeholder inside the string would have to survive
+            three translations to keep the chip. */}
         <p className="mt-1 mb-4 text-sm text-[var(--color-muted-foreground)]">
-          The board&apos;s web address stays as{' '}
-          <code className="rounded bg-[var(--color-muted)] px-1 py-0.5 text-xs">/{board.slug}</code>{' '}
-          when you rename it, so existing links keep working.
+          {t('space.slugKept')}{' '}
+          <code className="rounded bg-[var(--color-muted)] px-1 py-0.5 text-xs">/{board.slug}</code>
         </p>
         <BoardDetailsForm
           boardId={board.id}
@@ -72,7 +75,7 @@ export default async function BoardSettingsPage({
       <section>
         <h2 className="text-lg font-semibold tracking-tight">{t('space.logo')}</h2>
         <p className="mt-1 mb-4 text-sm text-[var(--color-muted-foreground)]">
-          A small square mark, shown beside the space name.
+          {t('space.logoIntro')}
         </p>
         <div className="mb-4 flex items-center gap-3">
           <Avatar
@@ -98,7 +101,7 @@ export default async function BoardSettingsPage({
       <section>
         <h2 className="text-lg font-semibold tracking-tight">{t('space.banner')}</h2>
         <p className="mt-1 mb-4 text-sm text-[var(--color-muted-foreground)]">
-          A wide image across the top of the space.
+          {t('space.bannerIntro')}
         </p>
         <BannerPicker
           current={board.banner_url}

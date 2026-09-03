@@ -43,7 +43,7 @@ export function AvatarUpload({
 
     const problem = validateMediaFile('user-avatars', file);
     if (problem) {
-      setError(problem);
+      setError(t(problem.key, problem.values));
       return;
     }
 

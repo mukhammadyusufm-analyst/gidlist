@@ -4,6 +4,7 @@ import { useRef, useState, useTransition } from 'react';
 import {
   MEDIA_LIMITS,
   buildMediaPath,
+  mediaLimitMb,
   validateMediaFile,
   type MediaBucket,
 } from '@app/core/media';
@@ -40,12 +41,19 @@ export function ImageUploadForm({
   bucket,
   target,
   prefix,
-  label = 'Upload',
+  label,
 }: {
   bucket: MediaBucket;
   target: UploadTarget;
   prefix: string;
-  label?: string;
+  /**
+   * Required, and translated by the caller.
+   *
+   * It used to default to the English word "Upload", which meant a call site
+   * that forgot it shipped an untranslated button and nothing said so. A
+   * required prop makes the omission a type error instead.
+   */
+  label: string;
 }) {
   const boardId = target.boardId;
   const inputRef = useRef<HTMLInputElement>(null);
@@ -71,7 +79,7 @@ export function ImageUploadForm({
     // a slow upload. The bucket enforces the same limits regardless.
     const problem = validateMediaFile(bucket, file);
     if (problem) {
-      setError(problem);
+      setError(t(problem.key, problem.values));
       return;
     }
 
@@ -85,8 +93,11 @@ export function ImageUploadForm({
 
       if (uploadError) {
         // A permission failure here means the storage policy refused — which is
-        // the same rule the server would apply, just reported earlier.
-        setError(`Upload failed: ${uploadError.message}`);
+        // the same rule the server would apply, just reported earlier. The
+        // library's own message stays in English; it is a detail for whoever is
+        // asked to look into it, and inventing a translation for it would only
+        // make it harder to search for.
+        setError(t('media.uploadFailed', { message: uploadError.message }));
         return;
       }
 
@@ -125,7 +136,9 @@ export function ImageUploadForm({
           aria-label={label}
           className="block w-full text-sm file:mr-3 file:min-h-11 file:rounded-md file:border-0 file:bg-[var(--color-secondary)] file:px-4 file:py-2 file:text-sm file:font-medium hover:file:opacity-80"
         />
-        <p className="mt-1.5 text-xs text-[var(--color-muted-foreground)]">{limits.hint}</p>
+        <p className="mt-1.5 text-xs text-[var(--color-muted-foreground)]">
+          {t(limits.hintKey, { mb: mediaLimitMb(bucket) })}
+        </p>
       </div>
 
       <Button type="submit" size="full" disabled={pending} aria-busy={pending}>

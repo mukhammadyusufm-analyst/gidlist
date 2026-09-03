@@ -35,6 +35,7 @@ export default async function CompliancePage({
     checklist?: string;
     status?: string;
     assignee?: string;
+    filledBy?: string;
     page?: string;
   }>;
 }) {
@@ -65,6 +66,7 @@ export default async function CompliancePage({
     checklistId: sp.checklist,
     status,
     assigneeEmail: sp.assignee,
+    filledBy: sp.filledBy,
     page: Number(sp.page) || 1,
   });
 
@@ -106,7 +108,18 @@ export default async function CompliancePage({
             not count against the company is the kind of thing somebody may
             later be asked to justify. `set_submission_void` checks the same
             thing, so hiding the control is a courtesy rather than the rule. */}
-        <SubmissionsTable rows={data.rows} slug={slug} canVoid={canGovern(role)} />
+        <SubmissionsTable
+          rows={data.rows}
+          slug={slug}
+          canVoid={canGovern(role)}
+          checklists={data.checklists}
+          assignees={data.assignees}
+          submitters={data.submitters}
+          checklistId={sp.checklist}
+          status={status}
+          assigneeEmail={sp.assignee}
+          filledBy={sp.filledBy}
+        />
         <Pager slug={slug} page={data.page} pageCount={data.pageCount} />
       </section>
     </div>

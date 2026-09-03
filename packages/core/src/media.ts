@@ -19,41 +19,53 @@ export const MEDIA_BUCKETS = [
 
 export type MediaBucket = (typeof MEDIA_BUCKETS)[number];
 
+/**
+ * `hintKey` rather than a hint, because this file is read in three languages.
+ *
+ * An English sentence here would have been rendered verbatim under every upload
+ * field regardless of the language the app was being read in — which is what it
+ * did. The catalogue owns the wording and takes `{mb}`; this owns the rule.
+ */
 export const MEDIA_LIMITS: Record<
   MediaBucket,
-  { maxBytes: number; types: readonly string[]; accept: string; hint: string }
+  { maxBytes: number; types: readonly string[]; accept: string; hintKey: string }
 > = {
   'board-logos': {
     maxBytes: 2 * 1024 * 1024,
     types: ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'],
     accept: 'image/png,image/jpeg,image/webp,image/svg+xml',
-    hint: 'PNG, JPEG, WebP or SVG, up to 2 MB.',
+    hintKey: 'media.hintLogo',
   },
   'board-banners': {
     maxBytes: 5 * 1024 * 1024,
     types: ['image/png', 'image/jpeg', 'image/webp'],
     accept: 'image/png,image/jpeg,image/webp',
-    hint: 'PNG, JPEG or WebP, up to 5 MB. Roughly 3:1 works best.',
+    hintKey: 'media.hintBanner',
   },
   'checklist-banners': {
     maxBytes: 5 * 1024 * 1024,
     types: ['image/png', 'image/jpeg', 'image/webp'],
     accept: 'image/png,image/jpeg,image/webp',
-    hint: 'PNG, JPEG or WebP, up to 5 MB. Roughly 3:1 works best.',
+    hintKey: 'media.hintBanner',
   },
   'checklist-avatars': {
     maxBytes: 2 * 1024 * 1024,
     types: ['image/png', 'image/jpeg', 'image/webp'],
     accept: 'image/png,image/jpeg,image/webp',
-    hint: 'PNG, JPEG or WebP, up to 2 MB. Square works best.',
+    hintKey: 'media.hintSquare',
   },
   'user-avatars': {
     maxBytes: 2 * 1024 * 1024,
     types: ['image/png', 'image/jpeg', 'image/webp'],
     accept: 'image/png,image/jpeg,image/webp',
-    hint: 'PNG, JPEG or WebP, up to 2 MB. Square works best.',
+    hintKey: 'media.hintSquare',
   },
 };
+
+/** Whole megabytes, for the wording that quotes the ceiling. */
+export function mediaLimitMb(bucket: MediaBucket): number {
+  return Math.round(MEDIA_LIMITS[bucket].maxBytes / (1024 * 1024));
+}
 
 export function isMediaBucket(value: string): value is MediaBucket {
   return (MEDIA_BUCKETS as readonly string[]).includes(value);
@@ -66,19 +78,29 @@ export function describeTypes(bucket: MediaBucket): string {
     .join(', ');
 }
 
+/**
+ * What is wrong with a chosen file, as a catalogue key and its values.
+ *
+ * A message rather than a code was the earlier shape, and it meant the one
+ * place a person is told why their photograph was refused answered in English
+ * whatever language they were working in. Returning the key leaves the wording
+ * to whoever is displaying it — which is always a component with `t` to hand,
+ * since nothing on the server calls this.
+ */
+export type MediaProblem = { key: string; values?: Record<string, string | number> };
+
 export function validateMediaFile(
   bucket: MediaBucket,
   file: { size: number; type: string },
-): string | null {
+): MediaProblem | null {
   const limits = MEDIA_LIMITS[bucket];
 
-  if (file.size === 0) return 'That file is empty.';
+  if (file.size === 0) return { key: 'media.errEmpty' };
   if (file.size > limits.maxBytes) {
-    const mb = Math.round(limits.maxBytes / (1024 * 1024));
-    return `That image is larger than ${mb} MB. Choose a smaller one.`;
+    return { key: 'media.errTooLarge', values: { mb: mediaLimitMb(bucket) } };
   }
   if (!limits.types.includes(file.type)) {
-    return `Use one of: ${describeTypes(bucket)}.`;
+    return { key: 'media.errWrongType', values: { types: describeTypes(bucket) } };
   }
   return null;
 }

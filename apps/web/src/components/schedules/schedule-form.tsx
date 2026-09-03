@@ -11,7 +11,6 @@ import {
   type AssignmentMode,
 } from '@app/core/schedule-display';
 import { SCHEDULE_KINDS, type ScheduleKind } from '@app/core/constants';
-import { toIsoDate } from '@app/core/dates';
 
 import { createSchedule, type ActionState } from '@/lib/schedules/actions';
 import type { AssignCandidate } from '@/components/schedules/schedule-card';
@@ -51,12 +50,6 @@ function monthName(locale: string, month: number): string {
   );
 }
 
-function today(): string {
-  // Local calendar parts, never toISOString — that converts to UTC and hands
-  // back yesterday's date anywhere east of Greenwich.
-  return toIsoDate(new Date());
-}
-
 /** Kept beside the modes so a new one cannot be added without its wording. */
 const MODE_LABELS: Record<AssignmentMode, string> = {
   creator: 'schedule.assignCreator',
@@ -73,10 +66,25 @@ const MODE_NOTES: Record<AssignmentMode, string> = {
 export function ScheduleForm({
   checklistId,
   candidates,
+  today,
 }: {
   checklistId: string;
   /** Everyone in the space, for the "specific people" case. */
   candidates: AssignCandidate[];
+  /**
+   * Today's date where the viewer is, resolved on the server.
+   *
+   * This used to be read from the browser's own clock inside the component,
+   * which is correct once the page is interactive and wrong before it: a Client
+   * Component is rendered on the server too, and Vercel's clock is UTC — so
+   * between midnight and 05:00 in Tashkent the markup arrived carrying
+   * yesterday's date and only corrected itself on hydration. Those are exactly
+   * the hours a night shift is working.
+   *
+   * `getToday()` reads the timezone cookie, so the server and the browser agree
+   * from the first byte and there is no window where the field is a day out.
+   */
+  today: string;
 }) {
   const [state, formAction] = useActionState(createSchedule, initialState);
   const [kind, setKind] = useState<ScheduleKind>('daily');
@@ -264,7 +272,7 @@ export function ScheduleForm({
         <div className="flex flex-col gap-3 sm:flex-row">
           <div className="flex-1">
             <Label htmlFor="startDate">{t('schedule.starts')}</Label>
-            <DateField id="startDate" name="startDate" required defaultValue={today()} />
+            <DateField id="startDate" name="startDate" required defaultValue={today} />
             <FieldError messages={state.fieldErrors?.startDate} />
           </div>
           <div className="flex-1">

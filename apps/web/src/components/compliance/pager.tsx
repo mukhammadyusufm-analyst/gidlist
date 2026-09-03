@@ -1,9 +1,9 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { useComplianceFilters } from '@/components/compliance/use-filters';
 import { useT } from '@/components/i18n/provider';
 
 /**
@@ -22,19 +22,17 @@ export function Pager({
   page: number;
   pageCount: number;
 }) {
-  const router = useRouter();
-  const params = useSearchParams();
+  const { update } = useComplianceFilters(slug);
   const { t } = useT();
 
   if (pageCount <= 1) return null;
 
   function go(next: number) {
-    const query = new URLSearchParams(params.toString());
     // Page 1 is the default, so it stays out of the URL — a cleaner link to
     // copy, and the same page whether the parameter is present or not.
-    if (next <= 1) query.delete('page');
-    else query.set('page', String(next));
-    router.push(`/dashboard/boards/${slug}/compliance?${query.toString()}`);
+    // Naming `page` in the change is also what exempts this from the reset the
+    // hook applies to every other filter.
+    update({ page: next <= 1 ? undefined : String(next) });
   }
 
   return (

@@ -47,7 +47,7 @@ export function MemberRow({
           {member.full_name && member.invited_email ? member.invited_email : null}
           {pending ? (
             <span className="ml-0 rounded bg-[var(--color-muted)] px-1.5 py-0.5">
-              Invited — not registered yet
+              {t('members.pending')}
             </span>
           ) : null}
         </p>
@@ -106,7 +106,7 @@ export function MemberRow({
               // visibly snaps back rather than lying about having saved.
               onChange={(e) => e.currentTarget.form?.requestSubmit()}
               className="min-h-11 rounded-md border border-[var(--color-input)] bg-transparent px-2 py-1 text-sm"
-              aria-label={`Role for ${displayName}`}
+              aria-label={t('members.roleFor', { name: displayName })}
             >
               <option value="member">{t('members.roleMember')}</option>
               <option value="editor">{t('members.roleEditor')}</option>
@@ -123,8 +123,8 @@ export function MemberRow({
           <form action={removeAction}>
             <input type="hidden" name="memberId" value={member.id} />
             <input type="hidden" name="boardId" value={boardId} />
-            <Button type="submit" variant="ghost" size="sm">
-              Remove
+            <Button type="submit" variant="ghost" size="sm" aria-label={t('members.removeName', { name: displayName })}>
+              {t('members.remove')}
             </Button>
           </form>
         ) : null}

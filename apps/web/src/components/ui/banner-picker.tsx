@@ -59,7 +59,7 @@ export function BannerPicker({
       {current && !isBannerPreset(current) ? (
         <BannerFramingControl current={current} target={target} />
       ) : current ? (
-        <Banner value={current} alt="Current banner" />
+        <Banner value={current} alt={t('media.currentBanner')} />
       ) : (
         <p className="text-sm text-[var(--color-muted-foreground)]">{t('space.noBanner')}</p>
       )}
@@ -76,7 +76,7 @@ export function BannerPicker({
                 disabled={pending}
                 onClick={() => choose(preset.key)}
                 aria-pressed={selected}
-                title={preset.label}
+                title={t(`media.preset.${preset.key}`)}
                 className={cn(
                   'aspect-[3/1] rounded-md border-2 transition-opacity disabled:opacity-50',
                   // Selection is shown by a ring, not by colour alone — the
@@ -88,8 +88,9 @@ export function BannerPicker({
                 style={{ backgroundImage: preset.gradient }}
               >
                 <span className="sr-only">
-                  {preset.label}
-                  {selected ? ' (selected)' : ''}
+                  {selected
+                    ? t('media.presetSelected', { name: t(`media.preset.${preset.key}`) })
+                    : t(`media.preset.${preset.key}`)}
                 </span>
               </button>
             );
