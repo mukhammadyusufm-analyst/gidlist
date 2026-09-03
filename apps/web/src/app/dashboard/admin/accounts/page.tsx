@@ -6,7 +6,7 @@ import { formatMoney, money } from '@app/core';
 import { hasCapability } from '@/lib/platform/access';
 import { UnlimitedToggle } from './unlimited-toggle';
 import { DeleteAccount } from './delete-account';
-import { ListFilter } from '@/components/ui/list-controls';
+import { AccountColumnFilters } from './column-filters';
 import { createClient } from '@/lib/supabase/server';
 import { getTranslations } from '@/lib/i18n/server';
 
@@ -86,17 +86,38 @@ function formatDay(iso: string, locale: string): string {
  * bot or a person the product lost in its first minute. Neither was visible
  * before, and nothing else in the product surfaces them.
  */
+/** How many days ago, from an ISO timestamp. Whole days, local calendar. */
+function daysSince(iso: string): number {
+  return Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+}
+
+/** A `min…` parameter, as a number. Rubbish and zero both mean "no floor". */
+function floorOf(value: string | undefined): number {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
 export default async function AccountsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; action?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    state?: string;
+    joined?: string;
+    seen?: string;
+    plan?: string;
+    minMembers?: string;
+    minSpaces?: string;
+    minChecklists?: string;
+    minActivity?: string;
+    limits?: string;
+    paying?: string;
+  }>;
 }) {
   if (!(await hasCapability('accounts'))) notFound();
 
-  // `action` is the shared filter control's parameter name; here it carries an
-  // account state.
-  const { q, action: stateFilter } = await searchParams;
-  const search = q?.trim().toLowerCase() ?? '';
+  const sp = await searchParams;
+  const search = sp.q?.trim().toLowerCase() ?? '';
 
   const supabase = await createClient();
   const [{ data: accounts }, { data: revenue }, { locale }, canChangeLimits] = await Promise.all([
@@ -127,8 +148,53 @@ export default async function AccountsPage({
     stateCounts.set(s, (stateCounts.get(s) ?? 0) + 1);
   }
 
+  /*
+   * The state counts and the plan list are computed over EVERY account, not
+   * over the visible ones — deliberately. An option labelled with the count of
+   * rows that would survive the filters already applied changes its own label
+   * as you use it, and an option whose count has fallen to zero disappears, so
+   * the way to widen a search vanishes exactly when you need it.
+   */
+  const plans = [...new Set(rows.map((r) => r.plan_name))].sort();
+
+  const minMembers = floorOf(sp.minMembers);
+  const minSpaces = floorOf(sp.minSpaces);
+  const minChecklists = floorOf(sp.minChecklists);
+  const minActivity = floorOf(sp.minActivity);
+
   const visible = rows.filter((row) => {
-    if (stateFilter && accountState(row) !== stateFilter) return false;
+    if (sp.state && accountState(row) !== sp.state) return false;
+    if (sp.plan && row.plan_name !== sp.plan) return false;
+
+    if (sp.joined) {
+      const within = Number(sp.joined);
+      if (Number.isFinite(within) && daysSince(row.joined_at) > within) return false;
+    }
+
+    if (sp.seen === 'never') {
+      if (row.last_sign_in_at) return false;
+    } else if (sp.seen === 'stale') {
+      // Never signed in is excluded rather than included. "Over 30 days ago"
+      // is a claim about a last visit, and an account with no visit at all has
+      // no answer to it — it has its own option, and its own state badge.
+      if (!row.last_sign_in_at || daysSince(row.last_sign_in_at) <= 30) return false;
+    } else if (sp.seen) {
+      const within = Number(sp.seen);
+      if (!row.last_sign_in_at) return false;
+      if (Number.isFinite(within) && daysSince(row.last_sign_in_at) > within) return false;
+    }
+
+    if (row.used_members < minMembers) return false;
+    if (row.used_spaces < minSpaces) return false;
+    if (row.checklists < minChecklists) return false;
+    if (row.submissions_30d < minActivity) return false;
+
+    if (sp.limits === 'unlimited' && !unlimited.has(row.owner_id)) return false;
+    if (sp.limits === 'plan' && unlimited.has(row.owner_id)) return false;
+
+    if (sp.paying === 'yes' && row.price_minor <= 0) return false;
+    if (sp.paying === 'no' && row.price_minor > 0) return false;
+
     if (!search) return true;
     return (
       row.email.toLowerCase().includes(search) ||
@@ -136,9 +202,9 @@ export default async function AccountsPage({
     );
   });
 
-  const filterOptions = (Object.keys(STATE_LABELS) as AccountState[])
+  const stateOptions = (Object.keys(STATE_LABELS) as AccountState[])
     .filter((s) => (stateCounts.get(s) ?? 0) > 0)
-    .map((s) => ({ action: s, uses: stateCounts.get(s) ?? 0 }));
+    .map((s) => ({ value: s, label: STATE_LABELS[s], count: stateCounts.get(s) ?? 0 }));
 
   return (
     <div className="space-y-6">
@@ -186,20 +252,12 @@ export default async function AccountsPage({
         </div>
       ) : null}
 
-      <ListFilter
-        action="/dashboard/admin/accounts"
-        search={q ?? ''}
-        searchLabel="Search by name or email"
-        actions={filterOptions}
-        selectedAction={stateFilter}
-        actionLabel="State"
-        allLabel="Every account"
-        optionLabel={(value) => STATE_LABELS[value as AccountState] ?? value}
-        submitLabel="Search"
-      />
+      <p className="text-sm text-[var(--color-muted-foreground)] tabular-nums">
+        Showing {visible.length} of {rows.length}
+      </p>
 
       <div className="overflow-x-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-card)]">
-        <table className="w-full min-w-3xl text-sm">
+        <table className="w-full min-w-5xl text-sm">
           <thead>
             <tr className="border-b border-[var(--color-border)] text-left text-xs text-[var(--color-muted-foreground)]">
               <th className="px-4 py-2.5 font-normal">Account</th>
@@ -215,12 +273,31 @@ export default async function AccountsPage({
               <th className="px-4 py-2.5 text-right font-normal">Per month</th>
               <th className="px-4 py-2.5 font-normal"><span className="sr-only">Delete</span></th>
             </tr>
+
+            <AccountColumnFilters
+              columns={12}
+              states={stateOptions}
+              plans={plans}
+              current={{
+                q: sp.q,
+                state: sp.state,
+                joined: sp.joined,
+                seen: sp.seen,
+                plan: sp.plan,
+                minMembers: sp.minMembers,
+                minSpaces: sp.minSpaces,
+                minChecklists: sp.minChecklists,
+                minActivity: sp.minActivity,
+                limits: sp.limits,
+                paying: sp.paying,
+              }}
+            />
           </thead>
           <tbody>
             {visible.length === 0 ? (
               <tr>
                 <td colSpan={12} className="px-4 py-8 text-center text-[var(--color-muted-foreground)]">
-                  {rows.length === 0 ? 'No accounts yet.' : 'No accounts match that filter.'}
+                  {rows.length === 0 ? 'No accounts yet.' : 'No accounts match these filters.'}
                 </td>
               </tr>
             ) : (
