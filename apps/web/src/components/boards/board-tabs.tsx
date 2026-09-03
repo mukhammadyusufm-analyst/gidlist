@@ -34,11 +34,19 @@ export function BoardTabs({
   const base = `/dashboard/boards/${slug}`;
 
   const tabs = [
+    /*
+     * Fill in comes first, for everybody.
+     *
+     * It is the only tab most people in a space ever need, and the one they open
+     * every day — the others are for whoever set the space up. Ordering by who
+     * builds rather than by who uses puts the daily task second for an editor and
+     * makes the first tab something a member cannot even open.
+     */
+    { href: `${base}/fill`, label: t('space.fillIn'), icon: SquareCheckBig },
     // The Checklists tab leads to the builder, schedules and checklist details
     // — all editor work. Someone who only fills checklists in has no use for
     // it, and a tab whose every page refuses them is worse than no tab.
     ...(canEdit ? [{ href: base, label: t('space.checklists'), icon: ListChecks }] : []),
-    { href: `${base}/fill`, label: t('space.fillIn'), icon: SquareCheckBig },
     { href: `${base}/compliance`, label: t('space.compliance'), icon: BarChart3 },
     // The staff list is not a member's business. They still see their own role
     // and their own record; the roster belongs to whoever runs the space.

@@ -257,14 +257,40 @@ export function DateField({
   );
 }
 
-/** All arithmetic is done in UTC, so a timezone never shifts a calendar square. */
+/*
+ * EVERYTHING BELOW IS LOCAL CALENDAR ARITHMETIC, never UTC.
+ *
+ * The first version of this mixed the two and was wrong everywhere east of
+ * Greenwich, which is to say everywhere this product is used. `fromIsoDate`
+ * returns *local* midnight, and these functions then read `getUTCMonth()` —
+ * which in Tashkent, five hours ahead, is still the previous day and therefore
+ * sometimes the previous month.
+ *
+ * Reproduced under TZ=Asia/Tashkent before fixing:
+ *
+ *   next month from 2026-09-01  ->  2026-09-01   (the arrow appeared dead)
+ *   prev month from 2026-09-01  ->  2026-07-01   (silently skipped a month)
+ *   grid for September          ->  built from August
+ *
+ * That last one is why "Today" selected the wrong date: the cell drawn as 3
+ * carried the ISO string for a day in the previous month. `dates.ts` opens by
+ * saying nothing in it ever converts to UTC. This file now keeps that promise.
+ */
+
 function startOfMonth(iso: string): string {
   return `${iso.slice(0, 7)}-01`;
 }
 
+/** Parse `YYYY-MM` into local year and zero-based month, with no Date in between. */
+function monthParts(iso: string): [number, number] {
+  const [year, month] = iso.split('-').map(Number);
+  return [year, month - 1];
+}
+
 function shiftMonth(iso: string, by: number): string {
-  const date = fromIsoDate(iso);
-  return toIsoDate(new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + by, 1)));
+  const [year, month] = monthParts(iso);
+  // Day 1 of a month can never roll into the wrong month the way day 31 can.
+  return toIsoDate(new Date(year, month + by, 1));
 }
 
 /**
@@ -272,18 +298,16 @@ function shiftMonth(iso: string, by: number): string {
  * weekday. Trailing padding is unnecessary — the grid simply ends.
  */
 function buildMonthGrid(monthIso: string): (string | null)[] {
-  const first = fromIsoDate(startOfMonth(monthIso));
-  const year = first.getUTCFullYear();
-  const month = first.getUTCMonth();
+  const [year, month] = monthParts(startOfMonth(monthIso));
+  const first = new Date(year, month, 1);
 
-  // getUTCDay is Sunday-based; this shifts it to a Monday-based column index.
-  const lead = (first.getUTCDay() + 6) % 7;
-  const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  // getDay is Sunday-based; this shifts it to a Monday-based column index.
+  const lead = (first.getDay() + 6) % 7;
+  // Day 0 of the next month is the last day of this one.
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
 
   return [
     ...Array.from({ length: lead }, () => null),
-    ...Array.from({ length: daysInMonth }, (_, i) =>
-      toIsoDate(new Date(Date.UTC(year, month, i + 1))),
-    ),
+    ...Array.from({ length: daysInMonth }, (_, i) => toIsoDate(new Date(year, month, i + 1))),
   ];
 }

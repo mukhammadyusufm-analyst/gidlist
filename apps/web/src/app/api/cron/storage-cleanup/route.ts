@@ -86,7 +86,21 @@ async function cleanup(request: NextRequest) {
     return NextResponse.json({ error: readError.message, code: readError.code }, { status: 500 });
   }
 
+  /*
+   * NOTHING TO DO IS A SUCCESSFUL RUN, and it has to say so.
+   *
+   * This used to return here without recording the heartbeat, so a healthy
+   * system with an empty queue was indistinguishable from a scheduler that had
+   * never fired: the monitor reported "has never succeeded" every night while
+   * the job was in fact running correctly every night. An alert that cries wolf
+   * on the normal case is worse than no alert, because it trains you to ignore
+   * the one that matters.
+   *
+   * The queue is empty most of the time by design — it only fills when evidence
+   * passes its retention window — so this is the common path, not the edge case.
+   */
   if (!pending?.length) {
+    await recordHeartbeat(supabase);
     return NextResponse.json({ deleted: 0, remaining: 0 });
   }
 
@@ -160,13 +174,27 @@ async function cleanup(request: NextRequest) {
    * worth turning a completed cleanup into a 500 that makes the scheduler retry
    * work already done.
    */
-  const { error: heartbeatError } = await supabase.rpc('record_job_heartbeat', {
+  await recordHeartbeat(supabase);
+
+  return NextResponse.json({ deleted, remaining: count ?? 0 });
+}
+
+/**
+ * Tell the monitor this run finished.
+ *
+ * Extracted so both exits report it — the one that deleted files and the far
+ * more common one that found nothing to delete. A failure to record is logged
+ * and swallowed: it is not worth turning a completed cleanup into a 500 that
+ * makes the scheduler retry work already done.
+ */
+async function recordHeartbeat(supabase: ReturnType<typeof createAdminClient>) {
+  if (!supabase) return;
+
+  const { error } = await supabase.rpc('record_job_heartbeat', {
     p_jobname: 'storage-cleanup',
   });
 
-  if (heartbeatError) {
-    console.error('[storage-cleanup] could not record the heartbeat:', heartbeatError.message);
+  if (error) {
+    console.error('[storage-cleanup] could not record the heartbeat:', error.message);
   }
-
-  return NextResponse.json({ deleted, remaining: count ?? 0 });
 }
