@@ -87,11 +87,23 @@ export function DateField({
     };
   }, [open]);
 
+  /*
+   * NO `timeZone` OPTION HERE, AND THAT IS THE WHOLE POINT.
+   *
+   * `fromIsoDate` builds a Date at *local* midnight. Formatting that with
+   * `timeZone: 'UTC'` — which this used to do — renders the instant five hours
+   * earlier, so in Tashkent every label came out a day early: the field showed
+   * "2 September" for a stored value of 2026-09-03, and the September grid was
+   * headed "August".
+   *
+   * The stored value was right the whole time; only the label lied, which is
+   * why it survived the first round of fixing the arithmetic. Local Date,
+   * local formatting.
+   */
   const monthLabel = useMemo(
-    () =>
-      new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(
-        fromIsoDate(cursor),
-      ),
+    () => new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(
+      fromIsoDate(cursor),
+    ),
     [cursor, locale],
   );
 
@@ -103,12 +115,12 @@ export function DateField({
 
   const days = useMemo(() => buildMonthGrid(cursor), [cursor]);
 
+  // Local Date, local formatting — see the note on monthLabel above.
   const display = value
     ? new Intl.DateTimeFormat(locale, {
         day: 'numeric',
         month: 'long',
         year: 'numeric',
-        timeZone: 'UTC',
       }).format(fromIsoDate(value))
     : '';
 
