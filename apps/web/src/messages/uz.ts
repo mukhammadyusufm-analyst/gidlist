@@ -22,6 +22,8 @@ export const uz = {
   'common.cancel': 'Bekor qilish',
   'common.add': 'Qoʻshish',
   'checklist.windowTitle': 'Kun vaqti',
+  'schedule.derivedRange': '{from} dan {to} gacha, yuqorida tanlangan sanalarda.',
+  'schedule.derivedRangeEmpty': 'Yuqorida kamida bitta sana tanlang.',
   'fill.windowRequired': 'Faqat {from} va {to} orasida belgilash mumkin.',
   'fill.windowExpected': '{from} va {to} orasida kutilmoqda.',
   'checklist.windowFrom': 'Dan',

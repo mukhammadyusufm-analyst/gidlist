@@ -867,8 +867,17 @@ export type Database = {
           status: SubscriptionStatus;
           period_end: string | null;
           joined_at: string;
+          /** False means the address was never confirmed, so they cannot sign in. */
+          confirmed: boolean;
+          /** Null means registered and never came back. */
+          last_sign_in_at: string | null;
+          checklists: number;
+          /** Submissions completed across their spaces in the last 30 days. */
+          submissions_30d: number;
         }[];
       };
+      /** Refuses your own account, one owning a space, and one holding platform access. */
+      delete_account: { Args: { p_user_id: string }; Returns: undefined };
       platform_revenue: {
         Args: Record<string, never>;
         Returns: {

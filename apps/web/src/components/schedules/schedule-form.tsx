@@ -86,6 +86,25 @@ export function ScheduleForm({
   const [assignmentMode, setAssignmentMode] = useState<AssignmentMode | null>(null);
   const { t, locale } = useT();
 
+  /*
+   * The span the chosen dates cover. Sorted rather than assuming the person
+   * entered them in order — nothing makes them, and the rows can be edited after
+   * the fact.
+   */
+  const chosenRange = (() => {
+    const valid = specificDates.filter((d) => d).sort();
+    return { start: valid[0] ?? '', end: valid[valid.length - 1] ?? '' };
+  })();
+
+  /** ISO to something readable, in the reader's own language. */
+  const formatDate = (iso: string) =>
+    new Intl.DateTimeFormat(locale, {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      timeZone: 'UTC',
+    }).format(new Date(`${iso}T00:00:00Z`));
+
   return (
     <form action={formAction} className="space-y-4" noValidate>
       <input type="hidden" name="checklistId" value={checklistId} />
@@ -217,18 +236,44 @@ export function ScheduleForm({
         </fieldset>
       ) : null}
 
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <div className="flex-1">
-          <Label htmlFor="startDate">{t('schedule.starts')}</Label>
-          <DateField id="startDate" name="startDate" required defaultValue={today()} />
+      {/*
+        On specific dates the range is not a separate decision.
+
+        The chosen dates already say when this starts and stops, so asking again
+        invites a contradiction — a start after the first date silently drops it,
+        and nothing on screen explains why one of the dates the person picked
+        never produced a checklist. The range is derived and shown as a sentence
+        instead, and travels in hidden fields the server already knows how to
+        read.
+      */}
+      {kind === 'specific_dates' ? (
+        <div>
+          <input type="hidden" name="startDate" value={chosenRange.start} />
+          <input type="hidden" name="endDate" value={chosenRange.end} />
+          <p className="text-sm text-[var(--color-muted-foreground)]">
+            {chosenRange.start
+              ? t('schedule.derivedRange', {
+                  from: formatDate(chosenRange.start),
+                  to: formatDate(chosenRange.end),
+                })
+              : t('schedule.derivedRangeEmpty')}
+          </p>
           <FieldError messages={state.fieldErrors?.startDate} />
         </div>
-        <div className="flex-1">
-          <Label htmlFor="endDate">{t('schedule.ends')}</Label>
-          <DateField id="endDate" name="endDate" />
-          <FieldError messages={state.fieldErrors?.endDate} />
+      ) : (
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="flex-1">
+            <Label htmlFor="startDate">{t('schedule.starts')}</Label>
+            <DateField id="startDate" name="startDate" required defaultValue={today()} />
+            <FieldError messages={state.fieldErrors?.startDate} />
+          </div>
+          <div className="flex-1">
+            <Label htmlFor="endDate">{t('schedule.ends')}</Label>
+            <DateField id="endDate" name="endDate" />
+            <FieldError messages={state.fieldErrors?.endDate} />
+          </div>
         </div>
-      </div>
+      )}
 
       <div>
         <Label htmlFor="timezone">{t('schedule.timezone')}</Label>

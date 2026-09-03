@@ -5,26 +5,98 @@ import { formatMoney, money } from '@app/core';
 
 import { hasCapability } from '@/lib/platform/access';
 import { UnlimitedToggle } from './unlimited-toggle';
+import { DeleteAccount } from './delete-account';
+import { ListFilter } from '@/components/ui/list-controls';
 import { createClient } from '@/lib/supabase/server';
 import { getTranslations } from '@/lib/i18n/server';
 
 export const metadata: Metadata = { title: 'Accounts' };
 
 /**
- * Customers and revenue.
+ * What an account is doing, in one word.
+ *
+ * Ordered by how much it should worry you, and the first match wins. An
+ * unconfirmed address cannot sign in at all, which is both the clearest bot
+ * signal and the reason none of the later states would mean anything for it.
+ */
+type AccountState = 'unconfirmed' | 'never' | 'dormant' | 'near-limit' | 'active';
+
+function accountState(a: {
+  confirmed: boolean;
+  last_sign_in_at: string | null;
+  submissions_30d: number;
+  used_members: number;
+  max_members: number | null;
+  used_spaces: number;
+  max_spaces: number | null;
+}): AccountState {
+  if (!a.confirmed) return 'unconfirmed';
+  if (!a.last_sign_in_at) return 'never';
+
+  // Four fifths of either ceiling, the same threshold the revenue figures use
+  // for "near a limit" — this is the upgrade conversation.
+  const nearMembers = a.max_members !== null && a.used_members >= a.max_members * 0.8;
+  const nearSpaces = a.max_spaces !== null && a.used_spaces >= a.max_spaces * 0.8;
+  if (nearMembers || nearSpaces) return 'near-limit';
+
+  return a.submissions_30d > 0 ? 'active' : 'dormant';
+}
+
+const STATE_LABELS: Record<AccountState, string> = {
+  unconfirmed: 'Unconfirmed',
+  never: 'Never signed in',
+  dormant: 'Dormant',
+  'near-limit': 'Near a limit',
+  active: 'Active',
+};
+
+function StateBadge({ state }: { state: AccountState }) {
+  const tone =
+    state === 'active'
+      ? 'text-[var(--color-success)]'
+      : state === 'near-limit'
+        ? 'text-[var(--color-warning)]'
+        : state === 'unconfirmed'
+          ? 'text-[var(--color-destructive)]'
+          : 'text-[var(--color-muted-foreground)]';
+
+  return <span className={`text-xs whitespace-nowrap ${tone}`}>{STATE_LABELS[state]}</span>;
+}
+
+/** A date, no time. The hour an account registered has never mattered here. */
+function formatDay(iso: string, locale: string): string {
+  return new Intl.DateTimeFormat(locale, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  }).format(new Date(iso));
+}
+
+/**
+ * Every account, what it pays, and what it is actually doing.
  *
  * Gated on `accounts`, not on being an administrator — the whole point of
  * splitting platform access was that someone editing Uzbek wording should never
  * reach this page. The database refuses it too; this check only decides whether
  * rendering is worth attempting.
  *
- * Free accounts are shown alongside paying ones on purpose. They are the
- * pipeline, and the near-limit count below is the part that earns its keep: an
- * account at nine of ten members is a conversation to have this week, and
- * nothing else in the product surfaces that.
+ * Free accounts sit beside paying ones on purpose: they are the pipeline. The
+ * states are what earn their keep — an account near a limit is a conversation
+ * to have this week, and one that registered and never signed in is either a
+ * bot or a person the product lost in its first minute. Neither was visible
+ * before, and nothing else in the product surfaces them.
  */
-export default async function AccountsPage() {
+export default async function AccountsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; action?: string }>;
+}) {
   if (!(await hasCapability('accounts'))) notFound();
+
+  // `action` is the shared filter control's parameter name; here it carries an
+  // account state.
+  const { q, action: stateFilter } = await searchParams;
+  const search = q?.trim().toLowerCase() ?? '';
 
   const supabase = await createClient();
   const [{ data: accounts }, { data: revenue }, { locale }, canChangeLimits] = await Promise.all([
@@ -42,19 +114,41 @@ export default async function AccountsPage() {
   const { data: unlimitedRows } = await supabase.from('unlimited_accounts').select('user_id');
   const unlimited = new Set((unlimitedRows ?? []).map((u) => u.user_id));
 
+  /*
+   * Filtering happens here rather than in SQL because the function already
+   * returns every account and the counts beside each filter have to be computed
+   * over the whole set anyway — a filtered query would need a second one just to
+   * label its own options. That holds at this scale; when the listing grows a
+   * limit and an offset, this moves into the database with it.
+   */
+  const stateCounts = new Map<AccountState, number>();
+  for (const row of rows) {
+    const s = accountState(row);
+    stateCounts.set(s, (stateCounts.get(s) ?? 0) + 1);
+  }
+
+  const visible = rows.filter((row) => {
+    if (stateFilter && accountState(row) !== stateFilter) return false;
+    if (!search) return true;
+    return (
+      row.email.toLowerCase().includes(search) ||
+      (row.full_name ?? '').toLowerCase().includes(search)
+    );
+  });
+
+  const filterOptions = (Object.keys(STATE_LABELS) as AccountState[])
+    .filter((s) => (stateCounts.get(s) ?? 0) > 0)
+    .map((s) => ({ action: s, uses: stateCounts.get(s) ?? 0 }));
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Accounts</h1>
-        {/* Said plainly, because "why is this person missing" is the obvious
-            question otherwise. Someone who only joined another company's space
-            has no plan and no price, so a row here would be mostly blanks —
-            they are counted inside that account's member figure instead. */}
         <p className="mt-1 text-sm text-[var(--color-muted-foreground)]">
-          One row per account that owns a space, and what it pays. People who
-          only belong to someone else&apos;s space are counted in that
-          account&apos;s members, not listed separately — see Platform access
-          for everyone with a login.
+          One row per registered account — what it pays, what it has built, and
+          whether anyone is using it. Someone who only belongs to another
+          company&apos;s space also appears here, with no plan of their own, and
+          is counted again inside that space&apos;s member figure.
         </p>
       </div>
 
@@ -92,31 +186,62 @@ export default async function AccountsPage() {
         </div>
       ) : null}
 
+      <ListFilter
+        action="/dashboard/admin/accounts"
+        search={q ?? ''}
+        searchLabel="Search by name or email"
+        actions={filterOptions}
+        selectedAction={stateFilter}
+        actionLabel="State"
+        allLabel="Every account"
+        optionLabel={(value) => STATE_LABELS[value as AccountState] ?? value}
+        submitLabel="Search"
+      />
+
       <div className="overflow-x-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-card)]">
         <table className="w-full min-w-3xl text-sm">
           <thead>
             <tr className="border-b border-[var(--color-border)] text-left text-xs text-[var(--color-muted-foreground)]">
               <th className="px-4 py-2.5 font-normal">Account</th>
+              <th className="px-4 py-2.5 font-normal">State</th>
+              <th className="px-4 py-2.5 font-normal">Registered</th>
+              <th className="px-4 py-2.5 font-normal">Last seen</th>
               <th className="px-4 py-2.5 font-normal">Plan</th>
               <th className="px-4 py-2.5 font-normal">Members</th>
               <th className="px-4 py-2.5 font-normal">Spaces</th>
+              <th className="px-4 py-2.5 font-normal">Checklists</th>
+              <th className="px-4 py-2.5 font-normal">30-day activity</th>
               <th className="px-4 py-2.5 font-normal">Limits</th>
               <th className="px-4 py-2.5 text-right font-normal">Per month</th>
+              <th className="px-4 py-2.5 font-normal"><span className="sr-only">Delete</span></th>
             </tr>
           </thead>
           <tbody>
-            {rows.length === 0 ? (
+            {visible.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-[var(--color-muted-foreground)]">
-                  No accounts with a live space yet.
+                <td colSpan={12} className="px-4 py-8 text-center text-[var(--color-muted-foreground)]">
+                  {rows.length === 0 ? 'No accounts yet.' : 'No accounts match that filter.'}
                 </td>
               </tr>
             ) : (
-              rows.map((account) => (
+              visible.map((account) => (
                 <tr key={account.owner_id} className="border-b border-[var(--color-border)] last:border-b-0">
                   <td className="px-4 py-3">
                     <div className="font-medium">{account.full_name ?? '—'}</div>
                     <div className="text-xs text-[var(--color-muted-foreground)]">{account.email}</div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <StateBadge state={accountState(account)} />
+                  </td>
+                  <td className="px-4 py-3 tabular-nums whitespace-nowrap">
+                    {formatDay(account.joined_at, locale)}
+                  </td>
+                  <td className="px-4 py-3 tabular-nums whitespace-nowrap">
+                    {account.last_sign_in_at ? (
+                      formatDay(account.last_sign_in_at, locale)
+                    ) : (
+                      <span className="text-[var(--color-muted-foreground)]">never</span>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     {account.plan_name}
@@ -130,6 +255,12 @@ export default async function AccountsPage() {
                   <td className="px-4 py-3">
                     <Usage used={account.used_spaces} limit={account.max_spaces} />
                   </td>
+                  <td className="px-4 py-3 tabular-nums">{account.checklists}</td>
+                  {/* Built and used are different things. An account with nine
+                      checklists and no submissions set something up and walked
+                      away, which is a different conversation from one with two
+                      checklists filled in every day. */}
+                  <td className="px-4 py-3 tabular-nums">{account.submissions_30d}</td>
                   <td className="px-4 py-3">
                     <UnlimitedToggle
                       ownerId={account.owner_id}
@@ -140,6 +271,12 @@ export default async function AccountsPage() {
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums">
                     {formatMoney(money(account.price_minor, account.currency), locale)}
+                  </td>
+                  <td className="px-4 py-3">
+                    <DeleteAccount
+                      userId={account.owner_id}
+                      label={account.full_name ?? account.email}
+                    />
                   </td>
                 </tr>
               ))

@@ -18,6 +18,8 @@ export const ru = {
   'common.cancel': 'Отмена',
   'common.add': 'Добавить',
   'checklist.windowTitle': 'Время суток',
+  'schedule.derivedRange': 'Действует с {from} по {to}, в выбранные выше даты.',
+  'schedule.derivedRangeEmpty': 'Выберите хотя бы одну дату выше.',
   'fill.windowRequired': 'Можно отметить только с {from} до {to}.',
   'fill.windowExpected': 'Ожидается с {from} до {to}.',
   'checklist.windowFrom': 'С',

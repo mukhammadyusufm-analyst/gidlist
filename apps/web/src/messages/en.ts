@@ -21,6 +21,8 @@ export const en = {
   'common.cancel': 'Cancel',
   'common.add': 'Add',
   'checklist.windowTitle': 'Time of day',
+  'schedule.derivedRange': 'Runs from {from} to {to}, on the dates chosen above.',
+  'schedule.derivedRangeEmpty': 'Choose at least one date above.',
   'fill.windowRequired': 'Can only be ticked between {from} and {to}.',
   'fill.windowExpected': 'Expected between {from} and {to}.',
   'checklist.windowFrom': 'From',

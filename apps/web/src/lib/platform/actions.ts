@@ -139,3 +139,23 @@ export async function setAllPlatformGrants(
       : 'All access removed.',
   };
 }
+
+/**
+ * Remove an account that should not exist.
+ *
+ * The rules live in the database — your own account, an account owning a space,
+ * an account holding platform access are all refused there — because they have
+ * to hold for any caller, not only for this button. Here they become sentences.
+ */
+export async function deleteAccount(_prev: GrantResult, formData: FormData): Promise<GrantResult> {
+  const userId = String(formData.get('userId') ?? '');
+  if (!userId) return { error: 'That account is not valid.' };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc('delete_account', { p_user_id: userId });
+
+  if (error) return { error: error.message };
+
+  revalidatePath('/dashboard/admin/accounts');
+  return { notice: 'Account deleted.' };
+}
