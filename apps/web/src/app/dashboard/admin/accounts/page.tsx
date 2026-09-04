@@ -4,7 +4,7 @@ import { AlertTriangle, TrendingUp, Users } from 'lucide-react';
 import { formatMoney, money } from '@app/core';
 
 import { hasCapability } from '@/lib/platform/access';
-import { UnlimitedToggle } from './unlimited-toggle';
+import { AccountLimits, type AccountAgreement } from './account-limits';
 import { DeleteAccount } from './delete-account';
 import { AccountColumnFilters } from './column-filters';
 import { createClient } from '@/lib/supabase/server';
@@ -131,9 +131,32 @@ export default async function AccountsPage({
   const totals = revenue?.[0];
   const rows = accounts ?? [];
 
-  // One query for the whole page rather than one per row.
-  const { data: unlimitedRows } = await supabase.from('unlimited_accounts').select('user_id');
-  const unlimited = new Set((unlimitedRows ?? []).map((u) => u.user_id));
+  /*
+   * One query for the whole page rather than one per row.
+   *
+   * Every agreement, including lapsed ones. A row that has expired still has to
+   * appear — struck through — or the screen would quietly stop mentioning a
+   * deal that was signed and simply ran out, which is the moment somebody most
+   * needs to see it.
+   */
+  const { data: limitRows } = await supabase
+    .from('account_limits')
+    .select('user_id, max_spaces, max_members, expires_at, note');
+
+  const agreements = new Map<string, AccountAgreement>(
+    (limitRows ?? []).map((r) => [
+      r.user_id,
+      { maxSpaces: r.max_spaces, maxMembers: r.max_members, expiresAt: r.expires_at, note: r.note },
+    ]),
+  );
+
+  /** Uncapped in both directions and still in force — what "unlimited" now means. */
+  const isUnlimited = (id: string) => {
+    const a = agreements.get(id);
+    if (!a) return false;
+    if (a.expiresAt && new Date(a.expiresAt) <= new Date()) return false;
+    return a.maxSpaces === null && a.maxMembers === null;
+  };
 
   /*
    * Filtering happens here rather than in SQL because the function already
@@ -189,8 +212,8 @@ export default async function AccountsPage({
     if (row.checklists < minChecklists) return false;
     if (row.submissions_30d < minActivity) return false;
 
-    if (sp.limits === 'unlimited' && !unlimited.has(row.owner_id)) return false;
-    if (sp.limits === 'plan' && unlimited.has(row.owner_id)) return false;
+    if (sp.limits === 'unlimited' && !isUnlimited(row.owner_id)) return false;
+    if (sp.limits === 'plan' && isUnlimited(row.owner_id)) return false;
 
     if (sp.paying === 'yes' && row.price_minor <= 0) return false;
     if (sp.paying === 'no' && row.price_minor > 0) return false;
@@ -339,10 +362,12 @@ export default async function AccountsPage({
                       checklists filled in every day. */}
                   <td className="px-4 py-3 tabular-nums">{account.submissions_30d}</td>
                   <td className="px-4 py-3">
-                    <UnlimitedToggle
+                    <AccountLimits
                       ownerId={account.owner_id}
                       accountName={account.full_name ?? account.email}
-                      unlimited={unlimited.has(account.owner_id)}
+                      agreement={agreements.get(account.owner_id) ?? null}
+                      planSpaces={account.max_spaces}
+                      planMembers={account.max_members}
                       canChange={canChangeLimits}
                     />
                   </td>

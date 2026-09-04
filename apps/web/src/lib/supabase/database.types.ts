@@ -127,10 +127,9 @@ export type Database = {
         Relationships: [];
       };
       /**
-       * Accounts whose space and member ceilings are lifted, whatever plan they
-       * are on. A row, not a boolean column, so the concession records who
-       * granted it and when — the questions actually asked about it a year on.
-       * Billing is untouched: the account keeps its plan and its invoices.
+       * A VIEW now, over `account_limits` — the rows where both ceilings are
+       * uncapped and the agreement has not lapsed. Kept so anything still
+       * asking the old question keeps working and keeps telling the truth.
        */
       unlimited_accounts: {
         Row: {
@@ -139,9 +138,34 @@ export type Database = {
           granted_by: string | null;
           granted_at: string;
         };
-        // Written only through set_account_unlimited(), which checks `billing`.
-        Insert: { user_id: string; note?: string | null; granted_by?: string | null };
-        Update: { note?: string | null };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      /**
+       * What an account was sold: space and member ceilings, and an optional
+       * end date.
+       *
+       * A NULL ceiling means uncapped; a NULL `expires_at` means open-ended.
+       * Rows survive expiry deliberately — they are the record of what was
+       * agreed, which is the question asked a year later, and nothing already
+       * created is taken away when one lapses.
+       *
+       * Billing is untouched: the account keeps its plan and its invoices.
+       * Written only through `set_account_limits`, which checks `billing`.
+       */
+      account_limits: {
+        Row: {
+          user_id: string;
+          max_spaces: number | null;
+          max_members: number | null;
+          expires_at: string | null;
+          note: string | null;
+          granted_by: string | null;
+          granted_at: string;
+        };
+        Insert: never;
+        Update: never;
         Relationships: [];
       };
       profiles: {
@@ -1094,6 +1118,21 @@ export type Database = {
        * answers "which rows may they act on", for which controls to draw.
        * Neither decides anything — RLS and `set_submission_void` do.
        */
+      /** What an account was sold. Empty ceiling means uncapped. See the migration. */
+      set_account_limits: {
+        Args: {
+          p_user_id: string;
+          p_max_spaces: number | null;
+          p_max_members: number | null;
+          p_expires_at: string | null;
+          p_note: string | null;
+        };
+        Returns: undefined;
+      };
+      clear_account_limits: {
+        Args: { p_user_id: string };
+        Returns: undefined;
+      };
       manages_anyone: {
         Args: { p_board_id: string };
         Returns: boolean;

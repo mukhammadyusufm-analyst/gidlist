@@ -84,6 +84,80 @@ export async function setAccountUnlimited(
 }
 
 /**
+ * Record what an organisation was sold: spaces, people, and until when.
+ *
+ * An empty box means uncapped, which is why each value is read as "blank or
+ * not" before it is read as a number — `Number('')` is 0, and a limit of zero
+ * would lock a paying customer out of their own account rather than freeing
+ * them. That single coercion is the whole risk in this function.
+ *
+ * The date arrives as a plain `YYYY-MM-DD` from a date input and is sent as
+ * the very end of that day, so "until the 31st" includes the 31st. Anything
+ * else means an agreement quietly lapsing at midnight on the morning of the
+ * day the customer believes they still have.
+ */
+export async function setAccountLimits(
+  _prev: GrantResult,
+  formData: FormData,
+): Promise<GrantResult> {
+  const ownerId = String(formData.get('ownerId') ?? '');
+  if (!ownerId) return { error: 'That account is not valid.' };
+
+  const optionalNumber = (key: string): number | null => {
+    const raw = String(formData.get(key) ?? '').trim();
+    if (raw === '') return null;
+    const n = Number(raw);
+    return Number.isFinite(n) && n >= 0 ? Math.floor(n) : null;
+  };
+
+  const day = String(formData.get('expiresAt') ?? '').trim();
+  const expiresAt = day ? `${day}T23:59:59` : null;
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc('set_account_limits', {
+    p_user_id: ownerId,
+    p_max_spaces: optionalNumber('maxSpaces'),
+    p_max_members: optionalNumber('maxMembers'),
+    p_expires_at: expiresAt,
+    p_note: String(formData.get('note') ?? '') || null,
+  });
+
+  if (error) {
+    return {
+      error: error.message.includes('do not have permission')
+        ? 'Changing account limits needs the billing capability.'
+        : error.message,
+    };
+  }
+
+  revalidatePath('/dashboard/admin/accounts');
+  return { notice: 'Limits saved.' };
+}
+
+/** Withdraw an agreement, so the account's plan decides again. */
+export async function clearAccountLimits(
+  _prev: GrantResult,
+  formData: FormData,
+): Promise<GrantResult> {
+  const ownerId = String(formData.get('ownerId') ?? '');
+  if (!ownerId) return { error: 'That account is not valid.' };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc('clear_account_limits', { p_user_id: ownerId });
+
+  if (error) {
+    return {
+      error: error.message.includes('do not have permission')
+        ? 'Changing account limits needs the billing capability.'
+        : error.message,
+    };
+  }
+
+  revalidatePath('/dashboard/admin/accounts');
+  return { notice: 'Plan limits restored.' };
+}
+
+/**
  * Grant, or remove, every capability a person can hold — except root.
  *
  * Asked for as "unlimited access". This is convenience only and confers no
