@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
 
+import { SpeedInsights } from '@vercel/speed-insights/next';
+
 import { getMessages } from '@/lib/i18n/server';
 import { getTheme } from '@/lib/theme/server';
 import { I18nProvider } from '@/components/i18n/provider';
@@ -69,6 +71,26 @@ export default async function RootLayout({ children }: LayoutProps<'/'>) {
           {children}
         </I18nProvider>
         <RegisterServiceWorker />
+
+        {/*
+          Real user monitoring, and it survives the CSP — which was checked
+          rather than assumed, because this is the third script this app has
+          added and the first two both failed silently under `strict-dynamic`
+          (items 13a and 40).
+
+          Why it is safe here: the component renders `null` and injects its tag
+          with `document.createElement('script')` from code React has already
+          run. `strict-dynamic` exists precisely to let an already-trusted
+          script load others, so no nonce is needed — and the package has no
+          `nonce` prop at all, so a tag in the markup would have been blocked
+          with nothing to say why. Its beacons go to `/_vercel/...` on this
+          origin, covered by `connect-src 'self'`.
+
+          What it is for: every timing in README 2c to 2f was measured from one
+          machine on one network. This says what the shift actually waits for,
+          on the phone they actually hold.
+        */}
+        <SpeedInsights />
       </body>
     </html>
   );
