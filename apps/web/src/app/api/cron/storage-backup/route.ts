@@ -286,10 +286,27 @@ async function copy(
        * itself: the next run's anti-join no longer sees it.
        */
       failed += 1;
-      console.error(
-        `[storage-backup] ${object.bucket_id}/${object.object_path} failed:`,
-        e instanceof Error ? e.message : e,
-      );
+      const message = e instanceof Error ? e.message : String(e);
+
+      console.error(`[storage-backup] ${object.bucket_id}/${object.object_path} failed:`, message);
+
+      /*
+       * And to the database, because the log line above cannot be read.
+       *
+       * Hobby keeps runtime logs about an hour and this runs at 04:00, so by
+       * the time anyone looks the reason is gone. The row survives, carries an
+       * attempt count that separates a transient failure from a permanent one,
+       * and is removed by `storage_backup_record` the moment the file copies.
+       */
+      const { error: noteError } = await supabase.rpc('storage_backup_fail', {
+        p_bucket: object.bucket_id,
+        p_path: object.object_path,
+        p_error: message,
+        p_size: object.size,
+      });
+      if (noteError) {
+        console.error('[storage-backup] could not record the failure:', noteError.message);
+      }
     }
   }
 

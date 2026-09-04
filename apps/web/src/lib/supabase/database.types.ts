@@ -743,6 +743,25 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
+      /**
+       * Why a file would not copy. Written by `storage_backup_fail` and
+       * removed by `storage_backup_record` when the file finally lands, so a
+       * row here always describes a file that is still not backed up.
+       */
+      storage_backup_failures: {
+        Row: {
+          bucket_id: string;
+          object_path: string;
+          error: string;
+          size: number;
+          attempts: number;
+          first_failed_at: string;
+          last_failed_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       plan_prices: {
         Row: {
           plan_code: PlanCode;
@@ -1063,6 +1082,10 @@ export type Database = {
       };
       storage_backup_record: {
         Args: { p_bucket: string; p_path: string; p_size: number };
+        Returns: undefined;
+      };
+      storage_backup_fail: {
+        Args: { p_bucket: string; p_path: string; p_error: string; p_size: number };
         Returns: undefined;
       };
       compliance_assignees: {
