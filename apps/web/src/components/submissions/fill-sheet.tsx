@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useOptimistic, useState, useTransition } from 'react';
+import { useActionState, useMemo, useOptimistic, useState, useTransition } from 'react';
 import { Check, Lock, MessageSquarePlus, Paperclip, Send } from 'lucide-react';
 
 import {
@@ -16,6 +16,7 @@ import type { ChecklistGroup } from '@/lib/supabase/database.types';
 import { Button } from '@/components/ui/button';
 import { FormNotice } from '@/components/ui/field-error';
 import { ProgressBar, ProgressRing } from '@/components/ui/progress';
+import { useOffline } from '@/components/offline/offline-provider';
 import { useT } from '@/components/i18n/provider';
 import { cn } from '@/lib/utils';
 
@@ -24,32 +25,59 @@ const initialState: ActionState = {};
 type GroupWithAnswers = ChecklistGroup & { items: AnsweredItem[] };
 
 /**
- * Ticks the person has just made, which the server has not confirmed yet.
+ * Ticks in flight, which the server has not confirmed yet. Answer id to value.
  *
- * Keyed by answer id. `from` is kept as well as `to` so the running total stays
- * right when somebody taps the same box twice before either request lands —
- * without it, tick-then-untick would subtract one from a count that was never
- * incremented.
+ * This used to carry the value each tick started *from*, so the running total
+ * could be measured against it. That is no longer needed and was subtly wrong
+ * once ticks could be queued offline: the value at tap time is whatever was on
+ * screen, which for a queued item is the queued guess rather than the server's
+ * answer, so a queued-then-retapped item counted against the wrong baseline.
+ * The server's own values are right here in `groups`; measuring against those
+ * is both simpler and correct in every order of events.
  */
-type PendingTicks = Map<string, { from: boolean; to: boolean }>;
+type PendingTicks = Map<string, boolean>;
 
-/** Whether a box should look ticked: what the person did, else what the server says. */
-function isTicked(item: AnsweredItem, pending: PendingTicks): boolean {
+/**
+ * Whether a box should look ticked, in order of who knows best.
+ *
+ *   1. a tick in flight right now      — React drops this when it settles
+ *   2. a tick waiting for a connection — survives reloads until it is sent
+ *   3. the server's answer
+ *
+ * Two layers rather than one because they have opposite lifetimes. The
+ * optimistic map exists to cover a round trip and is *meant* to vanish when the
+ * server replies. A queued tick must do the reverse: outlive the failure, the
+ * reload, and the walk back out of the basement. Collapsing them into one would
+ * either revert queued work or leave in-flight guesses on screen after they
+ * were refused.
+ */
+function isTicked(item: AnsweredItem, pending: PendingTicks, queued: QueuedTicks): boolean {
   const id = item.answer?.id;
-  const optimistic = id ? pending.get(id) : undefined;
-  return optimistic ? optimistic.to : (item.answer?.checked ?? false);
+  if (!id) return item.answer?.checked ?? false;
+
+  const optimistic = pending.get(id);
+  if (optimistic !== undefined) return optimistic;
+
+  const waiting = queued.get(id);
+  if (waiting !== undefined) return waiting;
+
+  return item.answer?.checked ?? false;
 }
+
+/** Answer id to the value waiting to be sent. */
+type QueuedTicks = Map<string, boolean>;
 
 /** Counts every level, not just the top — a section is only done when its sub-tasks are. */
 function countProgress(
   items: AnsweredItem[],
   pending: PendingTicks,
+  queued: QueuedTicks,
 ): { done: number; total: number } {
   return items.reduce(
     (acc, item) => {
-      const child = countProgress(item.children, pending);
+      const child = countProgress(item.children, pending, queued);
       return {
-        done: acc.done + (isTicked(item, pending) ? 1 : 0) + child.done,
+        done: acc.done + (isTicked(item, pending, queued) ? 1 : 0) + child.done,
         total: acc.total + 1 + child.total,
       };
     },
@@ -95,23 +123,55 @@ export function FillSheet({
    * server props are the truth. So a failed write needs no rollback code: the
    * box returns to where it was, and `onError` says why.
    */
-  const [pendingTicks, addPendingTick] = useOptimistic<
-    PendingTicks,
-    { id: string; from: boolean; to: boolean }
-  >(new Map(), (current, change) => {
-    const next = new Map(current);
-    // Keep the ORIGINAL `from` on a second tap of the same box, so the running
-    // total is measured against what the server holds, not against the guess.
-    next.set(change.id, { from: current.get(change.id)?.from ?? change.from, to: change.to });
-    return next;
-  });
-
-  const pendingDelta = [...pendingTicks.values()].reduce(
-    (sum, { from, to }) => sum + (to ? 1 : 0) - (from ? 1 : 0),
-    0,
+  const [pendingTicks, addPendingTick] = useOptimistic<PendingTicks, { id: string; to: boolean }>(
+    new Map(),
+    (current, change) => new Map(current).set(change.id, change.to),
   );
 
-  const shownChecked = Math.min(Math.max(checkedItems + pendingDelta, 0), totalItems);
+  /*
+   * Writes still waiting for a connection.
+   *
+   * Null when this sheet is rendered outside the dashboard — the checklist
+   * details page previews it read-only, where there is nothing to queue.
+   */
+  const offline = useOffline();
+  const queuedTicks: QueuedTicks = useMemo(() => {
+    const map: QueuedTicks = new Map();
+    for (const record of offline?.pending ?? []) {
+      if (record.op.kind === 'tick') map.set(record.op.answerId, record.op.checked);
+    }
+    return map;
+  }, [offline?.pending]);
+
+  /** What the server actually holds, which is the baseline every count needs. */
+  const serverChecked = useMemo(() => {
+    const map = new Map<string, boolean>();
+    const walk = (items: AnsweredItem[]) => {
+      for (const item of items) {
+        if (item.answer?.id) map.set(item.answer.id, item.answer.checked ?? false);
+        walk(item.children);
+      }
+    };
+    for (const group of groups) walk(group.items);
+    return map;
+  }, [groups]);
+
+  /*
+   * One pass over every id that differs from the server, whichever layer it
+   * differs in. Counting the two layers separately would double-count an item
+   * that is queued and then tapped again.
+   */
+  const delta = useMemo(() => {
+    let sum = 0;
+    for (const id of new Set([...pendingTicks.keys(), ...queuedTicks.keys()])) {
+      const shown = pendingTicks.get(id) ?? queuedTicks.get(id) ?? false;
+      const server = serverChecked.get(id) ?? false;
+      sum += (shown ? 1 : 0) - (server ? 1 : 0);
+    }
+    return sum;
+  }, [pendingTicks, queuedTicks, serverChecked]);
+
+  const shownChecked = Math.min(Math.max(checkedItems + delta, 0), totalItems);
   const remaining = totalItems - shownChecked;
 
   return (
@@ -141,7 +201,7 @@ export function FillSheet({
       {submitState.formError ? <FormNotice kind="error">{submitState.formError}</FormNotice> : null}
 
       {groups.map((group) => {
-        const progress = countProgress(group.items, pendingTicks);
+        const progress = countProgress(group.items, pendingTicks, queuedTicks);
         const complete = progress.total > 0 && progress.done === progress.total;
 
         return (
@@ -171,6 +231,7 @@ export function FillSheet({
                 onError={setError}
                 depth={0}
                 pending={pendingTicks}
+                queued={queuedTicks}
                 onTick={addPendingTick}
               />
             </div>
@@ -212,7 +273,8 @@ export function FillSheet({
 /** What every row needs to show and record an unconfirmed tick. */
 type TickState = {
   pending: PendingTicks;
-  onTick: (change: { id: string; from: boolean; to: boolean }) => void;
+  queued: QueuedTicks;
+  onTick: (change: { id: string; to: boolean }) => void;
 };
 
 function ItemList({
@@ -221,6 +283,7 @@ function ItemList({
   onError,
   depth,
   pending,
+  queued,
   onTick,
 }: {
   items: AnsweredItem[];
@@ -238,6 +301,7 @@ function ItemList({
           onError={onError}
           depth={depth}
           pending={pending}
+          queued={queued}
           onTick={onTick}
         />
       ))}
@@ -251,6 +315,7 @@ function ItemRow({
   onError,
   depth,
   pending: pendingTicks,
+  queued,
   onTick,
 }: {
   item: AnsweredItem;
@@ -260,12 +325,13 @@ function ItemRow({
 } & TickState) {
   const [pending, startTransition] = useTransition();
   const [showComment, setShowComment] = useState(Boolean(item.answer?.comment));
+  const offline = useOffline();
   const { t } = useT();
 
   const hasChildren = item.children.length > 0;
   // The optimistic view, so a tap moves the box now rather than after the
   // round trip. Falls back to the server's answer once the write settles.
-  const checked = isTicked(item, pendingTicks);
+  const checked = isTicked(item, pendingTicks, queued);
   const answerId = item.answer?.id;
   const interactive = Boolean(answerId) && !readOnly && !hasChildren;
 
@@ -338,7 +404,7 @@ function ItemRow({
        * the second or two the GPS takes. So the enforced case gets its
        * optimistic update after the position is in hand, not before.
        */
-      if (!locationRequired) onTick({ id: answerId, from: checked, to: !checked });
+      if (!locationRequired) onTick({ id: answerId, to: !checked });
 
       /*
        * Only when ticking, and only when the item asks for it. Reading a
@@ -364,10 +430,31 @@ function ItemRow({
       }
 
       // The enforced case, now that the reading has cleared. See above.
-      if (locationRequired) onTick({ id: answerId, from: checked, to: !checked });
+      if (locationRequired) onTick({ id: answerId, to: !checked });
 
-      const result = await setItemChecked(answerId, !checked, position);
-      if (result.error) onError(result.error);
+      try {
+        const result = await setItemChecked(answerId, !checked, position);
+        if (result.error) onError(result.error);
+      } catch {
+        /*
+         * COULD NOT REACH THE SERVER, WHICH IS NOT THE SAME AS BEING REFUSED.
+         *
+         * A thrown request means the network failed — a freezer, a basement, a
+         * lift. The tick is real work somebody did, so it goes in the queue and
+         * stays on screen until it can be sent. A refusal, by contrast, comes
+         * back as `result.error` above and is shown immediately, because the
+         * server has considered it and said no.
+         *
+         * Telling the two apart is the whole point. Queueing a refusal would
+         * retry it forever; showing an error for lost signal would throw away
+         * work and blame the person for their building.
+         */
+        if (offline) {
+          await offline.enqueue({ kind: 'tick', answerId, checked: !checked });
+        } else {
+          onError(t('fill.offlineUnavailable'));
+        }
+      }
     });
   }
 
@@ -530,6 +617,7 @@ function ItemRow({
             onError={onError}
             depth={depth + 1}
             pending={pendingTicks}
+            queued={queued}
             onTick={onTick}
           />
         </div>

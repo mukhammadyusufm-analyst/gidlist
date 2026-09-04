@@ -19,9 +19,12 @@
  *
  * Everything else goes straight to the network and is not touched.
  *
- * When real offline support is wanted — filling in a checklist in a basement
- * and syncing on the way out — that is a queue of pending writes in IndexedDB,
- * not a response cache, and it belongs with the Expo work rather than here.
+ * The queue of pending writes that makes a basement work — ticking with no
+ * signal and syncing on the way out — was built, and this file was right that
+ * it belongs in IndexedDB rather than in a response cache. It lives in
+ * src/lib/offline/queue.ts and drains from the page, because Server Actions
+ * need a React runtime that a service worker does not have. It is NOT here,
+ * and nothing about the rule above changed.
  */
 
 const CACHE = 'gidlist-shell-v1';

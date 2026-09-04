@@ -11,6 +11,10 @@ import type { Messages } from '@app/core';
 export const en = {
   // --- common -----------------------------------------------------------
   'common.save': 'Save',
+  'offline.waiting': '{count} waiting to sync',
+  'offline.syncing': 'Syncing…',
+  'offline.noConnection': 'No connection',
+  'fill.offlineUnavailable': 'Could not reach the server. Check your connection and try again.',
   'common.reset': 'Reset',
   'common.clear': 'Clear',
   'date.choose': 'Choose a date',

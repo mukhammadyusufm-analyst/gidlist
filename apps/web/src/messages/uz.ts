@@ -12,6 +12,10 @@ import type { Messages } from '@app/core';
  */
 export const uz = {
   'common.save': 'Saqlash',
+  'offline.waiting': '{count} ta yuborilishi kutilmoqda',
+  'offline.syncing': 'Yuborilmoqda…',
+  'offline.noConnection': 'Aloqa yoʻq',
+  'fill.offlineUnavailable': 'Serverga ulanib boʻlmadi. Aloqani tekshiring va qayta urining.',
   'common.reset': 'Tiklash',
   'common.clear': 'Tozalash',
   'date.choose': 'Sanani tanlang',

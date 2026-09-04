@@ -8,6 +8,10 @@ import type { Messages } from '@app/core';
  */
 export const ru = {
   'common.save': 'Сохранить',
+  'offline.waiting': '{count} ожидает отправки',
+  'offline.syncing': 'Отправка…',
+  'offline.noConnection': 'Нет соединения',
+  'fill.offlineUnavailable': 'Не удалось связаться с сервером. Проверьте соединение и попробуйте снова.',
   'common.reset': 'Сбросить',
   'common.clear': 'Очистить',
   'date.choose': 'Выберите дату',

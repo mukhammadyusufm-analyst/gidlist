@@ -4,6 +4,8 @@ import { CircleCheckBig, LogOut, ShieldCheck } from 'lucide-react';
 
 import { getUser } from '@/lib/supabase/server';
 import { getMyProfile } from '@/lib/account/profile';
+import { OfflineProvider } from '@/components/offline/offline-provider';
+import { OfflineIndicator } from '@/components/offline/offline-indicator';
 import { signOut } from '@/lib/auth/actions';
 import { getAvailableLocales, getTranslations } from '@/lib/i18n/server';
 import { hasAnyCapability } from '@/lib/platform/access';
@@ -42,6 +44,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const displayName = profile?.full_name?.trim() || user.email;
 
   return (
+    // Wrapped here rather than around the fill sheet alone, so a tick made in a
+    // basement is still flushed when the person comes back and lands on any
+    // page — the queue would otherwise only drain if they happened to reopen
+    // the same checklist.
+    <OfflineProvider userId={user.id}>
     <div className="flex min-h-dvh flex-col">
       {/* Sticky, translucent and blurred: on a phone the header stays reachable
           while scrolling a long checklist, and the blur keeps it legible over
@@ -69,6 +76,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
                 <span className="sr-only">{t('admin.title')}</span>
               </Link>
             ) : null}
+
+            {/* Before the theme and language controls, because it is the only
+                thing here that is ever urgent. */}
+            <OfflineIndicator />
 
             <ThemeToggle current={theme} />
             <LanguageSwitcher locales={locales} />
@@ -119,5 +130,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
           work out what "today" means where the user actually is. */}
       <TimezoneProbe current={timezone} />
     </div>
+    </OfflineProvider>
   );
 }
