@@ -326,7 +326,25 @@ $$;
 -- rather than the view owner's, which is the difference between a view that
 -- respects RLS and one that quietly bypasses it.
 -- -----------------------------------------------------------------------------
-drop table if exists public.unlimited_accounts;
+-- Dropped only if it is still a TABLE, which is what makes this migration safe
+-- to run twice. `drop table if exists` does not skip a view — it refuses with
+-- "is not a table", so a second run of the original version failed here and
+-- rolled the whole transaction back. `drop view if exists` has the same problem
+-- in reverse, so neither can be used blind; the catalogue is asked instead.
+do $$
+begin
+  if exists (
+    select 1
+      from pg_class c
+      join pg_namespace n on n.oid = c.relnamespace
+     where n.nspname = 'public'
+       and c.relname = 'unlimited_accounts'
+       and c.relkind = 'r'
+  ) then
+    drop table public.unlimited_accounts;
+  end if;
+end;
+$$;
 
 create or replace view public.unlimited_accounts
 with (security_invoker = true) as
