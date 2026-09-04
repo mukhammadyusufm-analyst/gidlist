@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useState, useTransition } from 'react';
+import { useActionState, useOptimistic, useState, useTransition } from 'react';
 import { Check, Lock, MessageSquarePlus, Paperclip, Send } from 'lucide-react';
 
 import {
@@ -23,13 +23,33 @@ const initialState: ActionState = {};
 
 type GroupWithAnswers = ChecklistGroup & { items: AnsweredItem[] };
 
+/**
+ * Ticks the person has just made, which the server has not confirmed yet.
+ *
+ * Keyed by answer id. `from` is kept as well as `to` so the running total stays
+ * right when somebody taps the same box twice before either request lands —
+ * without it, tick-then-untick would subtract one from a count that was never
+ * incremented.
+ */
+type PendingTicks = Map<string, { from: boolean; to: boolean }>;
+
+/** Whether a box should look ticked: what the person did, else what the server says. */
+function isTicked(item: AnsweredItem, pending: PendingTicks): boolean {
+  const id = item.answer?.id;
+  const optimistic = id ? pending.get(id) : undefined;
+  return optimistic ? optimistic.to : (item.answer?.checked ?? false);
+}
+
 /** Counts every level, not just the top — a section is only done when its sub-tasks are. */
-function countProgress(items: AnsweredItem[]): { done: number; total: number } {
+function countProgress(
+  items: AnsweredItem[],
+  pending: PendingTicks,
+): { done: number; total: number } {
   return items.reduce(
     (acc, item) => {
-      const child = countProgress(item.children);
+      const child = countProgress(item.children, pending);
       return {
-        done: acc.done + (item.answer?.checked ? 1 : 0) + child.done,
+        done: acc.done + (isTicked(item, pending) ? 1 : 0) + child.done,
         total: acc.total + 1 + child.total,
       };
     },
@@ -56,7 +76,43 @@ export function FillSheet({
   const [error, setError] = useState<string | null>(null);
   const { t } = useT();
 
-  const remaining = totalItems - checkedItems;
+  /*
+   * TICKING HAS TO BE INSTANT, AND UNTIL NOW IT WAS NOT.
+   *
+   * `checked` came straight from the server, so a tap did nothing visible until
+   * the action returned and the page re-rendered — up to two seconds on a cold
+   * function (item 2f). On a phone in a warehouse that is indistinguishable
+   * from the app having ignored you, and the second tap it invites *un*-ticks
+   * the item the first one ticked.
+   *
+   * One optimistic map for the whole sheet rather than a flag inside each row,
+   * because the box is not the only thing that has to move: the ring at the
+   * top and the count on each section are all derived from the same answers.
+   * Making only the checkbox instant would have swapped one visible lag for a
+   * subtler one — a ticked box beside a counter still reading the old number.
+   *
+   * React discards this the moment the transition settles, at which point the
+   * server props are the truth. So a failed write needs no rollback code: the
+   * box returns to where it was, and `onError` says why.
+   */
+  const [pendingTicks, addPendingTick] = useOptimistic<
+    PendingTicks,
+    { id: string; from: boolean; to: boolean }
+  >(new Map(), (current, change) => {
+    const next = new Map(current);
+    // Keep the ORIGINAL `from` on a second tap of the same box, so the running
+    // total is measured against what the server holds, not against the guess.
+    next.set(change.id, { from: current.get(change.id)?.from ?? change.from, to: change.to });
+    return next;
+  });
+
+  const pendingDelta = [...pendingTicks.values()].reduce(
+    (sum, { from, to }) => sum + (to ? 1 : 0) - (from ? 1 : 0),
+    0,
+  );
+
+  const shownChecked = Math.min(Math.max(checkedItems + pendingDelta, 0), totalItems);
+  const remaining = totalItems - shownChecked;
 
   return (
     <div className="space-y-4">
@@ -65,17 +121,17 @@ export function FillSheet({
           is left, and burying that at the bottom means scrolling to find it. */}
       <div className="sticky top-14 z-20 -mx-4 border-y border-[var(--color-border)] bg-[var(--color-background)]/90 px-4 py-2.5 backdrop-blur-md sm:mx-0 sm:rounded-xl sm:border">
         <div className="flex items-center gap-3">
-          <ProgressRing value={checkedItems} total={totalItems} />
+          <ProgressRing value={shownChecked} total={totalItems} />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium">
-              {t('fill.ticked', { done: checkedItems, total: totalItems })}
+              {t('fill.ticked', { done: shownChecked, total: totalItems })}
             </p>
             <ProgressBar
               className="mt-1.5"
-              value={checkedItems}
+              value={shownChecked}
               total={totalItems}
               tone={remaining === 0 ? 'success' : 'primary'}
-              label={t('fill.ticked', { done: checkedItems, total: totalItems })}
+              label={t('fill.ticked', { done: shownChecked, total: totalItems })}
             />
           </div>
         </div>
@@ -85,7 +141,7 @@ export function FillSheet({
       {submitState.formError ? <FormNotice kind="error">{submitState.formError}</FormNotice> : null}
 
       {groups.map((group) => {
-        const progress = countProgress(group.items);
+        const progress = countProgress(group.items, pendingTicks);
         const complete = progress.total > 0 && progress.done === progress.total;
 
         return (
@@ -109,7 +165,14 @@ export function FillSheet({
             </header>
 
             <div className="divide-y divide-[var(--color-border)]">
-              <ItemList items={group.items} readOnly={readOnly} onError={setError} depth={0} />
+              <ItemList
+                items={group.items}
+                readOnly={readOnly}
+                onError={setError}
+                depth={0}
+                pending={pendingTicks}
+                onTick={addPendingTick}
+              />
             </div>
           </section>
         );
@@ -146,21 +209,37 @@ export function FillSheet({
   );
 }
 
+/** What every row needs to show and record an unconfirmed tick. */
+type TickState = {
+  pending: PendingTicks;
+  onTick: (change: { id: string; from: boolean; to: boolean }) => void;
+};
+
 function ItemList({
   items,
   readOnly,
   onError,
   depth,
+  pending,
+  onTick,
 }: {
   items: AnsweredItem[];
   readOnly: boolean;
   onError: (message: string | null) => void;
   depth: number;
-}) {
+} & TickState) {
   return (
     <>
       {items.map((item) => (
-        <ItemRow key={item.id} item={item} readOnly={readOnly} onError={onError} depth={depth} />
+        <ItemRow
+          key={item.id}
+          item={item}
+          readOnly={readOnly}
+          onError={onError}
+          depth={depth}
+          pending={pending}
+          onTick={onTick}
+        />
       ))}
     </>
   );
@@ -171,18 +250,22 @@ function ItemRow({
   readOnly,
   onError,
   depth,
+  pending: pendingTicks,
+  onTick,
 }: {
   item: AnsweredItem;
   readOnly: boolean;
   onError: (message: string | null) => void;
   depth: number;
-}) {
+} & TickState) {
   const [pending, startTransition] = useTransition();
   const [showComment, setShowComment] = useState(Boolean(item.answer?.comment));
   const { t } = useT();
 
   const hasChildren = item.children.length > 0;
-  const checked = item.answer?.checked ?? false;
+  // The optimistic view, so a tap moves the box now rather than after the
+  // round trip. Falls back to the server's answer once the write settles.
+  const checked = isTicked(item, pendingTicks);
   const answerId = item.answer?.id;
   const interactive = Boolean(answerId) && !readOnly && !hasChildren;
 
@@ -246,6 +329,18 @@ function ItemRow({
       let position: TickPosition | undefined;
 
       /*
+       * Move the box now — but NOT when a location is enforced.
+       *
+       * For an ordinary item the tick is all but certain to succeed, so showing
+       * it immediately is honest. An item that refuses outside its radius is
+       * different: the reading below genuinely decides the outcome, and a tick
+       * that appears and then vanishes is a worse answer than one that waits
+       * the second or two the GPS takes. So the enforced case gets its
+       * optimistic update after the position is in hand, not before.
+       */
+      if (!locationRequired) onTick({ id: answerId, from: checked, to: !checked });
+
+      /*
        * Only when ticking, and only when the item asks for it. Reading a
        * position to *un*-tick something would prompt for permission to record
        * where somebody was when they changed their mind.
@@ -267,6 +362,9 @@ function ItemRow({
           // Not required: proceed with no reading rather than stopping the work.
         }
       }
+
+      // The enforced case, now that the reading has cleared. See above.
+      if (locationRequired) onTick({ id: answerId, from: checked, to: !checked });
 
       const result = await setItemChecked(answerId, !checked, position);
       if (result.error) onError(result.error);
@@ -431,6 +529,8 @@ function ItemRow({
             readOnly={readOnly}
             onError={onError}
             depth={depth + 1}
+            pending={pendingTicks}
+            onTick={onTick}
           />
         </div>
       ) : null}
