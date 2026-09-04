@@ -55,6 +55,26 @@ export const maxDuration = 60;
 const COPY_BATCH = 20;
 const PRUNE_BATCH = 200;
 
+/**
+ * Stop copying at 45 seconds and finish tidily.
+ *
+ * THE BUG THIS FIXES IS NOT SLOWNESS, IT IS SILENCE. `maxDuration` kills the
+ * function at 60 seconds wherever it happens to be, which means the heartbeat
+ * at the end never runs — and a job that does useful work every night but never
+ * reports it reads as *stale* to `check_job_health` after 26 hours. The
+ * operator then gets an alert saying the backup has stopped, about a backup
+ * that is running perfectly. Item 15b is entirely about how expensive that
+ * particular lie is.
+ *
+ * So the run now yields before the platform takes the decision away: whatever
+ * it managed is recorded, the heartbeat lands, and the response says it stopped
+ * early rather than pretending it finished the batch.
+ *
+ * 45 rather than 55, because the check happens *between* files and the file it
+ * declines to start might have been a 5 MB photograph over a slow link.
+ */
+const TIME_BUDGET_MS = 45_000;
+
 export async function GET(request: NextRequest) {
   /*
    * This runs unattended at four in the morning and the only reader is someone
@@ -100,8 +120,9 @@ async function backup(request: NextRequest) {
     );
   }
 
+  const startedAt = Date.now();
   const pruned = await prune(supabase, r2);
-  const copied = await copy(supabase, r2);
+  const copied = await copy(supabase, r2, startedAt);
 
   /*
    * Tell the watcher this ran. `check_job_health()` reads pg_cron's own
@@ -121,7 +142,14 @@ async function backup(request: NextRequest) {
     console.error('[storage-backup] could not record the heartbeat:', heartbeatError.message);
   }
 
-  return NextResponse.json({ copied: copied.copied, failed: copied.failed, pruned });
+  return NextResponse.json({
+    copied: copied.copied,
+    failed: copied.failed,
+    pruned,
+    // Says which of the two reasons the run ended, so a short night is
+    // distinguishable from a finished one without reading logs.
+    stoppedEarly: copied.stoppedEarly,
+  });
 }
 
 /**
@@ -188,19 +216,21 @@ async function prune(
 async function copy(
   supabase: NonNullable<ReturnType<typeof createAdminClient>>,
   r2: NonNullable<ReturnType<typeof createR2>>,
-): Promise<{ copied: number; failed: number }> {
+  startedAt: number,
+): Promise<{ copied: number; failed: number; stoppedEarly: boolean }> {
   const { data: pending, error } = await supabase.rpc('storage_backup_pending', {
     p_limit: COPY_BATCH,
   });
 
   if (error) {
     console.error('[storage-backup] could not list pending objects:', error.message);
-    return { copied: 0, failed: 0 };
+    return { copied: 0, failed: 0, stoppedEarly: false };
   }
-  if (!pending?.length) return { copied: 0, failed: 0 };
+  if (!pending?.length) return { copied: 0, failed: 0, stoppedEarly: false };
 
   let copied = 0;
   let failed = 0;
+  let stoppedEarly = false;
 
   /*
    * Sequential, not Promise.all. Twenty five-megabyte files in flight at once
@@ -209,6 +239,16 @@ async function copy(
    * is waiting on this at four in the morning.
    */
   for (const object of pending) {
+    // Checked before starting a file, never during one: a half-written object
+    // in the destination is worse than a file left for tomorrow.
+    if (Date.now() - startedAt > TIME_BUDGET_MS) {
+      stoppedEarly = true;
+      console.warn(
+        `[storage-backup] stopping at ${copied} of ${pending.length} to stay inside the time limit; the rest go next run`,
+      );
+      break;
+    }
+
     try {
       const { data: file, error: downloadError } = await supabase.storage
         .from(object.bucket_id)
@@ -253,5 +293,5 @@ async function copy(
     }
   }
 
-  return { copied, failed };
+  return { copied, failed, stoppedEarly };
 }
