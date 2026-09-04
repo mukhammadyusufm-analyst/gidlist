@@ -1088,6 +1088,20 @@ export type Database = {
         Args: { p_bucket: string; p_path: string; p_error: string; p_size: number };
         Returns: undefined;
       };
+      /**
+       * Phase B of the member hierarchy. `manages_anyone` answers "is this
+       * person a supervisor here at all", for wording; `my_report_emails`
+       * answers "which rows may they act on", for which controls to draw.
+       * Neither decides anything — RLS and `set_submission_void` do.
+       */
+      manages_anyone: {
+        Args: { p_board_id: string };
+        Returns: boolean;
+      };
+      my_report_emails: {
+        Args: { p_board_id: string };
+        Returns: string[];
+      };
       compliance_assignees: {
         Args: { p_board_id: string; p_from: string; p_to: string };
         Returns: { email: string }[];

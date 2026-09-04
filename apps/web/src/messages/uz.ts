@@ -464,6 +464,7 @@ export const uz = {
   'compliance.next': 'Keyingi',
   'compliance.pageOf': '{pages} sahifadan {page}-si',
   'compliance.ownRecordOnly': 'Siz faqat oʻz toʻldirishlaringizni koʻrmoqdasiz.',
+  'compliance.teamRecords': 'Siz oʻz va jamoangiz toʻldirishlarini koʻrmoqdasiz.',
 
   'status.done': 'Bajarilgan',
   'status.draft': 'Jarayonda',

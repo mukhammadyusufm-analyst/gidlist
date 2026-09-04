@@ -458,6 +458,7 @@ export const ru = {
   'compliance.next': 'Далее',
   'compliance.pageOf': 'Страница {page} из {pages}',
   'compliance.ownRecordOnly': 'Показаны только ваши заполнения.',
+  'compliance.teamRecords': 'Показаны ваши заполнения и заполнения вашей команды.',
 
   'status.done': 'Выполнено',
   'status.draft': 'В процессе',

@@ -462,6 +462,7 @@ export const en = {
   'compliance.next': 'Next',
   'compliance.pageOf': 'Page {page} of {pages}',
   'compliance.ownRecordOnly': 'You are seeing your own submissions.',
+  'compliance.teamRecords': 'You are seeing your own submissions and your team’s.',
 
   // --- statuses ---------------------------------------------------------
   'status.done': 'Done',

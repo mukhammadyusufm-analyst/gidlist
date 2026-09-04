@@ -5,7 +5,8 @@ import { getBoardBySlug, getMyRole } from '@/lib/boards/queries';
 import { getComplianceData } from '@/lib/compliance/queries';
 import { getToday } from '@/lib/timezone/server';
 import { getTranslations } from '@/lib/i18n/server';
-import { addDays, canGovern, isIsoDate } from '@app/core';
+import { addDays, canEditContent, canGovern, isIsoDate } from '@app/core';
+import { createClient } from '@/lib/supabase/server';
 import type { SubmissionStatus } from '@/lib/supabase/database.types';
 import { StatTiles } from '@/components/compliance/stat-tiles';
 import { CompletionChart } from '@/components/compliance/completion-chart';
@@ -60,15 +61,47 @@ export default async function CompliancePage({
 
   const { t } = await getTranslations();
 
-  const data = await getComplianceData(board.id, {
-    from,
-    to,
-    checklistId: sp.checklist,
-    status,
-    assigneeEmail: sp.assignee,
-    filledBy: sp.filledBy,
-    page: Number(sp.page) || 1,
-  });
+  /*
+   * Who this person may act on, which is not the same as what they can see.
+   *
+   * Asked only when it can change the answer. An editor or above already sees
+   * the whole space and can void anything in it, so the reporting lines add
+   * nothing and the round trip would be wasted on the common case.
+   */
+  const governs = canGovern(role);
+  const supabase = await createClient();
+  const { data: reportEmails } = canEditContent(role)
+    ? { data: null }
+    : await supabase.rpc('my_report_emails', { p_board_id: board.id });
+
+  const manageable = new Set((reportEmails ?? []).filter(Boolean));
+
+  const [data] = await Promise.all([
+    getComplianceData(board.id, {
+      from,
+      to,
+      checklistId: sp.checklist,
+      status,
+      assigneeEmail: sp.assignee,
+      filledBy: sp.filledBy,
+      page: Number(sp.page) || 1,
+    }),
+  ]);
+
+  /*
+   * Say whose records these are.
+   *
+   * There are three answers now and the page gave none of them. `ownRecordOnly`
+   * was written for this and then never rendered anywhere — a string sitting in
+   * three catalogues that no screen had ever shown. A member looking at a
+   * report of two rows had nothing to tell them the other forty were simply not
+   * theirs to see, which reads as missing data rather than as a boundary.
+   */
+  const scope = canEditContent(role)
+    ? null
+    : manageable.size > 0
+      ? t('compliance.teamRecords')
+      : t('compliance.ownRecordOnly');
 
   return (
     <div className="space-y-6">
@@ -77,6 +110,11 @@ export default async function CompliancePage({
         <p className="mt-1 text-sm text-[var(--color-muted-foreground)]">
           {t('compliance.intro')}
         </p>
+        {scope ? (
+          <p className="mt-2 inline-block rounded-md bg-[var(--color-muted)] px-2 py-1 text-xs text-[var(--color-muted-foreground)]">
+            {scope}
+          </p>
+        ) : null}
       </div>
 
       <FilterBar
@@ -107,11 +145,19 @@ export default async function CompliancePage({
         {/* Voiding is governance, not content: deciding a missed check should
             not count against the company is the kind of thing somebody may
             later be asked to justify. `set_submission_void` checks the same
-            thing, so hiding the control is a courtesy rather than the rule. */}
+            thing, so hiding the control is a courtesy rather than the rule.
+
+            Two ways to hold it now. An admin governs the whole space, so
+            `canVoid` is blanket. A supervisor may void their own reports'
+            records and nothing else — including, deliberately, not their own:
+            nobody is their own manager, and the database refuses it. Passing
+            the set rather than a boolean is what stops the control appearing
+            on a row where it would only fail. */}
         <SubmissionsTable
           rows={data.rows}
           slug={slug}
-          canVoid={canGovern(role)}
+          canVoid={governs}
+          voidableEmails={manageable}
           checklists={data.checklists}
           assignees={data.assignees}
           submitters={data.submitters}

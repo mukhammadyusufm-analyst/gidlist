@@ -31,6 +31,7 @@ export function SubmissionsTable({
   rows,
   slug,
   canVoid,
+  voidableEmails,
   checklists,
   assignees,
   submitters,
@@ -41,8 +42,17 @@ export function SubmissionsTable({
 }: {
   rows: ComplianceRow[];
   slug: string;
-  /** Governance roles only. The database refuses everyone else regardless. */
+  /** An admin, who governs the whole space. The database refuses everyone else regardless. */
   canVoid: boolean;
+  /**
+   * Assignees this viewer supervises, for the case an admin does not cover.
+   *
+   * A manager may void their reports' records and nothing else — not a
+   * colleague's, and not their own, since nobody is their own manager. Given as
+   * a set rather than a flag so the control is drawn only where it would work;
+   * `set_submission_void` refuses the rest whatever this says.
+   */
+  voidableEmails?: ReadonlySet<string>;
   checklists: { id: string; title: string }[];
   assignees: string[];
   submitters: string[];
@@ -216,7 +226,7 @@ export function SubmissionsTable({
                 <td className="px-4 py-2.5">
                   <div className="flex flex-wrap items-center gap-2">
                     <StatusBadge status={row.status} voided={row.voided_at !== null} />
-                    {canVoid ? (
+                    {canVoid || (row.assignee_email ? voidableEmails?.has(row.assignee_email) : false) ? (
                       <VoidControl
                         submissionId={row.id}
                         voidedAt={row.voided_at}
