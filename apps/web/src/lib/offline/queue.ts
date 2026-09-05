@@ -65,7 +65,17 @@ export type PendingRecord = {
 };
 
 const DB_NAME = 'gidlist-offline';
-const DB_VERSION = 1;
+/**
+ * MUST MATCH `snapshot.ts`, which shares this database.
+ *
+ * `indexedDB.open(name, n)` throws when `n` is lower than the version already
+ * on disk. So leaving this at 1 after snapshots took it to 2 would not degrade
+ * gracefully — it would throw on every call here, silently disabling the write
+ * queue on exactly the devices that had used the app before. Both files declare
+ * 2, and both create both stores, so whichever runs first leaves a complete
+ * database behind.
+ */
+const DB_VERSION = 2;
 const STORE = 'pending';
 
 /** Every operation has exactly one slot. See the note on coalescing above. */
@@ -81,6 +91,12 @@ function openDb(): Promise<IDBDatabase> {
       const db = request.result;
       if (!db.objectStoreNames.contains(STORE)) {
         db.createObjectStore(STORE, { keyPath: 'id' });
+      }
+      // Created here too, so whichever module opens the database first leaves
+      // it complete. An upgrade runs once; the other module would never get a
+      // second chance to add its store.
+      if (!db.objectStoreNames.contains('snapshots')) {
+        db.createObjectStore('snapshots', { keyPath: 'submissionId' });
       }
     };
 

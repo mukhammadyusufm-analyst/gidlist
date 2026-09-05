@@ -6,13 +6,13 @@ import { getUser } from '@/lib/supabase/server';
 import { getMyProfile } from '@/lib/account/profile';
 import { OfflineProvider } from '@/components/offline/offline-provider';
 import { OfflineIndicator } from '@/components/offline/offline-indicator';
+import { SignOutButton } from '@/components/offline/sign-out-button';
 import { signOut } from '@/lib/auth/actions';
 import { getAvailableLocales, getTranslations } from '@/lib/i18n/server';
 import { hasAnyCapability } from '@/lib/platform/access';
 import { getTheme } from '@/lib/theme/server';
 import { getTimezone } from '@/lib/timezone/server';
 import { TimezoneProbe } from '@/components/timezone-probe';
-import { Button } from '@/components/ui/button';
 import { LanguageSwitcher } from '@/components/i18n/language-switcher';
 import { Avatar } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
@@ -104,22 +104,22 @@ export default async function DashboardLayout({ children }: { children: React.Re
               <span className="sr-only">{t('account.link')}</span>
             </Link>
 
-            <form action={signOut}>
-              {/* Outlined with a card background rather than ghost, so it reads
-                  as the same kind of control as the theme toggle and language
-                  picker next to it. A bare ghost button looked like a different
-                  class of thing sitting in the same row. */}
-              <Button
-                type="submit"
-                variant="outline"
-                size="icon"
-                title={t('auth.signOut')}
-                className="bg-[var(--color-card)]"
-              >
-                <LogOut className="size-4" aria-hidden="true" />
-                <span className="sr-only">{t('auth.signOut')}</span>
-              </Button>
-            </form>
+            {/* Wraps the same action, and destroys the device's own copies
+                first — the checklists and the write queue in IndexedDB, which
+                have no session attached. Keying them by user id is half of what
+                makes an offline cache safe on a shared phone; wiping them on
+                the way out is the other half. It warns once when something is
+                still unsent. Styling matches the theme toggle and language
+                picker beside it, as before: a bare ghost button read as a
+                different class of thing in the same row. */}
+            <SignOutButton
+              action={signOut}
+              label={t('auth.signOut')}
+              className="flex size-9 items-center justify-center rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] text-[var(--color-muted-foreground)] transition-colors hover:bg-[var(--color-accent)] hover:text-[var(--color-foreground)]"
+            >
+              <LogOut className="size-4" aria-hidden="true" />
+              <span className="sr-only">{t('auth.signOut')}</span>
+            </SignOutButton>
           </div>
         </div>
       </header>

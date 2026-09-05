@@ -5,8 +5,10 @@ import type { Metadata } from 'next';
 import { getBoardBySlug } from '@/lib/boards/queries';
 import { getSubmissionDetail } from '@/lib/submissions/queries';
 import { getTranslations } from '@/lib/i18n/server';
+import { getUser } from '@/lib/supabase/server';
 import { StatusBadge } from '@/components/submissions/status-badge';
 import { FillSheet } from '@/components/submissions/fill-sheet';
+import { SnapshotRecorder } from '@/components/offline/snapshot-recorder';
 import { Banner } from '@/components/ui/banner';
 
 // Translated, so the browser tab matches the language the app is being read in.
@@ -35,6 +37,9 @@ export default async function FillPage({
   if (!board || !detail || detail.submission.checklist_id === null) notFound();
 
   const { submission, checklist, groups, totalItems, checkedItems } = detail;
+
+  // Memoised, so this is the same round trip the layout above already made.
+  const user = await getUser();
   const readOnly = submission.status === 'done';
   const { t, locale } = await getTranslations();
 
@@ -95,6 +100,26 @@ export default async function FillPage({
         totalItems={totalItems}
         checkedItems={checkedItems}
       />
+
+      {/* Renders nothing. Keeps a copy of this checklist on the device so it
+          can be opened with no signal — the half the write queue could not
+          provide, since queueing ticks only helps somebody who already had the
+          page open. Read-only previews are excluded: there is nothing to fill
+          in offline. */}
+      {!readOnly && user ? (
+        <SnapshotRecorder
+          snapshot={{
+            submissionId: submission.id,
+            userId: user.id,
+            slug,
+            checklistTitle: checklist.title,
+            dueDate: submission.due_date,
+            groups,
+            totalItems,
+            checkedItems,
+          }}
+        />
+      ) : null}
     </div>
   );
 }

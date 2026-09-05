@@ -27,7 +27,8 @@
  * and nothing about the rule above changed.
  */
 
-const CACHE = 'gidlist-shell-v1';
+const CACHE = 'gidlist-shell-v2';
+const ASSETS = 'gidlist-assets-v1';
 const OFFLINE_URL = '/offline';
 
 self.addEventListener('install', (event) => {
@@ -49,7 +50,11 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key))))
+      .then((keys) =>
+        Promise.all(
+          keys.filter((key) => key !== CACHE && key !== ASSETS).map((key) => caches.delete(key)),
+        ),
+      )
       /*
        * Navigation preload, and it is the difference between this worker being
        * free and being the slowest thing on the page.
@@ -78,9 +83,44 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const request = event.request;
 
-  // Only ever page navigations. Not API calls, not RSC payloads, not images —
-  // those are where user data lives, and they are left entirely alone.
-  if (request.method !== 'GET' || request.mode !== 'navigate') return;
+  if (request.method !== 'GET') return;
+
+  /*
+   * BUILD OUTPUT IS CACHED. USER DATA IS STILL NOT.
+   *
+   * The rule at the top of this file — a worker cache has no session, so
+   * nothing user-scoped may go in it — is unchanged. What goes in here is
+   * /_next/static/*: JavaScript and CSS produced by the build, byte-identical
+   * for every visitor, containing no rows and no names. That is a different
+   * kind of thing from a checklist, and treating them alike would be repeating
+   * the rule rather than applying it.
+   *
+   * It has to be cached for one specific reason: without it the offline page
+   * cannot boot React, so it cannot read the checklists kept in IndexedDB, and
+   * the whole offline feature is a static apology. Cache-first is safe because
+   * these paths carry a content hash — changed file, changed URL — so a stale
+   * entry can never be served for new code.
+   */
+  if (new URL(request.url).pathname.startsWith('/_next/static/')) {
+    event.respondWith(
+      caches.match(request).then(
+        (hit) =>
+          hit ??
+          fetch(request).then((response) => {
+            if (response.ok) {
+              const copy = response.clone();
+              caches.open(ASSETS).then((cache) => cache.put(request, copy));
+            }
+            return response;
+          }),
+      ),
+    );
+    return;
+  }
+
+  // Everything else: only page navigations. Not API calls, not RSC payloads,
+  // not images — those are where user data lives, and they are left alone.
+  if (request.mode !== 'navigate') return;
 
   event.respondWith(
     (async () => {
