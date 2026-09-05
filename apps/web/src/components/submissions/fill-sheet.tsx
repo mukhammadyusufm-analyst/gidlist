@@ -675,8 +675,16 @@ function ItemRow({
     if ((item.answer?.comment ?? '') === value.trim()) return;
 
     startTransition(async () => {
-      const result = await saveComment(answerId, value);
-      if (result.error) onError(result.error);
+      try {
+        const result = await saveComment(answerId, value);
+        if (result.error) onError(result.error);
+      } catch {
+        // Same shape as a tick: unreachable, not refused. A note written in a
+        // basement is worth keeping. Without this catch the failure reached
+        // Next's error screen and took the comment with it.
+        if (offline) await offline.enqueue({ kind: 'comment', answerId, comment: value });
+        else onError(t('fill.offlineUnavailable'));
+      }
     });
   }
 
@@ -887,29 +895,54 @@ function EvidenceControl({
     data.set('kind', kind);
     data.set('file', file);
 
+    /*
+     * KEEP THE FILE, NOT AN APOLOGY.
+     *
+     * The photograph is the evidence. It exists, on this device, taken where
+     * and when the work was done — a connection is the only thing missing.
+     * Discarding it because the upload failed would mean asking somebody to
+     * walk back into the freezer and take it again, which is the exact thing
+     * this feature exists to prevent.
+     */
+    const keep = async () => {
+      if (offline) {
+        // IndexedDB stores Blobs by structured clone, so the queue holds the
+        // actual bytes rather than a reference to a file picker that will not
+        // exist in five minutes.
+        await offline.enqueue({ kind: 'evidence', answerId, attachment: kind, file });
+      } else {
+        onError(t('fill.offlineUnavailable'));
+      }
+    };
+
     startTransition(async () => {
+      /*
+       * ASKED BEFORE ATTEMPTING, WHICH TICKING DOES NOT NEED TO DO.
+       *
+       * A failed tick throws and is caught. A failed *upload* does not behave
+       * the same way: it carries a multi-megabyte body, and the failure
+       * escaped the try/catch below and reached Next's error screen — so
+       * somebody who had just photographed a fridge with no signal was told
+       * "This page couldn't load" and lost the photograph.
+       *
+       * So an upload is never started unless there is something to start it
+       * over. The probe costs one HEAD request against a static file, which is
+       * nothing beside the megabytes it is deciding whether to send — the same
+       * check would be too expensive on every tick, which is why ticking still
+       * relies on the catch.
+       */
+      if (!(await reachable())) {
+        await keep();
+        return;
+      }
+
       try {
         const result = await uploadEvidence(data);
         if (result.error) onError(result.error);
       } catch {
-        /*
-         * KEEP THE FILE, NOT AN APOLOGY.
-         *
-         * The photograph is the evidence. It exists, on this device, taken at
-         * the moment the work was done — and a connection is the one thing
-         * that is missing. Discarding it because the upload failed would mean
-         * asking somebody to walk back to the freezer and photograph it again,
-         * which is exactly the thing this feature exists to avoid.
-         *
-         * IndexedDB stores Blobs by structured clone, so what goes in the
-         * queue is the actual bytes rather than a reference to a file picker
-         * that will not exist in five minutes.
-         */
-        if (offline) {
-          await offline.enqueue({ kind: 'evidence', answerId, attachment: kind, file });
-        } else {
-          onError(t('fill.offlineUnavailable'));
-        }
+        // The connection died between the probe and the upload. Rare, and the
+        // file still matters.
+        await keep();
       }
     });
   }
@@ -921,8 +954,21 @@ function EvidenceControl({
     data.set('kind', kind);
 
     startTransition(async () => {
-      const result = await removeEvidence(data);
-      if (result.error) onError(result.error);
+      try {
+        const result = await removeEvidence(data);
+        if (result.error) onError(result.error);
+      } catch {
+        /*
+         * NOT QUEUED, and this one is a real decision rather than an omission.
+         *
+         * Deleting evidence is destructive and irreversible. Queueing it would
+         * mean a file disappearing hours later, from a checklist that may by
+         * then have been submitted with that file counted as present. Removing
+         * a photograph is the kind of thing somebody should do deliberately,
+         * with a connection, and be told about immediately if they cannot.
+         */
+        onError(t('fill.offlineUnavailable'));
+      }
     });
   }
 
