@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useMemo, useOptimistic, useState, useTransition } from 'react';
+import { useActionState, useMemo, useOptimistic, useRef, useState, useTransition } from 'react';
 import { Check, Lock, MessageSquarePlus, Paperclip, Send } from 'lucide-react';
 
 import {
@@ -67,6 +67,31 @@ function isTicked(item: AnsweredItem, pending: PendingTicks, queued: QueuedTicks
 /** Answer id to the value waiting to be sent. */
 type QueuedTicks = Map<string, boolean>;
 
+/**
+ * Is the server actually reachable — asked, not assumed.
+ *
+ * `navigator.onLine` only reports whether the device has a network interface
+ * up. It goes true the moment a phone leaves aeroplane mode, well before any
+ * request can complete, which is exactly when somebody presses submit. Trusting
+ * it produced the failure this exists to prevent.
+ *
+ * `manifest.webmanifest` is the probe because it is tiny, static, and excluded
+ * from the proxy matcher — so it costs no session lookup and no function
+ * invocation. Any response at all means the network is carrying traffic; only a
+ * throw means it is not. The status is deliberately ignored: a 404 would still
+ * prove the round trip worked.
+ */
+async function reachable(): Promise<boolean> {
+  if (typeof navigator !== 'undefined' && !navigator.onLine) return false;
+
+  try {
+    await fetch('/manifest.webmanifest', { method: 'HEAD', cache: 'no-store' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Counts every level, not just the top — a section is only done when its sub-tasks are. */
 function countProgress(
   items: AnsweredItem[],
@@ -103,6 +128,15 @@ export function FillSheet({
   const [submitState, submitAction] = useActionState(submitSubmission, initialState);
   const [error, setError] = useState<string | null>(null);
   const { t } = useT();
+
+  /**
+   * Marks the second pass through the submit handler.
+   *
+   * A ref rather than state, because `requestSubmit()` fires the handler again
+   * synchronously — a state update would not have landed by then, and the form
+   * would stop itself in a loop.
+   */
+  const verifiedRef = useRef(false);
 
   /*
    * TICKING HAS TO BE INSTANT, AND UNTIL NOW IT WAS NOT.
@@ -270,48 +304,62 @@ export function FillSheet({
           <form
             action={submitAction}
             /*
-             * Refuse to send with no connection, rather than letting it fail.
+             * TWO THINGS ARE CHECKED BEFORE THIS IS ALLOWED TO SEND, and both
+             * were found by filling a checklist in a basement.
              *
-             * Submitting is a Server Action, so offline the request throws
-             * before reaching any code that could explain itself — and Next
-             * answers a thrown action with its own error screen. Somebody who
-             * has just finished a checklist in a basement got "This page
-             * couldn't load" and no idea whether their work survived.
+             * (1) Is the server actually reachable. `navigator.onLine` is not
+             * an answer to that — it goes true the instant the radio comes back,
+             * before anything can get through, so submitting the moment signal
+             * returned still produced "This page couldn't load". A Server
+             * Action that throws is answered by Next's own error screen, and
+             * somebody who has just finished a checklist should never be shown
+             * it with no idea whether their work survived. So the connection is
+             * probed rather than assumed.
              *
-             * It is NOT queued, and that is deliberate rather than unfinished:
-             * submitting means "this is complete and I stand behind it", and a
-             * submission that quietly happens twenty minutes later carries a
-             * time nobody chose. The ticks are safe in the queue; only the act
-             * of sending waits for a connection.
+             * (2) Is the tick queue empty. Submitting goes straight to the
+             * server; a queued tick has not got there yet, so sending in
+             * between records the checklist as complete while items it claims
+             * are done are still unticked — and if one is then refused, the
+             * record is permanently wrong and nobody is told.
+             *
+             * Submitting is still NOT queued, deliberately: it means "this is
+             * complete and I stand behind it", and a submission that quietly
+             * happens twenty minutes later carries a time nobody chose. The
+             * ticks are safe; only the act of sending waits.
              */
             onSubmit={(event) => {
-              if (typeof navigator !== 'undefined' && !navigator.onLine) {
-                event.preventDefault();
-                setError(t('fill.submitNeedsConnection'));
+              /*
+               * ALWAYS PREVENTED FIRST, then re-submitted once the checks pass.
+               *
+               * `preventDefault` has to be called synchronously, and one of the
+               * checks is a network probe. So the form is stopped every time
+               * and `requestSubmit()` lets it through afterwards, with a ref
+               * marking the second pass so it is not stopped again.
+               */
+              if (verifiedRef.current) {
+                verifiedRef.current = false;
                 return;
               }
 
-              /*
-               * NOT WHILE TICKS ARE STILL IN THE QUEUE.
-               *
-               * Submitting goes straight to the server; a queued tick has not
-               * got there yet. Sending in between records the checklist as
-               * complete while items it claims are done are still unticked on
-               * the server — and if one of those is then refused, the record is
-               * permanently wrong in a way nobody is told about.
-               *
-               * Found by testing: a location-pinned item was ticked offline,
-               * the checklist was submitted the moment signal returned, and the
-               * tick was refused afterwards. The refusal was visible; the
-               * submission it had already invalidated was not.
-               *
-               * Waiting is a few seconds — the queue drains on reconnect — so
-               * this costs a message rather than a workflow.
-               */
-              if (offline && offline.pending.length > 0) {
-                event.preventDefault();
-                setError(t('fill.submitWaitForSync', { count: offline.pending.length }));
-              }
+              const form = event.currentTarget;
+              event.preventDefault();
+              setError(null);
+
+              void (async () => {
+                if (offline && offline.pending.length > 0) {
+                  setError(t('fill.submitWaitForSync', { count: offline.pending.length }));
+                  return;
+                }
+
+                if (!(await reachable())) {
+                  setError(t('fill.submitNeedsConnection'));
+                  return;
+                }
+
+                verifiedRef.current = true;
+                form.requestSubmit();
+              })();
+              return;
             }}
             className="space-y-2"
           >
