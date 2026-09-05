@@ -15,6 +15,7 @@ export const uz = {
   'offline.waiting': '{count} ta yuborilishi kutilmoqda',
   'fill.evidenceNeedsConnection': 'Bu band uchun rasm yoki fayl biriktirilishi kerak, buning uchun aloqa zarur. Aloqa tiklangach belgilang.',
   'fill.submitNeedsConnection': 'Yuborish uchun aloqa kerak. Belgilashlaringiz saqlandi va sinxronlanadi — aloqa tiklangach yuboring.',
+  'fill.submitWaitForSync': '{count} ta belgilash hali yuborilmoqda. Biroz kuting va soʻng yuboring.',
   'offline.rejected': '{count} ta oʻzgarish saqlanmadi',
   'offline.syncing': 'Yuborilmoqda…',
   'offline.noConnection': 'Aloqa yoʻq',

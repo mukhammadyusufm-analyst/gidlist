@@ -288,6 +288,29 @@ export function FillSheet({
               if (typeof navigator !== 'undefined' && !navigator.onLine) {
                 event.preventDefault();
                 setError(t('fill.submitNeedsConnection'));
+                return;
+              }
+
+              /*
+               * NOT WHILE TICKS ARE STILL IN THE QUEUE.
+               *
+               * Submitting goes straight to the server; a queued tick has not
+               * got there yet. Sending in between records the checklist as
+               * complete while items it claims are done are still unticked on
+               * the server — and if one of those is then refused, the record is
+               * permanently wrong in a way nobody is told about.
+               *
+               * Found by testing: a location-pinned item was ticked offline,
+               * the checklist was submitted the moment signal returned, and the
+               * tick was refused afterwards. The refusal was visible; the
+               * submission it had already invalidated was not.
+               *
+               * Waiting is a few seconds — the queue drains on reconnect — so
+               * this costs a message rather than a workflow.
+               */
+              if (offline && offline.pending.length > 0) {
+                event.preventDefault();
+                setError(t('fill.submitWaitForSync', { count: offline.pending.length }));
               }
             }}
             className="space-y-2"
@@ -532,7 +555,12 @@ function ItemRow({
           // lied. Queueing this would show it done and then lose it.
           onError(t('fill.evidenceNeedsConnection'));
         } else if (offline) {
-          await offline.enqueue({ kind: 'tick', answerId, checked: !checked });
+          // `position` goes with it. It was read moments ago, from GPS, which
+          // works with no network — and it is the only record of where this
+          // was actually done. Dropping it here was the bug that made a
+          // location-pinned item fail on sync with "must be ticked at its
+          // location", about a tick made in exactly the right place.
+          await offline.enqueue({ kind: 'tick', answerId, checked: !checked, position });
         } else {
           onError(t('fill.offlineUnavailable'));
         }

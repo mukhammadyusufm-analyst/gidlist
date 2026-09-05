@@ -14,6 +14,7 @@ export const en = {
   'offline.waiting': '{count} waiting to sync',
   'fill.evidenceNeedsConnection': 'This item needs a photo or file attached, which needs a connection. Tick it once you are back online.',
   'fill.submitNeedsConnection': 'Sending needs a connection. Your ticks are saved and will sync — send this once you are back online.',
+  'fill.submitWaitForSync': '{count} tick(s) are still being sent. Wait a moment, then submit.',
   'offline.rejected': '{count} change(s) could not be saved',
   'offline.syncing': 'Syncing…',
   'offline.noConnection': 'No connection',

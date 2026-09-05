@@ -138,7 +138,10 @@ export function OfflineProvider({
         try {
           const result =
             record.op.kind === 'tick'
-              ? await setItemChecked(record.op.answerId, record.op.checked)
+              ? // The position captured at tick time, carried through. Not
+                // re-read here: that would record where the person was when
+                // the signal returned, not where they did the work.
+                await setItemChecked(record.op.answerId, record.op.checked, record.op.position)
               : await saveComment(record.op.answerId, record.op.comment);
 
           if (result?.error) {

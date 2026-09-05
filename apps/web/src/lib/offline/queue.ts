@@ -38,7 +38,31 @@
  */
 
 export type PendingOp =
-  | { kind: 'tick'; answerId: string; checked: boolean }
+  | {
+      kind: 'tick';
+      answerId: string;
+      checked: boolean;
+      /**
+       * WHERE THE PERSON WAS WHEN THEY TICKED IT, and it must travel with the
+       * tick rather than be re-read at sync time.
+       *
+       * This was missing in the first version and produced exactly the failure
+       * it was supposed to prevent: an item pinned to a place was ticked in a
+       * basement, GPS supplied a good fix — satellites need no network — the
+       * request failed, and the position was dropped on the way into the queue.
+       * The server then refused the tick on sync with "this item has to be
+       * ticked at its location", which was true of the request it received and
+       * false of what actually happened.
+       *
+       * Re-reading the position when the queue drains would be worse than
+       * dropping it: it would record where somebody was when they got signal
+       * back, and put that on a compliance record as though it were where the
+       * work was done.
+       *
+       * Plain numbers, so it survives structured clone into IndexedDB.
+       */
+      position?: { latitude: number; longitude: number; accuracy: number };
+    }
   | { kind: 'comment'; answerId: string; comment: string };
 
 export type PendingRecord = {
