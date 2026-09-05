@@ -169,6 +169,24 @@ export function FillSheet({
    * details page previews it read-only, where there is nothing to queue.
    */
   const offline = useOffline();
+
+  /*
+   * SUBMITTED OFFLINE, AND THEREFORE CLOSED.
+   *
+   * Once somebody has declared a checklist finished it must stop being
+   * editable, whether or not the declaration has reached us yet. Otherwise the
+   * thing eventually sent is not the thing they stood behind — they could tick
+   * three more items after submitting and the server would receive a
+   * submission it has no record of them making twice.
+   *
+   * `readOnly` from the server covers the online case. This covers the gap
+   * between pressing submit in a basement and the queue draining.
+   */
+  const submittedOffline = Boolean(
+    offline?.pending.some((r) => r.op.kind === 'submit' && r.op.submissionId === submissionId),
+  );
+  const locked = readOnly || submittedOffline;
+
   const queuedTicks: QueuedTicks = useMemo(() => {
     const map: QueuedTicks = new Map();
     for (const record of offline?.pending ?? []) {
@@ -249,6 +267,14 @@ export function FillSheet({
         </FormNotice>
       ) : null}
 
+      {/* Said plainly, because the sheet has just gone read-only and nothing
+          else on screen would explain why. Somebody who submits in a basement
+          and then finds they cannot tick anything needs to know that is the
+          feature working, not the app breaking. */}
+      {submittedOffline ? (
+        <FormNotice kind="info">{t('fill.submittedOffline')}</FormNotice>
+      ) : null}
+
       {error ? <FormNotice kind="error">{error}</FormNotice> : null}
       {submitState.formError ? <FormNotice kind="error">{submitState.formError}</FormNotice> : null}
 
@@ -279,7 +305,7 @@ export function FillSheet({
             <div className="divide-y divide-[var(--color-border)]">
               <ItemList
                 items={group.items}
-                readOnly={readOnly}
+                readOnly={locked}
                 onError={setError}
                 depth={0}
                 pending={pendingTicks}
@@ -297,7 +323,7 @@ export function FillSheet({
         </p>
       ) : null}
 
-      {!readOnly ? (
+      {!locked ? (
         // Sticky at the bottom, clear of the home indicator. Someone finishing
         // the last item should not have to scroll back down to submit.
         <div className="pb-safe sticky bottom-0 -mx-4 border-t border-[var(--color-border)] bg-[var(--color-background)]/90 px-4 pt-3 backdrop-blur-md sm:mx-0">
@@ -310,22 +336,23 @@ export function FillSheet({
              * (1) Is the server actually reachable. `navigator.onLine` is not
              * an answer to that — it goes true the instant the radio comes back,
              * before anything can get through, so submitting the moment signal
-             * returned still produced "This page couldn't load". A Server
-             * Action that throws is answered by Next's own error screen, and
-             * somebody who has just finished a checklist should never be shown
-             * it with no idea whether their work survived. So the connection is
+             * returned produced "This page couldn't load". So the connection is
              * probed rather than assumed.
              *
-             * (2) Is the tick queue empty. Submitting goes straight to the
-             * server; a queued tick has not got there yet, so sending in
-             * between records the checklist as complete while items it claims
-             * are done are still unticked — and if one is then refused, the
-             * record is permanently wrong and nobody is told.
+             * (2) If it is not reachable, the submission is QUEUED, and the
+             * sheet locks. This reverses an earlier decision, and the reason
+             * that decision was wrong is worth keeping: it refused to queue a
+             * submission because one arriving hours later would carry a time
+             * nobody chose. True — of a design with only one timestamp. There
+             * are now two. `completed_at` is when the person pressed submit, by
+             * their own clock; `submitted_at` is when it reached us. A record
+             * where they differ by four hours is not a problem to hide, it is
+             * the true story of a night shift in a basement.
              *
-             * Submitting is still NOT queued, deliberately: it means "this is
-             * complete and I stand behind it", and a submission that quietly
-             * happens twenty minutes later carries a time nobody chose. The
-             * ticks are safe; only the act of sending waits.
+             * Locking on submit matters as much as sending it. Once somebody
+             * has declared a checklist finished it must stop being editable,
+             * offline included — otherwise the thing eventually sent is not the
+             * thing they stood behind.
              */
             onSubmit={(event) => {
               /*
@@ -346,18 +373,35 @@ export function FillSheet({
               setError(null);
 
               void (async () => {
-                if (offline && offline.pending.length > 0) {
-                  setError(t('fill.submitWaitForSync', { count: offline.pending.length }));
+                if (await reachable()) {
+                  /*
+                   * Online, but the queue may still be draining. Ticks must
+                   * land before the submission, or the checklist is recorded
+                   * complete while items proving it are still on the phone.
+                   */
+                  if (offline && offline.pending.length > 0) {
+                    setError(t('fill.submitWaitForSync', { count: offline.pending.length }));
+                    return;
+                  }
+
+                  verifiedRef.current = true;
+                  form.requestSubmit();
                   return;
                 }
 
-                if (!(await reachable())) {
+                if (!offline) {
                   setError(t('fill.submitNeedsConnection'));
                   return;
                 }
 
-                verifiedRef.current = true;
-                form.requestSubmit();
+                // Offline: record the moment they finished, by their clock, and
+                // lock the sheet. Both times reach the server on sync.
+                await offline.enqueue({
+                  kind: 'submit',
+                  submissionId,
+                  slug,
+                  completedAt: Date.now(),
+                });
               })();
               return;
             }}
@@ -472,9 +516,19 @@ function ItemRow({
    * network, so a position captured offline is real evidence, and the server
    * judges it against the radius when the tick arrives.
    */
+  const heldOnDevice = (attachment: 'photo' | 'file') =>
+    Boolean(
+      offline?.pending.some(
+        (r) =>
+          r.op.kind === 'evidence' &&
+          r.op.answerId === answerId &&
+          r.op.attachment === attachment,
+      ),
+    );
+
   const missingEvidence =
-    (item.photo_required && !item.answer?.photo_path) ||
-    (item.file_required && !item.answer?.file_path);
+    (item.photo_required && !item.answer?.photo_path && !heldOnDevice('photo')) ||
+    (item.file_required && !item.answer?.file_path && !heldOnDevice('file'));
 
   /**
    * Read the browser's position, for items that are pinned to a place.
@@ -818,7 +872,13 @@ function EvidenceControl({
   onError: (message: string | null) => void;
 }) {
   const [pending, startTransition] = useTransition();
+  const offline = useOffline();
   const { t, locale } = useT();
+
+  /** Held on the device, not yet uploaded. Satisfies the requirement locally. */
+  const queued = offline?.pending.some(
+    (r) => r.op.kind === 'evidence' && r.op.answerId === answerId && r.op.attachment === kind,
+  );
 
   function upload(file: File) {
     onError(null);
@@ -828,8 +888,29 @@ function EvidenceControl({
     data.set('file', file);
 
     startTransition(async () => {
-      const result = await uploadEvidence(data);
-      if (result.error) onError(result.error);
+      try {
+        const result = await uploadEvidence(data);
+        if (result.error) onError(result.error);
+      } catch {
+        /*
+         * KEEP THE FILE, NOT AN APOLOGY.
+         *
+         * The photograph is the evidence. It exists, on this device, taken at
+         * the moment the work was done — and a connection is the one thing
+         * that is missing. Discarding it because the upload failed would mean
+         * asking somebody to walk back to the freezer and photograph it again,
+         * which is exactly the thing this feature exists to avoid.
+         *
+         * IndexedDB stores Blobs by structured clone, so what goes in the
+         * queue is the actual bytes rather than a reference to a file picker
+         * that will not exist in five minutes.
+         */
+        if (offline) {
+          await offline.enqueue({ kind: 'evidence', answerId, attachment: kind, file });
+        } else {
+          onError(t('fill.offlineUnavailable'));
+        }
+      }
     });
   }
 
@@ -843,6 +924,23 @@ function EvidenceControl({
       const result = await removeEvidence(data);
       if (result.error) onError(result.error);
     });
+  }
+
+  /*
+   * Held on the device takes precedence over "nothing attached", because for
+   * the person standing there it IS attached — the only thing outstanding is
+   * the upload. Saying "no photo" about a photo they just took would be both
+   * wrong and alarming.
+   */
+  if (queued && !hasFile) {
+    return (
+      <div className="rounded-lg border border-dashed border-[var(--color-border)] p-2.5 text-sm">
+        <p className="font-medium">{t('fill.evidenceHeldOnDevice')}</p>
+        <p className="text-xs text-[var(--color-muted-foreground)]">
+          {t('fill.evidenceWillUpload')}
+        </p>
+      </div>
+    );
   }
 
   return (

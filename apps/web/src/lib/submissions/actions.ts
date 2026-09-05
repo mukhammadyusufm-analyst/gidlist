@@ -110,12 +110,49 @@ export async function submitSubmission(
   const slug = String(formData.get('slug') ?? '');
 
   const supabase = await createClient();
-  const { error } = await supabase.rpc('submit_submission', { p_submission_id: submissionId });
+  const { error } = await supabase.rpc('submit_submission', {
+    p_submission_id: submissionId,
+    // Null when submitting online, which is the ordinary case: there is only
+    // one time and `now()` is it.
+    p_completed_at: null,
+  });
 
   if (error) return { formError: friendly(error.message) };
 
   revalidatePath(`/dashboard/boards/${slug}/fill`, 'page');
   redirect(`/dashboard/boards/${slug}/fill/${submissionId}?submitted=1`);
+}
+
+/**
+ * Submit a checklist that was finished offline, from the sync queue.
+ *
+ * SEPARATE FROM `submitSubmission` FOR ONE REASON: that one redirects, and this
+ * runs from a background drain that may be happening on a completely different
+ * page. A redirect there would throw somebody out of whatever they were doing
+ * to land on a checklist they finished hours ago.
+ *
+ * `completedAt` is the device's own clock at the moment they pressed submit.
+ * The database keeps it beside its own `now()` rather than instead of it, and
+ * does not trust it — see the migration for what that means and why the column
+ * can never become load-bearing.
+ */
+export async function submitQueued(
+  submissionId: string,
+  completedAt: number,
+): Promise<{ error?: string }> {
+  const supabase = await createClient();
+
+  const { error } = await supabase.rpc('submit_submission', {
+    p_submission_id: submissionId,
+    p_completed_at: new Date(completedAt).toISOString(),
+  });
+
+  if (error) return { error: friendly(error.message) };
+
+  // No redirect. Refreshing whatever the person is looking at is the caller's
+  // business, and it already does that once the drain finishes.
+  revalidatePath('/dashboard/boards/[slug]/fill', 'page');
+  return {};
 }
 
 function friendly(message: string): string {

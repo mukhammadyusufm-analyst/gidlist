@@ -1190,7 +1190,17 @@ export type Database = {
       start_submission: { Args: { p_submission_id: string }; Returns: string };
       /** Which space a submission belongs to, for building a storage path. */
       submission_board_id: { Args: { p_submission_id: string }; Returns: string | null };
-      submit_submission: { Args: { p_submission_id: string }; Returns: undefined };
+      /**
+       * `p_completed_at` is the filler's own device clock, sent only when the
+       * checklist was finished offline and is arriving from the sync queue.
+       * Null when submitting online, where `now()` is the only time there is.
+       * The database keeps it beside its own timestamp and does not trust it —
+       * see `20260905140000_offline_submission.sql`.
+       */
+      submit_submission: {
+        Args: { p_submission_id: string; p_completed_at: string | null };
+        Returns: undefined;
+      };
       generate_occurrences: {
         Args: {
           p_kind: string;

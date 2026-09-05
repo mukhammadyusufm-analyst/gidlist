@@ -11,7 +11,8 @@ import {
 } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { saveComment, setItemChecked } from '@/lib/submissions/actions';
+import { saveComment, setItemChecked, submitQueued } from '@/lib/submissions/actions';
+import { uploadEvidence } from '@/lib/submissions/evidence';
 import {
   enqueue as enqueueOp,
   getVersion,
@@ -136,13 +137,7 @@ export function OfflineProvider({
     try {
       for (const record of records) {
         try {
-          const result =
-            record.op.kind === 'tick'
-              ? // The position captured at tick time, carried through. Not
-                // re-read here: that would record where the person was when
-                // the signal returned, not where they did the work.
-                await setItemChecked(record.op.answerId, record.op.checked, record.op.position)
-              : await saveComment(record.op.answerId, record.op.comment);
+          const result = await send(record);
 
           if (result?.error) {
             /*
@@ -221,6 +216,48 @@ export function OfflineProvider({
       {children}
     </OfflineContext.Provider>
   );
+}
+
+/**
+ * Send one queued operation, whatever kind it is.
+ *
+ * Every branch returns `{ error }` rather than throwing on refusal, so the
+ * drain can tell a refusal from an unreachable server — the distinction the
+ * whole queue is built on. A genuine network failure still throws, and is
+ * caught one level up.
+ */
+async function send(record: PendingRecord): Promise<{ error?: string }> {
+  const op = record.op;
+
+  switch (op.kind) {
+    case 'tick':
+      // The position captured at tick time, carried through. Never re-read
+      // here: that would record where the person was when the signal came
+      // back, not where they did the work.
+      return setItemChecked(op.answerId, op.checked, op.position);
+
+    case 'comment':
+      return saveComment(op.answerId, op.comment);
+
+    case 'evidence': {
+      // Rebuilt rather than stored: FormData is not structured-cloneable, so
+      // the File is what the queue keeps and the envelope is made here.
+      const form = new FormData();
+      form.set('answerId', op.answerId);
+      form.set('kind', op.attachment);
+      form.set('file', op.file);
+      return uploadEvidence(form);
+    }
+
+    case 'submit':
+      /*
+       * Both times reach the server: `now()` there, and the device's clock
+       * here. A submission that waited four hours in a basement is recorded as
+       * completed then and received now, rather than as either one pretending
+       * to be the other.
+       */
+      return submitQueued(op.submissionId, op.completedAt);
+  }
 }
 
 /**

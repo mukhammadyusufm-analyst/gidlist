@@ -63,7 +63,26 @@ export type PendingOp =
        */
       position?: { latitude: number; longitude: number; accuracy: number };
     }
-  | { kind: 'comment'; answerId: string; comment: string };
+  | { kind: 'comment'; answerId: string; comment: string }
+  /**
+   * A photograph or file chosen with no signal.
+   *
+   * The File itself is kept. IndexedDB stores Blobs by structured clone, so
+   * this is the actual bytes off the camera, not a reference to something that
+   * will not exist later. It is the largest thing in the store by far, which is
+   * why the browser's own eviction rules matter and why a checklist demanding
+   * evidence should be finished and sent the same day.
+   */
+  | { kind: 'evidence'; answerId: string; attachment: 'photo' | 'file'; file: File }
+  /**
+   * The moment somebody declared the checklist finished.
+   *
+   * `completedAt` is their device's clock, and it is the whole reason
+   * submitting can be queued at all — see the migration. Without it a
+   * submission arriving hours later would carry a time nobody chose; with it,
+   * the record holds both what they did and when we heard about it.
+   */
+  | { kind: 'submit'; submissionId: string; slug: string; completedAt: number };
 
 export type PendingRecord = {
   /** Derived from the operation, so a repeat overwrites rather than stacks. */
@@ -104,8 +123,31 @@ const STORE = 'pending';
 
 /** Every operation has exactly one slot. See the note on coalescing above. */
 function idFor(op: PendingOp): string {
+  if (op.kind === 'submit') return `submit:${op.submissionId}`;
+  // Photo and file are separate slots on the same answer: an item can demand
+  // both, and one replacing the other would satisfy neither.
+  if (op.kind === 'evidence') return `evidence:${op.attachment}:${op.answerId}`;
   return `${op.kind}:${op.answerId}`;
 }
+
+/**
+ * The order operations must be sent in, regardless of when they were made.
+ *
+ * NOT chronological, and that is the point. The server enforces evidence
+ * requirements on the tick, so a photograph queued *after* the tick it belongs
+ * to must still be uploaded *before* it, or the tick is refused for missing
+ * evidence that is sitting right there in the queue. And a submission must go
+ * last, or a checklist is declared complete while the ticks proving it are
+ * still waiting behind it.
+ *
+ * Within a kind, oldest first.
+ */
+const ORDER: Record<PendingOp['kind'], number> = {
+  evidence: 0,
+  tick: 1,
+  comment: 2,
+  submit: 3,
+};
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -205,10 +247,12 @@ export async function enqueue(userId: string, op: PendingOp): Promise<void> {
   announce();
 }
 
-/** Everything waiting for this person, oldest first. */
+/** Everything waiting for this person, in the order it has to be sent. */
 export async function pendingFor(userId: string): Promise<PendingRecord[]> {
   const all = await withStore<PendingRecord[]>('readonly', (store) => store.getAll(), []);
-  return (all ?? []).filter((r) => r.userId === userId).sort((a, b) => a.createdAt - b.createdAt);
+  return (all ?? [])
+    .filter((r) => r.userId === userId)
+    .sort((a, b) => ORDER[a.op.kind] - ORDER[b.op.kind] || a.createdAt - b.createdAt);
 }
 
 export async function remove(id: string): Promise<void> {
