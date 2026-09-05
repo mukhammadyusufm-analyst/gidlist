@@ -674,14 +674,20 @@ function ItemRow({
     if (!answerId || readOnly) return;
     if ((item.answer?.comment ?? '') === value.trim()) return;
 
+    // Decided before the transition — see the long note in `upload`. A caught
+    // Server Action error is still reported to the error boundary, so the only
+    // reliable defence is not to dispatch one.
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      if (offline) void offline.enqueue({ kind: 'comment', answerId, comment: value });
+      else onError(t('fill.offlineUnavailable'));
+      return;
+    }
+
     startTransition(async () => {
       try {
         const result = await saveComment(answerId, value);
         if (result.error) onError(result.error);
       } catch {
-        // Same shape as a tick: unreachable, not refused. A note written in a
-        // basement is worth keeping. Without this catch the failure reached
-        // Next's error screen and took the comment with it.
         if (offline) await offline.enqueue({ kind: 'comment', answerId, comment: value });
         else onError(t('fill.offlineUnavailable'));
       }
@@ -915,22 +921,30 @@ function EvidenceControl({
       }
     };
 
+    /*
+     * DECIDED BEFORE ENTERING THE TRANSITION, not inside it.
+     *
+     * Wrapping the call in try/catch was not enough and this is the correction.
+     * A Server Action that fails on the network does not reliably surface as a
+     * rejection at the call site — React's transition machinery reports it too,
+     * and that report reaches the error boundary whatever the caller does with
+     * the promise. So catching it cannot be the defence.
+     *
+     * The only reliable defence is not to make the call. `navigator.onLine` is
+     * checked synchronously, here, outside React entirely: when it says there
+     * is no network there is certainly none, and the file goes straight to the
+     * queue without an action ever being dispatched.
+     *
+     * The probe inside still earns its place for the case `onLine` gets wrong
+     * — connected to a wifi access point with no route out, which is ordinary
+     * in a warehouse.
+     */
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      void keep();
+      return;
+    }
+
     startTransition(async () => {
-      /*
-       * ASKED BEFORE ATTEMPTING, WHICH TICKING DOES NOT NEED TO DO.
-       *
-       * A failed tick throws and is caught. A failed *upload* does not behave
-       * the same way: it carries a multi-megabyte body, and the failure
-       * escaped the try/catch below and reached Next's error screen — so
-       * somebody who had just photographed a fridge with no signal was told
-       * "This page couldn't load" and lost the photograph.
-       *
-       * So an upload is never started unless there is something to start it
-       * over. The probe costs one HEAD request against a static file, which is
-       * nothing beside the megabytes it is deciding whether to send — the same
-       * check would be too expensive on every tick, which is why ticking still
-       * relies on the catch.
-       */
       if (!(await reachable())) {
         await keep();
         return;
@@ -952,6 +966,13 @@ function EvidenceControl({
     const data = new FormData();
     data.set('answerId', answerId);
     data.set('kind', kind);
+
+    // Refused up front rather than attempted — see the note in `upload`.
+    // Deleting is never queued, so there is nothing to fall back to.
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      onError(t('fill.offlineUnavailable'));
+      return;
+    }
 
     startTransition(async () => {
       try {
