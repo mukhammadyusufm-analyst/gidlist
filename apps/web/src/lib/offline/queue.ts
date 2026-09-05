@@ -49,6 +49,19 @@ export type PendingRecord = {
   createdAt: number;
   attempts: number;
   lastError?: string;
+  /**
+   * Set when the SERVER refused this, as opposed to it not being reachable.
+   *
+   * A refused record is kept rather than deleted, and that is the whole point.
+   * The first version dropped it — so somebody could tick an item needing a
+   * photograph while offline, watch it appear done, and find later that it had
+   * silently un-ticked itself with nothing said. In a product whose subject is
+   * proving work was done, losing work quietly is the worst thing it can do.
+   *
+   * Kept until dismissed, shown in red, and never retried: a refusal is a
+   * decision, and repeating the question does not change the answer.
+   */
+  rejected?: string;
 };
 
 const DB_NAME = 'gidlist-offline';
@@ -163,13 +176,32 @@ export async function remove(id: string): Promise<void> {
   announce();
 }
 
-/** Note a failed attempt without dropping the work. */
+/** Note a failed attempt without dropping the work. Will be retried. */
 export async function noteFailure(record: PendingRecord, message: string): Promise<void> {
   await withStore(
     'readwrite',
     (store) => store.put({ ...record, attempts: record.attempts + 1, lastError: message }),
     undefined,
   );
+  announce();
+}
+
+/** The server said no. Kept and shown, never retried — see the note on `rejected`. */
+export async function markRejected(record: PendingRecord, message: string): Promise<void> {
+  await withStore(
+    'readwrite',
+    (store) => store.put({ ...record, attempts: record.attempts + 1, rejected: message }),
+    undefined,
+  );
+  announce();
+}
+
+/** Clear the refusals somebody has now read. */
+export async function dismissRejected(userId: string): Promise<void> {
+  const all = await pendingFor(userId);
+  for (const record of all) {
+    if (record.rejected) await withStore('readwrite', (s) => s.delete(record.id), undefined);
+  }
   announce();
 }
 

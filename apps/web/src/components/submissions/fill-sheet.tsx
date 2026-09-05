@@ -138,6 +138,7 @@ export function FillSheet({
   const queuedTicks: QueuedTicks = useMemo(() => {
     const map: QueuedTicks = new Map();
     for (const record of offline?.pending ?? []) {
+      // Only what is still going to be sent. A refused tick is not a tick.
       if (record.op.kind === 'tick') map.set(record.op.answerId, record.op.checked);
     }
     return map;
@@ -197,6 +198,23 @@ export function FillSheet({
         </div>
       </div>
 
+      {/* Refusals from the queue, which nothing else on the page would
+          mention. Shown until dismissed: the person ticked these believing
+          they were done, and the server disagreed after they walked away. */}
+      {offline && offline.rejected.length > 0 ? (
+        <FormNotice kind="error">
+          <span className="block">{t('offline.rejected', { count: offline.rejected.length })}</span>
+          <span className="mt-1 block text-xs opacity-90">{offline.rejected[0].rejected}</span>
+          <button
+            type="button"
+            onClick={() => void offline.dismissRejected()}
+            className="mt-1 text-xs underline underline-offset-4"
+          >
+            {t('common.clear')}
+          </button>
+        </FormNotice>
+      ) : null}
+
       {error ? <FormNotice kind="error">{error}</FormNotice> : null}
       {submitState.formError ? <FormNotice kind="error">{submitState.formError}</FormNotice> : null}
 
@@ -249,7 +267,31 @@ export function FillSheet({
         // Sticky at the bottom, clear of the home indicator. Someone finishing
         // the last item should not have to scroll back down to submit.
         <div className="pb-safe sticky bottom-0 -mx-4 border-t border-[var(--color-border)] bg-[var(--color-background)]/90 px-4 pt-3 backdrop-blur-md sm:mx-0">
-          <form action={submitAction} className="space-y-2">
+          <form
+            action={submitAction}
+            /*
+             * Refuse to send with no connection, rather than letting it fail.
+             *
+             * Submitting is a Server Action, so offline the request throws
+             * before reaching any code that could explain itself — and Next
+             * answers a thrown action with its own error screen. Somebody who
+             * has just finished a checklist in a basement got "This page
+             * couldn't load" and no idea whether their work survived.
+             *
+             * It is NOT queued, and that is deliberate rather than unfinished:
+             * submitting means "this is complete and I stand behind it", and a
+             * submission that quietly happens twenty minutes later carries a
+             * time nobody chose. The ticks are safe in the queue; only the act
+             * of sending waits for a connection.
+             */
+            onSubmit={(event) => {
+              if (typeof navigator !== 'undefined' && !navigator.onLine) {
+                event.preventDefault();
+                setError(t('fill.submitNeedsConnection'));
+              }
+            }}
+            className="space-y-2"
+          >
             <input type="hidden" name="submissionId" value={submissionId} />
             <input type="hidden" name="slug" value={slug} />
 
@@ -341,6 +383,29 @@ function ItemRow({
   const locationRequired = item.location_enabled && item.location_required;
 
   /**
+   * Evidence this item demands that is not attached yet.
+   *
+   * THIS IS WHY A TICK CANNOT BE QUEUED OFFLINE FOR SUCH AN ITEM. The
+   * requirement is enforced by a database trigger (item 30), so the server
+   * refuses the tick — correctly. But offline the request never reaches it: the
+   * fetch throws, the tick goes in the queue, the box shows done, and the
+   * person walks away believing the item is complete. On the next sync the
+   * server refuses it and the tick disappears.
+   *
+   * And the evidence cannot be supplied offline either, because attachments
+   * upload straight from the browser to storage — so this is not a race that
+   * resolves itself, it is a state that cannot be reached without a connection.
+   *
+   * Refusing at the moment of the tap, with a reason, is the only honest
+   * answer. Location is different and deliberately excluded: GPS works with no
+   * network, so a position captured offline is real evidence, and the server
+   * judges it against the radius when the tick arrives.
+   */
+  const missingEvidence =
+    (item.photo_required && !item.answer?.photo_path) ||
+    (item.file_required && !item.answer?.file_path);
+
+  /**
    * Read the browser's position, for items that are pinned to a place.
    *
    * `enableHighAccuracy` asks for GPS rather than the cheaper network estimate,
@@ -390,6 +455,19 @@ function ItemRow({
   function toggle() {
     if (!interactive || !answerId) return;
     onError(null);
+
+    /*
+     * Checked before anything moves, so the box does not flash on and off.
+     *
+     * Only when ticking and only when offline: with a connection the server
+     * answers properly and its message is better than a guess made here.
+     * `navigator.onLine` is famously optimistic, which is fine — it is used
+     * only to decline early, and the catch below is the real backstop.
+     */
+    if (!checked && missingEvidence && typeof navigator !== 'undefined' && !navigator.onLine) {
+      onError(t('fill.evidenceNeedsConnection'));
+      return;
+    }
 
     startTransition(async () => {
       let position: TickPosition | undefined;
@@ -449,7 +527,11 @@ function ItemRow({
          * retry it forever; showing an error for lost signal would throw away
          * work and blame the person for their building.
          */
-        if (offline) {
+        if (missingEvidence && !checked) {
+          // The backstop for the early check above, for when `navigator.onLine`
+          // lied. Queueing this would show it done and then lose it.
+          onError(t('fill.evidenceNeedsConnection'));
+        } else if (offline) {
           await offline.enqueue({ kind: 'tick', answerId, checked: !checked });
         } else {
           onError(t('fill.offlineUnavailable'));

@@ -13,6 +13,9 @@ import type { Messages } from '@app/core';
 export const uz = {
   'common.save': 'Saqlash',
   'offline.waiting': '{count} ta yuborilishi kutilmoqda',
+  'fill.evidenceNeedsConnection': 'Bu band uchun rasm yoki fayl biriktirilishi kerak, buning uchun aloqa zarur. Aloqa tiklangach belgilang.',
+  'fill.submitNeedsConnection': 'Yuborish uchun aloqa kerak. Belgilashlaringiz saqlandi va sinxronlanadi — aloqa tiklangach yuboring.',
+  'offline.rejected': '{count} ta oʻzgarish saqlanmadi',
   'offline.syncing': 'Yuborilmoqda…',
   'offline.noConnection': 'Aloqa yoʻq',
   'fill.offlineUnavailable': 'Serverga ulanib boʻlmadi. Aloqani tekshiring va qayta urining.',

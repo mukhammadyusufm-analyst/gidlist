@@ -9,6 +9,9 @@ import type { Messages } from '@app/core';
 export const ru = {
   'common.save': 'Сохранить',
   'offline.waiting': '{count} ожидает отправки',
+  'fill.evidenceNeedsConnection': 'Для этого пункта нужно приложить фото или файл, а для этого требуется соединение. Отметьте, когда связь восстановится.',
+  'fill.submitNeedsConnection': 'Для отправки нужно соединение. Ваши отметки сохранены и синхронизируются — отправьте, когда связь восстановится.',
+  'offline.rejected': 'Не удалось сохранить: {count}',
   'offline.syncing': 'Отправка…',
   'offline.noConnection': 'Нет соединения',
   'fill.offlineUnavailable': 'Не удалось связаться с сервером. Проверьте соединение и попробуйте снова.',

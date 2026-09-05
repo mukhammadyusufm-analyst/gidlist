@@ -15,7 +15,9 @@ import { saveComment, setItemChecked } from '@/lib/submissions/actions';
 import {
   enqueue as enqueueOp,
   getVersion,
+  dismissRejected as dismissRejectedOps,
   isAvailable,
+  markRejected,
   noteFailure,
   pendingFor,
   remove,
@@ -25,8 +27,12 @@ import {
 } from '@/lib/offline/queue';
 
 type OfflineState = {
-  /** What is waiting to be sent, for this person. */
+  /** Still to be sent. Excludes anything the server has refused. */
   pending: PendingRecord[];
+  /** Refused by the server, kept until read. Never retried. */
+  rejected: PendingRecord[];
+  /** Clear the refusals once somebody has seen them. */
+  dismissRejected: () => Promise<void>;
   /** Put a write in the queue because the network refused it. */
   enqueue: (op: PendingOp) => Promise<void>;
   /** True while the queue is being drained. */
@@ -72,7 +78,7 @@ export function OfflineProvider({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const [pending, setPending] = useState<PendingRecord[]>([]);
+  const [records, setRecords] = useState<PendingRecord[]>([]);
   const [syncing, setSyncing] = useState(false);
 
   /*
@@ -93,8 +99,8 @@ export function OfflineProvider({
   // it cannot be the store's own snapshot — the version number is.
   useEffect(() => {
     let cancelled = false;
-    pendingFor(userId).then((records) => {
-      if (!cancelled) setPending(records);
+    pendingFor(userId).then((rows) => {
+      if (!cancelled) setRecords(rows);
     });
     return () => {
       cancelled = true;
@@ -119,7 +125,9 @@ export function OfflineProvider({
   const drain = useCallback(async () => {
     if (draining.current || !navigator.onLine) return;
 
-    const records = await pendingFor(userId);
+    // Refusals are not retried: a refusal is a decision, and asking again
+    // does not change the answer.
+    const records = (await pendingFor(userId)).filter((r) => !r.rejected);
     if (records.length === 0) return;
 
     draining.current = true;
@@ -136,13 +144,18 @@ export function OfflineProvider({
           if (result?.error) {
             /*
              * The SERVER refused it, which is different from not reaching the
-             * server. A refusal will be refused again every time — an answer
-             * deleted, a submission already sent, a required photograph absent
-             * — so the record is dropped rather than retried forever. The
-             * reason is kept on screen through the failure count until then.
+             * server. A refusal is a decision — an answer deleted, a submission
+             * already sent, a required photograph absent — and asking again
+             * does not change the answer, so it is never retried.
+             *
+             * It is KEPT AND SHOWN rather than deleted. The first version
+             * deleted it, which meant somebody could tick an item offline,
+             * watch it appear done, and find later that it had quietly
+             * un-ticked itself with nothing said. In a product about proving
+             * work was done, losing work silently is the worst failure
+             * available.
              */
-            await noteFailure(record, result.error);
-            await remove(record.id);
+            await markRejected(record, result.error);
             continue;
           }
 
@@ -192,7 +205,16 @@ export function OfflineProvider({
   }, [drain]);
 
   return (
-    <OfflineContext.Provider value={{ pending, enqueue, syncing, online }}>
+    <OfflineContext.Provider
+      value={{
+        pending: records.filter((r) => !r.rejected),
+        rejected: records.filter((r) => r.rejected),
+        dismissRejected: () => dismissRejectedOps(userId),
+        enqueue,
+        syncing,
+        online,
+      }}
+    >
       {children}
     </OfflineContext.Provider>
   );

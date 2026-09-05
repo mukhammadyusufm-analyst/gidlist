@@ -12,6 +12,9 @@ export const en = {
   // --- common -----------------------------------------------------------
   'common.save': 'Save',
   'offline.waiting': '{count} waiting to sync',
+  'fill.evidenceNeedsConnection': 'This item needs a photo or file attached, which needs a connection. Tick it once you are back online.',
+  'fill.submitNeedsConnection': 'Sending needs a connection. Your ticks are saved and will sync — send this once you are back online.',
+  'offline.rejected': '{count} change(s) could not be saved',
   'offline.syncing': 'Syncing…',
   'offline.noConnection': 'No connection',
   'fill.offlineUnavailable': 'Could not reach the server. Check your connection and try again.',
