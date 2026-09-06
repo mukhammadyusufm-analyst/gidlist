@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 
+import { record } from '@/lib/offline/log';
+
 /**
  * The screen that was actually being hit, and the one I kept failing to
  * replace.
@@ -48,6 +50,16 @@ export default function GlobalError({
   useEffect(() => {
     setOffline(!navigator.onLine);
     console.error('[global] ', error.message, error.digest ?? '');
+
+    /*
+     * Written down as well as logged, because on the device where this screen
+     * actually appears there is no console to read.
+     *
+     * This is the single most valuable line in the trace: reaching here means
+     * the failure escaped every boundary in the app, and until now the only
+     * report available was somebody reading the heading aloud.
+     */
+    record('error.global', error.digest ? `${error.message} [${error.digest}]` : error);
   }, [error]);
 
   return (

@@ -7,6 +7,7 @@ import { getMyProfile } from '@/lib/account/profile';
 import { OfflineProvider } from '@/components/offline/offline-provider';
 import { OfflineIndicator } from '@/components/offline/offline-indicator';
 import { SignOutButton } from '@/components/offline/sign-out-button';
+import { ErrorRecorder } from '@/components/offline/error-recorder';
 import { signOut } from '@/lib/auth/actions';
 import { getAvailableLocales, getTranslations } from '@/lib/i18n/server';
 import { hasAnyCapability } from '@/lib/platform/access';
@@ -129,6 +130,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
       {/* Renders nothing; reports the browser's timezone once so the server can
           work out what "today" means where the user actually is. */}
       <TimezoneProbe current={timezone} />
+
+      {/* Also renders nothing. Writes down the failures that never reach a React
+          error boundary — a handler that threw, a promise nobody awaited — so
+          that a fault on a phone in a warehouse can be read at
+          /dashboard/diagnostics instead of guessed at from the source. */}
+      <ErrorRecorder />
     </div>
     </OfflineProvider>
   );

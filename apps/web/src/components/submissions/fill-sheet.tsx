@@ -11,6 +11,10 @@ import {
   type TickPosition,
 } from '@/lib/submissions/actions';
 import { removeEvidence, uploadEvidence } from '@/lib/submissions/evidence';
+// The flight recorder. Every branch below that decides between sending and
+// queueing writes one line, because which branch was taken is the thing three
+// rounds of debugging could not establish from a description of the screen.
+import { record as trace } from '@/lib/offline/log';
 import type { AnsweredItem } from '@/lib/submissions/queries';
 import type { ChecklistGroup } from '@/lib/supabase/database.types';
 import { Button } from '@/components/ui/button';
@@ -373,6 +377,8 @@ export function FillSheet({
               setError(null);
 
               void (async () => {
+                trace('submit.start', `onLine ${navigator.onLine}`);
+
                 if (await reachable()) {
                   /*
                    * Online, but the queue may still be draining. Ticks must
@@ -390,9 +396,12 @@ export function FillSheet({
                 }
 
                 if (!offline) {
+                  trace('submit.noProvider');
                   setError(t('fill.submitNeedsConnection'));
                   return;
                 }
+
+                trace('submit.queued');
 
                 // Offline: record the moment they finished, by their clock, and
                 // lock the sheet. Both times reach the server on sync.
@@ -638,7 +647,8 @@ function ItemRow({
       try {
         const result = await setItemChecked(answerId, !checked, position);
         if (result.error) onError(result.error);
-      } catch {
+      } catch (e) {
+        trace('tick.threw', e);
         /*
          * COULD NOT REACH THE SERVER, WHICH IS NOT THE SAME AS BEING REFUSED.
          *
@@ -678,6 +688,7 @@ function ItemRow({
     // Server Action error is still reported to the error boundary, so the only
     // reliable defence is not to dispatch one.
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      trace('comment.offline', offline ? 'queueing' : 'NO PROVIDER');
       if (offline) void offline.enqueue({ kind: 'comment', answerId, comment: value });
       else onError(t('fill.offlineUnavailable'));
       return;
@@ -687,7 +698,8 @@ function ItemRow({
       try {
         const result = await saveComment(answerId, value);
         if (result.error) onError(result.error);
-      } catch {
+      } catch (e) {
+        trace('comment.threw', e);
         if (offline) await offline.enqueue({ kind: 'comment', answerId, comment: value });
         else onError(t('fill.offlineUnavailable'));
       }
@@ -911,6 +923,7 @@ function EvidenceControl({
      * this feature exists to prevent.
      */
     const keep = async () => {
+      trace('evidence.keep', offline ? `${kind}, ${Math.round(file.size / 1024)} kB` : 'NO PROVIDER');
       if (offline) {
         // IndexedDB stores Blobs by structured clone, so the queue holds the
         // actual bytes rather than a reference to a file picker that will not
@@ -939,6 +952,8 @@ function EvidenceControl({
      * — connected to a wifi access point with no route out, which is ordinary
      * in a warehouse.
      */
+    trace('evidence.start', `${kind}, onLine ${navigator.onLine}`);
+
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
       void keep();
       return;
@@ -946,6 +961,7 @@ function EvidenceControl({
 
     startTransition(async () => {
       if (!(await reachable())) {
+        trace('evidence.unreachable');
         await keep();
         return;
       }
@@ -953,7 +969,8 @@ function EvidenceControl({
       try {
         const result = await uploadEvidence(data);
         if (result.error) onError(result.error);
-      } catch {
+      } catch (e) {
+        trace('evidence.threw', e);
         // The connection died between the probe and the upload. Rare, and the
         // file still matters.
         await keep();

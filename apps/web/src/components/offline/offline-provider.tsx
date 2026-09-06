@@ -13,6 +13,9 @@ import { useRouter } from 'next/navigation';
 
 import { saveComment, setItemChecked, submitQueued } from '@/lib/submissions/actions';
 import { uploadEvidence } from '@/lib/submissions/evidence';
+// Aliased: `record` is already the name of the loop variable in the drain, and
+// a logger shadowed by the thing it is logging is a footgun waiting to happen.
+import { record as log } from '@/lib/offline/log';
 import {
   enqueue as enqueueOp,
   getVersion,
@@ -111,6 +114,8 @@ export function OfflineProvider({
   const enqueue = useCallback(
     async (op: PendingOp) => {
       await enqueueOp(userId, op);
+      // Mechanism only — the kind of write, never what it said. See log.ts.
+      log('queue.add', op.kind);
     },
     [userId],
   );
@@ -133,6 +138,7 @@ export function OfflineProvider({
 
     draining.current = true;
     setSyncing(true);
+    log('drain.start', `${records.length} waiting`);
 
     try {
       for (const record of records) {
@@ -153,13 +159,16 @@ export function OfflineProvider({
              * work was done, losing work silently is the worst failure
              * available.
              */
+            log('drain.refused', `${record.op.kind}: ${result.error}`);
             await markRejected(record, result.error);
             continue;
           }
 
+          log('drain.sent', record.op.kind);
           await remove(record.id);
         } catch (e) {
           // Could not reach the server. Keep it and try again next time.
+          log('drain.unreachable', e);
           await noteFailure(record, e instanceof Error ? e.message : 'offline');
           break;
         }
@@ -167,6 +176,7 @@ export function OfflineProvider({
     } finally {
       draining.current = false;
       setSyncing(false);
+      log('drain.end');
       // Pull the server's own view back, so what is on screen stops being a
       // local guess the moment it no longer has to be.
       router.refresh();

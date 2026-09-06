@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { RefreshCw, WifiOff } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { record } from '@/lib/offline/log';
 
 /**
  * The last line of defence, and it should have existed before now.
@@ -39,6 +40,7 @@ export default function DashboardError({
     // `onRequestError` in instrumentation.ts, so a report from a shop floor can
     // be matched to the actual failure.
     console.error('[dashboard] render failed:', error.message, error.digest ?? '');
+    record('error.dashboard', error.digest ? `${error.message} [${error.digest}]` : error);
   }, [error]);
 
   const offline = typeof navigator !== 'undefined' && !navigator.onLine;
