@@ -16,6 +16,7 @@ import { uploadEvidence } from '@/lib/submissions/evidence';
 // Aliased: `record` is already the name of the loop variable in the drain, and
 // a logger shadowed by the thing it is logging is a footgun waiting to happen.
 import { record as log } from '@/lib/offline/log';
+import { refreshShell } from '@/lib/offline/shell-cache';
 import {
   enqueue as enqueueOp,
   getVersion,
@@ -205,8 +206,25 @@ export function OfflineProvider({
      */
     const first = setTimeout(() => void drain(), 0);
 
+    /*
+     * And, while there is a connection, make sure the copy of `/offline` held on
+     * this device is the current one.
+     *
+     * Deliberately late and deliberately here. Late, because it is a background
+     * correction and the queue is the urgent thing — a person waiting for their
+     * ticks to send should not be behind a cache refresh. Here, because this
+     * provider is mounted on every dashboard page, so any online moment at all
+     * is enough to bring the offline path up to date before it is needed.
+     */
+    const shell = setTimeout(() => {
+      void refreshShell().then((result) => {
+        if (result !== 'skipped') log('shell.refresh', result);
+      });
+    }, 3000);
+
     return () => {
       clearTimeout(first);
+      clearTimeout(shell);
       window.removeEventListener('online', drain);
       document.removeEventListener('visibilitychange', onVisible);
     };

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { clear as clearLog, entries, type LogEntry } from '@/lib/offline/log';
 import { pendingFor } from '@/lib/offline/queue';
+import { cachedShellBuild, refreshShell } from '@/lib/offline/shell-cache';
 
 /**
  * Everything I would have asked for over the phone, on one screen.
@@ -76,6 +77,21 @@ export function DiagnosticsReport({
         </Button>
 
         {/*
+          Forces the stale-copy fix rather than waiting for the background pass.
+          Present because the person most likely to be looking at this page is
+          the one already stuck behind an old offline page.
+        */}
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+            void refreshShell(true).then(() => collect());
+          }}
+        >
+          Update offline page
+        </Button>
+
+        {/*
           The self-serve version of "clear site data", and much narrower than it.
           Unregistering the worker and dropping its caches leaves the session,
           the queue and anything held on the device untouched — where wiping site
@@ -133,6 +149,22 @@ async function gather(userId: string, commit: string, builtAt: string): Promise<
   const lines: string[] = [];
 
   lines.push(`build     ${commit} (${builtAt})`);
+
+  /*
+   * The second build number, and the one that was missing.
+   *
+   * The app can be current while the page that runs with no signal is many
+   * deploys old — they are stored in different places and updated by different
+   * mechanisms. When these two lines disagree, every conclusion about the
+   * offline path drawn from the first line is about code the device does not
+   * run when it matters.
+   */
+  const shell = await cachedShellBuild();
+  lines.push(
+    `offline   ${shell ?? 'not stored, or from before this was marked'}${
+      shell && shell !== commit ? '  ← STALE, does not match the app' : ''
+    }`,
+  );
   lines.push(`page      ${location.origin}`);
   lines.push(`online    ${navigator.onLine}`);
   lines.push(

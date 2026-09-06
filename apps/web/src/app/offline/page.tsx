@@ -25,8 +25,20 @@ export const metadata: Metadata = { title: 'Offline · Gidlist' };
  * that their work is gone.
  */
 export default function OfflinePage() {
+  /*
+   * The build this copy came from, stamped into the markup.
+   *
+   * This page is stored by the service worker and served back with no signal,
+   * possibly many deploys later — so "which build is the offline page" is a
+   * different question from "which build is the app", and for a long time
+   * nobody could ask it. `lib/offline/shell-cache.ts` reads this to decide
+   * whether the stored copy needs replacing, and the diagnostics page shows
+   * both numbers side by side.
+   */
+  const build = (process.env.VERCEL_GIT_COMMIT_SHA ?? 'local').slice(0, 8);
+
   return (
-    <div className="min-h-dvh">
+    <div className="min-h-dvh" data-build={build}>
       <div className="flex justify-center pt-8">
         <span className="flex items-center gap-2.5 text-[var(--color-primary)]">
           <CircleCheckBig className="size-6" aria-hidden="true" />
