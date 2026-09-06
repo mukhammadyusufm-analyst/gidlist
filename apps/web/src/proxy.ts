@@ -26,7 +26,24 @@ import { env } from '@/lib/env';
  * data on it, and must render without a session — gating it would mean the
  * offline fallback redirected to a sign-in page that also cannot load.
  */
-const PUBLIC_ROUTES = ['/', '/login', '/signup', '/forgot-password', '/auth', '/offline'];
+/*
+ * `/.well-known` is here for Android, and it has to be.
+ *
+ * Google fetches `/.well-known/assetlinks.json` with no cookie, from its own
+ * infrastructure, to decide whether the installed app may take over these URLs.
+ * Session-gating it means the verifier receives a sign-in page with status 200,
+ * concludes the app is not authorised, and the app opens with an address bar
+ * across the top and nothing anywhere saying why.
+ */
+const PUBLIC_ROUTES = [
+  '/',
+  '/login',
+  '/signup',
+  '/forgot-password',
+  '/auth',
+  '/offline',
+  '/.well-known',
+];
 
 function isPublicRoute(pathname: string) {
   return PUBLIC_ROUTES.some(
