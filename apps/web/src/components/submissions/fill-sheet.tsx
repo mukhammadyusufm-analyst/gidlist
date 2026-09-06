@@ -15,7 +15,7 @@ import { removeEvidence, uploadEvidence } from '@/lib/submissions/evidence';
 // queueing writes one line, because which branch was taken is the thing three
 // rounds of debugging could not establish from a description of the screen.
 import { record as trace } from '@/lib/offline/log';
-import { evidenceKey } from '@/lib/offline/queue';
+import { evidenceKey, tickKey } from '@/lib/offline/queue';
 import type { AnsweredItem } from '@/lib/submissions/queries';
 import type { ChecklistGroup } from '@/lib/supabase/database.types';
 import { Button } from '@/components/ui/button';
@@ -1049,7 +1049,25 @@ function EvidenceControl({
             type="button"
             variant="ghost"
             size="sm"
-            onClick={() => void offline.discard(evidenceKey(kind, answerId))}
+            onClick={() =>
+              void (async () => {
+                await offline.discard(evidenceKey(kind, answerId));
+
+                /*
+                 * And the tick that this file was the reason for.
+                 *
+                 * The database enforces the same thing from the other side: a
+                 * trigger unticks an item whose required evidence is removed.
+                 * Neither is redundant. That one is the guarantee, and it acts
+                 * on records; this one is the truth on the screen, and it acts
+                 * before anything has been sent. Without it the box stays
+                 * ticked all the way to the next connection and is then refused
+                 * — correctly, and far too late to be useful to somebody
+                 * standing in front of the item.
+                 */
+                if (required) await offline.discard(tickKey(answerId));
+              })()
+            }
           >
             {t('common.delete')}
           </Button>

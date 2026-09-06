@@ -135,6 +135,11 @@ export function evidenceKey(attachment: 'photo' | 'file', answerId: string): str
   return `evidence:${attachment}:${answerId}`;
 }
 
+/** The slot a queued tick occupies. Exported for the same reason as above. */
+export function tickKey(answerId: string): string {
+  return `tick:${answerId}`;
+}
+
 /** Every operation has exactly one slot. See the note on coalescing above. */
 function idFor(op: PendingOp): string {
   if (op.kind === 'submit') return `submit:${op.submissionId}`;
