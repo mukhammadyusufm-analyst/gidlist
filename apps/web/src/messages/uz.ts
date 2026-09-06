@@ -18,6 +18,7 @@ export const uz = {
   'fill.submitWaitForSync': '{count} ta belgilash hali yuborilmoqda. Biroz kuting va soʻng yuboring.',
   'fill.evidenceHeldOnDevice': 'Shu qurilmada saqlandi',
   'fill.evidenceWillUpload': 'Aloqa paydo boʻlganda yuklanadi.',
+  'fill.evidenceDeleteNeedsConnection': 'Oʻchirish uchun aloqa kerak',
   'fill.submittedOffline': 'Shu qurilmada yuborildi. Aloqa tiklangach joʻnatiladi va tugatgan vaqtingiz bilan yoziladi.',
   'offline.rejected': '{count} ta oʻzgarish saqlanmadi',
   'offline.syncing': 'Yuborilmoqda…',

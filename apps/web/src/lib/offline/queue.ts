@@ -121,12 +121,24 @@ const DB_NAME = 'gidlist-offline';
 const DB_VERSION = 2;
 const STORE = 'pending';
 
+/**
+ * The slot a queued attachment occupies.
+ *
+ * Exported because the interface needs to name one without holding it: taking
+ * back a photograph that has not been uploaded yet means deleting this record,
+ * and the alternative — rebuilding the same string in a component — is the kind
+ * of duplication that silently stops matching.
+ */
+export function evidenceKey(attachment: 'photo' | 'file', answerId: string): string {
+  // Photo and file are separate slots on the same answer: an item can demand
+  // both, and one replacing the other would satisfy neither.
+  return `evidence:${attachment}:${answerId}`;
+}
+
 /** Every operation has exactly one slot. See the note on coalescing above. */
 function idFor(op: PendingOp): string {
   if (op.kind === 'submit') return `submit:${op.submissionId}`;
-  // Photo and file are separate slots on the same answer: an item can demand
-  // both, and one replacing the other would satisfy neither.
-  if (op.kind === 'evidence') return `evidence:${op.attachment}:${op.answerId}`;
+  if (op.kind === 'evidence') return evidenceKey(op.attachment, op.answerId);
   return `${op.kind}:${op.answerId}`;
 }
 

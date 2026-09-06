@@ -14,6 +14,7 @@ export const ru = {
   'fill.submitWaitForSync': 'Отметки ещё отправляются ({count}). Подождите немного и отправьте.',
   'fill.evidenceHeldOnDevice': 'Сохранено на устройстве',
   'fill.evidenceWillUpload': 'Будет загружено при появлении связи.',
+  'fill.evidenceDeleteNeedsConnection': 'Для удаления нужна связь',
   'fill.submittedOffline': 'Отправлено с устройства. Уйдёт при появлении связи и запишется со временем, когда вы завершили.',
   'offline.rejected': 'Не удалось сохранить: {count}',
   'offline.syncing': 'Отправка…',

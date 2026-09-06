@@ -15,6 +15,7 @@ import { removeEvidence, uploadEvidence } from '@/lib/submissions/evidence';
 // queueing writes one line, because which branch was taken is the thing three
 // rounds of debugging could not establish from a description of the screen.
 import { record as trace } from '@/lib/offline/log';
+import { evidenceKey } from '@/lib/offline/queue';
 import type { AnsweredItem } from '@/lib/submissions/queries';
 import type { ChecklistGroup } from '@/lib/supabase/database.types';
 import { Button } from '@/components/ui/button';
@@ -901,6 +902,14 @@ function EvidenceControl({
   const offline = useOffline();
   const { t, locale } = useT();
 
+  /*
+   * From the provider rather than `navigator.onLine` read at render: this has to
+   * change the button back the moment signal returns, and only the provider's
+   * subscription re-renders on that event. Assumed present when there is no
+   * provider at all — the read-only preview has no delete button to disable.
+   */
+  const noSignal = offline ? !offline.online : false;
+
   /** Held on the device, not yet uploaded. Satisfies the requirement locally. */
   const queued = offline?.pending.some(
     (r) => r.op.kind === 'evidence' && r.op.answerId === answerId && r.op.attachment === kind,
@@ -1018,11 +1027,33 @@ function EvidenceControl({
    */
   if (queued && !hasFile) {
     return (
-      <div className="rounded-lg border border-dashed border-[var(--color-border)] p-2.5 text-sm">
-        <p className="font-medium">{t('fill.evidenceHeldOnDevice')}</p>
-        <p className="text-xs text-[var(--color-muted-foreground)]">
-          {t('fill.evidenceWillUpload')}
-        </p>
+      <div className="flex items-center gap-3 rounded-lg border border-dashed border-[var(--color-border)] p-2.5 text-sm">
+        <div className="min-w-0 flex-1">
+          <p className="font-medium">{t('fill.evidenceHeldOnDevice')}</p>
+          <p className="text-xs text-[var(--color-muted-foreground)]">
+            {t('fill.evidenceWillUpload')}
+          </p>
+        </div>
+
+        {/*
+          Removable with no signal, unlike one already uploaded, and the
+          difference is not a technicality. This file has never left the phone,
+          so taking it back changes nothing anybody else can see and undoes
+          nothing on the server. Refusing here would mean somebody who
+          photographed the wrong shelf in a freezer carries that mistake around
+          until they find signal — with the queue still holding a file they have
+          already decided is wrong.
+        */}
+        {!readOnly && offline ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => void offline.discard(evidenceKey(kind, answerId))}
+          >
+            {t('common.delete')}
+          </Button>
+        ) : null}
       </div>
     );
   }
@@ -1068,10 +1099,36 @@ function EvidenceControl({
             )}
           </div>
 
+          {/*
+            REFUSED WITH NO SIGNAL, AND SAID SO WHERE THE TAP HAPPENS.
+
+            Deleting an uploaded file is not queued — the reason is in `remove`
+            below, and it stands. What was wrong was the way it refused: an
+            error banner at the top of a long checklist, invisible to somebody
+            scrolled down to the attachment they just tapped. It read as the
+            button doing nothing at all, which is how it was reported.
+
+            So the control is disabled and carries its own reason. A dead button
+            that explains itself is worth more than a live one that fails
+            silently somewhere off screen.
+          */}
           {!readOnly ? (
-            <Button type="button" variant="ghost" size="sm" onClick={remove} disabled={pending}>
-              {t('common.delete')}
-            </Button>
+            <div className="flex shrink-0 flex-col items-end">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={remove}
+                disabled={pending || noSignal}
+              >
+                {t('common.delete')}
+              </Button>
+              {noSignal ? (
+                <p className="max-w-32 text-right text-xs text-[var(--color-muted-foreground)]">
+                  {t('fill.evidenceDeleteNeedsConnection')}
+                </p>
+              ) : null}
+            </div>
           ) : null}
         </div>
       ) : expiredAt ? (

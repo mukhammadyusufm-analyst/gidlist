@@ -17,6 +17,7 @@ export const en = {
   'fill.submitWaitForSync': '{count} tick(s) are still being sent. Wait a moment, then submit.',
   'fill.evidenceHeldOnDevice': 'Saved on this device',
   'fill.evidenceWillUpload': 'It will be uploaded when you have signal.',
+  'fill.evidenceDeleteNeedsConnection': 'Removing needs a connection',
   'fill.submittedOffline': 'Submitted on this device. It will be sent when you have signal, recorded with the time you finished.',
   'offline.rejected': '{count} change(s) could not be saved',
   'offline.syncing': 'Syncing…',

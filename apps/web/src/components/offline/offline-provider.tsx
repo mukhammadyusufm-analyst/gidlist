@@ -40,6 +40,15 @@ type OfflineState = {
   dismissRejected: () => Promise<void>;
   /** Put a write in the queue because the network refused it. */
   enqueue: (op: PendingOp) => Promise<void>;
+  /**
+   * Take a queued write back out, unsent.
+   *
+   * Only meaningful for work that has never left the device — an attachment
+   * chosen with no signal and then thought better of. Nothing has been told to
+   * the server, so there is nothing to undo there and no reason to make somebody
+   * wait for a connection to change their mind.
+   */
+  discard: (id: string) => Promise<void>;
   /** True while the queue is being drained. */
   syncing: boolean;
   online: boolean;
@@ -237,6 +246,10 @@ export function OfflineProvider({
         rejected: records.filter((r) => r.rejected),
         dismissRejected: () => dismissRejectedOps(userId),
         enqueue,
+        discard: async (id) => {
+          await remove(id);
+          log('queue.discard', id);
+        },
         syncing,
         online,
       }}
