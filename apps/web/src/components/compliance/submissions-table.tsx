@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { CloudOff, Paperclip } from 'lucide-react';
 
 import { FILLED_BY_NOBODY } from '@/lib/compliance/filters';
 import type { ComplianceRow } from '@/lib/compliance/queries';
@@ -8,6 +9,19 @@ import { StatusBadge } from '@/components/submissions/status-badge';
 import { VoidControl } from '@/components/compliance/void-control';
 import { useComplianceFilters } from '@/components/compliance/use-filters';
 import { useT } from '@/components/i18n/provider';
+
+/**
+ * How far apart the two times are, in seconds.
+ *
+ * A minute's threshold, not zero. Every offline submission has a `completed_at`
+ * — including one queued and flushed two seconds later, when the person walked
+ * back into signal mid-tap. Showing "14:03 → 14:03" as though it were a story
+ * about a basement would make the marker meaningless by making it common.
+ */
+function gapSeconds(row: ComplianceRow): number {
+  if (!row.completed_at || !row.submitted_at) return 0;
+  return Math.abs(new Date(row.submitted_at).getTime() - new Date(row.completed_at).getTime()) / 1000;
+}
 
 /** Compact enough to sit inside a header cell without stretching the column. */
 const filterClass =
@@ -69,6 +83,16 @@ export function SubmissionsTable({
       day: 'numeric',
       month: 'short',
       year: 'numeric',
+    });
+
+  // Date as well as time: an offline submission can cross midnight, and "23:40
+  // → 06:15" without the days is a puzzle rather than a record.
+  const formatTime = (iso: string) =>
+    new Date(iso).toLocaleString(locale, {
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
     });
 
   /*
@@ -208,6 +232,30 @@ export function SubmissionsTable({
                   >
                     {row.checklist_title}
                   </Link>
+
+                  {/*
+                    THE EVIDENCE, COUNTED WHERE THE RECORD IS READ.
+
+                    Photographs and files were reachable only by opening the
+                    checklist and scrolling it, so somebody reviewing a month of
+                    records had no way to see which ones carried evidence at all
+                    — the thing a compliance report exists to show. A count here
+                    turns "open every row and look" into "open the three that
+                    have something".
+                  */}
+                  {row.attachments > 0 ? (
+                    <Link
+                      href={`/dashboard/boards/${slug}/fill/${row.id}#evidence`}
+                      title={t('compliance.attachmentsCount', { count: row.attachments })}
+                      className="ml-2 inline-flex items-center gap-1 rounded-md border border-[var(--color-border)] px-1.5 py-0.5 align-middle text-xs text-[var(--color-muted-foreground)] transition-colors hover:text-[var(--color-foreground)]"
+                    >
+                      <Paperclip className="size-3" aria-hidden="true" />
+                      <span className="tabular-nums">{row.attachments}</span>
+                      <span className="sr-only">
+                        {t('compliance.attachmentsCount', { count: row.attachments })}
+                      </span>
+                    </Link>
+                  ) : null}
                 </td>
                 <td className="px-4 py-2.5 text-[var(--color-muted-foreground)]">
                   {row.assignee_email ?? t('common.anyone')}
@@ -222,6 +270,52 @@ export function SubmissionsTable({
                   ) : (
                     <span className="text-[var(--color-muted-foreground)]">—</span>
                   )}
+
+                  {/*
+                    BOTH TIMES, AND ONLY WHEN THERE ARE TWO.
+
+                    An ordinary submission has one moment and shows one line. A
+                    checklist finished with no signal has two facts that are not
+                    interchangeable: when the work was declared done, from the
+                    filler's own device, and when it reached us. The gap between
+                    them is a night shift in a basement, and a report that showed
+                    either one alone would state something that did not happen.
+
+                    The device time is labelled as the device's. It is reported
+                    evidence, not a time this platform can vouch for — a phone's
+                    clock can be wrong by accident and can be set deliberately —
+                    and every compliance judgement still uses the server's.
+                  */}
+                  {row.submitted_at ? (
+                    <div className="mt-0.5 text-xs text-[var(--color-muted-foreground)] tabular-nums">
+                      {row.completed_at && gapSeconds(row) >= 60 ? (
+                        <>
+                          <span title={t('compliance.completedOnDevice')}>
+                            <CloudOff className="mr-1 inline size-3" aria-hidden="true" />
+                            {formatTime(row.completed_at)}
+                          </span>
+                          <span className="mx-1" aria-hidden="true">
+                            →
+                          </span>
+                          <span title={t('compliance.receivedByServer')}>
+                            {formatTime(row.submitted_at)}
+                          </span>
+                          {row.completed_clock_skewed ? (
+                            <span
+                              className="ml-1 text-[var(--color-destructive)]"
+                              title={t('compliance.deviceClockWrong')}
+                            >
+                              !
+                            </span>
+                          ) : null}
+                        </>
+                      ) : (
+                        <span title={t('compliance.receivedByServer')}>
+                          {formatTime(row.submitted_at)}
+                        </span>
+                      )}
+                    </div>
+                  ) : null}
                 </td>
                 <td className="px-4 py-2.5">
                   <div className="flex flex-wrap items-center gap-2">

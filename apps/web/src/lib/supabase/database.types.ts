@@ -555,6 +555,29 @@ export type Database = {
           submitted_by: string | null;
           submitted_by_email: string | null;
           /**
+           * When the filler pressed submit, by THEIR DEVICE'S clock.
+           *
+           * Set only for a checklist finished with no signal and flushed from
+           * the queue later; null when they were online, where `submitted_at`
+           * is the only time there is.
+           *
+           * REPORTED EVIDENCE, NOT A PLATFORM GUARANTEE. A phone's clock can be
+           * wrong by accident and can be set deliberately, so nothing that
+           * decides compliance may read this — `submitted_at` and `due_date`
+           * remain the load-bearing pair. It exists because a submission that
+           * waited four hours in a basement is not one that happened now, and
+           * writing either time into both columns is what would make the record
+           * dishonest.
+           */
+          completed_at: string | null;
+          /**
+           * True when the device reported a completion later than the server's
+           * own time. The value is clamped to `now()`, kept and flagged rather
+           * than refused: losing real work over a mis-set clock would punish
+           * somebody for their phone.
+           */
+          completed_clock_skewed: boolean;
+          /**
            * Voiding annotates rather than overwrites: `status` still says the
            * record was missed, and these say somebody decided it should not
            * count and why. A 'void' status would erase the fact the reason is

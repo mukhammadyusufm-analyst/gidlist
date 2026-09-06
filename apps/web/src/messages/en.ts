@@ -560,6 +560,10 @@ export const en = {
   'compliance.filterBy': 'Filter by {column}',
   'compliance.rangeAbove': 'Set above',
   'compliance.filledByNobody': 'Not filled in',
+  'compliance.attachmentsCount': '{count} attached',
+  'compliance.completedOnDevice': 'Finished on the device, by its own clock — reported, not verified',
+  'compliance.receivedByServer': 'Received by the server',
+  'compliance.deviceClockWrong': 'The device clock was ahead of ours, so the time was clamped',
 } satisfies Messages;
 
 export type MessageKey = keyof typeof en;

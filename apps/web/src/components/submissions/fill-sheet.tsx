@@ -255,6 +255,20 @@ export function FillSheet({
         </div>
       </div>
 
+      {/*
+        Every piece of evidence in one place, for the person reviewing rather
+        than the person filling in.
+
+        Only when the record is closed. While a checklist is being filled the
+        attachments are exactly where they belong — beside the item that asked
+        for them — and a summary above would be clutter over work in progress.
+        Afterwards the question changes completely: not "what does this item
+        need" but "show me what was photographed", and answering that meant
+        scrolling a checklist of forty items hoping to spot a thumbnail. That is
+        the state a compliance report links into, so this is where it lands.
+      */}
+      {readOnly ? <EvidenceStrip groups={groups} /> : null}
+
       {/* Refusals from the queue, which nothing else on the page would
           mention. Shown until dismissed: the person ticked these believing
           they were done, and the server disagreed after they walked away. */}
@@ -824,6 +838,97 @@ function ItemRow({
         </div>
       ) : null}
     </div>
+  );
+}
+
+/** One attachment, flattened out of the tree with the item that carries it. */
+type Evidence = {
+  itemTitle: string;
+  kind: 'photo' | 'file';
+  /** Signed, short-lived, and null when signing failed. */
+  url: string | null;
+};
+
+/** Walk every level: evidence on a sub-task is evidence. */
+function collectEvidence(items: AnsweredItem[], into: Evidence[] = []): Evidence[] {
+  for (const item of items) {
+    if (item.answer?.photo_path) {
+      into.push({ itemTitle: item.title, kind: 'photo', url: item.photoUrl });
+    }
+    if (item.answer?.file_path) {
+      into.push({ itemTitle: item.title, kind: 'file', url: item.fileUrl });
+    }
+    collectEvidence(item.children, into);
+  }
+  return into;
+}
+
+/**
+ * The attachments on a finished checklist, as one strip.
+ *
+ * `id="evidence"` is the anchor the compliance table links to, so the count in
+ * a report is a way in rather than only a number: from a month of records,
+ * click the paperclip, land on the photographs.
+ *
+ * `scroll-mt-32` because the page has a sticky header and a sticky progress
+ * bar. Without it the browser scrolls the anchor to the very top of the
+ * viewport, which is underneath both of them, and the link appears to do
+ * nothing.
+ */
+function EvidenceStrip({ groups }: { groups: GroupWithAnswers[] }) {
+  const { t } = useT();
+  const evidence = groups.flatMap((group) => collectEvidence(group.items));
+
+  if (evidence.length === 0) return null;
+
+  return (
+    <section
+      id="evidence"
+      className="scroll-mt-32 rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] p-3"
+    >
+      <h2 className="text-sm font-medium">
+        {t('compliance.attachmentsCount', { count: evidence.length })}
+      </h2>
+
+      {/* Scrolls inside itself. A row of twelve photographs must not make the
+          page scroll sideways — the same rule as the compliance table. */}
+      <ul className="mt-2 flex gap-2 overflow-x-auto pb-1">
+        {evidence.map((entry, index) => (
+          <li key={`${entry.itemTitle}-${entry.kind}-${index}`} className="w-20 shrink-0">
+            <a
+              href={entry.url ?? undefined}
+              target="_blank"
+              rel="noreferrer"
+              className={cn(
+                'block rounded-md border border-[var(--color-border)]',
+                entry.url ? 'hover:border-[var(--color-primary)]' : 'pointer-events-none opacity-60',
+              )}
+            >
+              {entry.kind === 'photo' && entry.url ? (
+                // A plain <img>: these are short-lived signed URLs on a private
+                // bucket, which the image optimiser cannot fetch and must not
+                // cache. Same reasoning as the control on each item.
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={entry.url}
+                  alt={entry.itemTitle}
+                  className="size-20 rounded-md object-cover"
+                />
+              ) : (
+                <span className="flex size-20 items-center justify-center rounded-md">
+                  <Paperclip className="size-5 text-[var(--color-muted-foreground)]" aria-hidden="true" />
+                </span>
+              )}
+            </a>
+            {/* The item, not the filename. "Fridge temperature" is what somebody
+                is looking for; a UUID with a .jpg on the end is not. */}
+            <p className="mt-1 truncate text-xs text-[var(--color-muted-foreground)]" title={entry.itemTitle}>
+              {entry.itemTitle}
+            </p>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 

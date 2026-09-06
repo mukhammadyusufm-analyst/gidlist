@@ -547,4 +547,8 @@ export const ru = {
   'compliance.filterBy': 'Фильтр по полю «{column}»',
   'compliance.rangeAbove': 'Задаётся выше',
   'compliance.filledByNobody': 'Не заполнено',
+  'compliance.attachmentsCount': 'вложений: {count}',
+  'compliance.completedOnDevice': 'Завершено на устройстве, по его часам — со слов устройства, не проверено',
+  'compliance.receivedByServer': 'Получено сервером',
+  'compliance.deviceClockWrong': 'Часы устройства шли впереди наших, время ограничено',
 } satisfies Messages;

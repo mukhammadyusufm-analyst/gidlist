@@ -554,4 +554,8 @@ export const uz = {
   'compliance.filterBy': '«{column}» boʻyicha filtr',
   'compliance.rangeAbove': 'Yuqorida belgilanadi',
   'compliance.filledByNobody': 'Toʻldirilmagan',
+  'compliance.attachmentsCount': '{count} ta biriktirma',
+  'compliance.completedOnDevice': 'Qurilmada tugatilgan, oʻz soati boʻyicha — bildirilgan, tasdiqlanmagan',
+  'compliance.receivedByServer': 'Server qabul qilgan vaqt',
+  'compliance.deviceClockWrong': 'Qurilma soati serverdan oldinda edi, shuning uchun vaqt cheklandi',
 } satisfies Messages;

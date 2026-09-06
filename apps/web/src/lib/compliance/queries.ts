@@ -46,6 +46,25 @@ export type ComplianceRow = {
   submitted_by_email: string | null;
   checklist_id: string;
   checklist_title: string;
+  /**
+   * When it reached the server. The platform's own clock, and the one every
+   * compliance judgement uses.
+   */
+  submitted_at: string | null;
+  /**
+   * When the person pressed submit, by THEIR DEVICE'S clock — set only when the
+   * checklist was finished with no signal and sent later.
+   *
+   * Null is the ordinary case: they were online, and there is only one time.
+   * When it is set and differs from `submitted_at` by hours, that gap is the
+   * night shift in a basement, and showing only one of the two would make the
+   * record say something that did not happen.
+   */
+  completed_at: string | null;
+  /** True when that device clock was ahead of the server's, so it was clamped. */
+  completed_clock_skewed: boolean | null;
+  /** How many photographs and files are attached across the whole submission. */
+  attachments: number;
   /** Set when somebody decided this record should not count. */
   voided_at: string | null;
   void_reason: string | null;
@@ -131,7 +150,7 @@ export async function getComplianceData(
   let rowQuery = supabase
     .from('submissions')
     .select(
-      'id, due_date, status, assignee_email, submitted_by_email, checklist_id, voided_at, void_reason',
+      'id, due_date, status, assignee_email, submitted_by_email, checklist_id, voided_at, void_reason, submitted_at, completed_at, completed_clock_skewed',
       { count: 'exact' },
     )
     .in(
@@ -197,11 +216,43 @@ export async function getComplianceData(
 
   const matched = rowResult.count ?? 0;
 
+  /*
+   * How much evidence each record carries, asked for only the rows on screen.
+   *
+   * A separate query rather than an embedded count, because PostgREST's
+   * embedded aggregate counts CHILD ROWS, not the ones with a file on them —
+   * every item in the checklist would be counted, attached or not, and the
+   * column would report the length of the checklist while looking like a
+   * number of photographs.
+   *
+   * Bounded by the page: at most `PAGE_SIZE` submissions' worth of items, and
+   * only those with something attached. RLS applies here as everywhere, so a
+   * viewer counts exactly what they could open.
+   */
+  const ids = (rowResult.data ?? []).map((r) => r.id);
+  const attachments = new Map<string, number>();
+
+  if (ids.length > 0) {
+    const { data: withFiles } = await supabase
+      .from('submission_items')
+      .select('submission_id, photo_path, file_path')
+      .in('submission_id', ids)
+      .or('photo_path.not.is.null,file_path.not.is.null');
+
+    for (const item of withFiles ?? []) {
+      // An item can carry both a photograph and a file, and they are two pieces
+      // of evidence rather than one item that happens to have things on it.
+      const n = (item.photo_path ? 1 : 0) + (item.file_path ? 1 : 0);
+      attachments.set(item.submission_id, (attachments.get(item.submission_id) ?? 0) + n);
+    }
+  }
+
   return {
     rows: (rowResult.data ?? []).map((r) => ({
       ...r,
       status: r.status,
       checklist_title: titles.get(r.checklist_id) ?? 'Checklist',
+      attachments: attachments.get(r.id) ?? 0,
     })),
     page,
     pageCount: Math.max(1, Math.ceil(matched / PAGE_SIZE)),
