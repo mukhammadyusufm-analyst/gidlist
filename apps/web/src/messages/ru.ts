@@ -427,6 +427,8 @@ export const ru = {
   'account.emailIntro': 'Адрес, с которым вы входите.',
   'account.changeEmail': 'Изменить почту',
   'account.passwordSection': 'Пароль',
+  'account.appearanceSection': 'Оформление',
+  'account.appearanceIntro': 'Хранится на этом устройстве, а не в аккаунте — телефону в цехе и компьютеру в тёмном офисе нужны разные настройки.',
   'account.newPassword': 'Новый пароль',
   'account.confirmPassword': 'Подтвердите пароль',
   'account.setPassword': 'Установить пароль',

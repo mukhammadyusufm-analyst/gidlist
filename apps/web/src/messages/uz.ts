@@ -433,6 +433,8 @@ export const uz = {
   'account.emailIntro': 'Tizimga kirishda ishlatiladigan manzil.',
   'account.changeEmail': 'Pochtani oʻzgartirish',
   'account.passwordSection': 'Parol',
+  'account.appearanceSection': 'Koʻrinish',
+  'account.appearanceIntro': 'Shu qurilmada saqlanadi, hisobingizda emas — sexdagi telefon va xira ofisdagi kompyuter uchun javob har xil boʻladi.',
   'account.newPassword': 'Yangi parol',
   'account.confirmPassword': 'Parolni tasdiqlang',
   'account.setPassword': 'Parol oʻrnatish',

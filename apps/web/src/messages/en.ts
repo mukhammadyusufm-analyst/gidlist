@@ -431,6 +431,8 @@ export const en = {
   'account.emailIntro': 'The address you sign in with.',
   'account.changeEmail': 'Change email',
   'account.passwordSection': 'Password',
+  'account.appearanceSection': 'Appearance',
+  'account.appearanceIntro': 'Kept on this device, not on your account — a phone on a shop floor and a desktop in a dim office want different answers.',
   'account.newPassword': 'New password',
   'account.confirmPassword': 'Confirm password',
   'account.setPassword': 'Set password',

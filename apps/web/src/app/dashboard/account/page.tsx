@@ -6,6 +6,8 @@ import { Check, ChevronRight, CreditCard, KeyRound, Mail } from 'lucide-react';
 import { getUser } from '@/lib/supabase/server';
 import { getMyProfile } from '@/lib/account/profile';
 import { getTranslations } from '@/lib/i18n/server';
+import { getTheme } from '@/lib/theme/server';
+import { ThemeChoice } from '@/components/theme/theme-choice';
 import { AvatarUpload } from '@/components/account/avatar-upload';
 import { EmailForm, NameForm, PasswordForm } from '@/components/account/account-forms';
 
@@ -23,7 +25,7 @@ export default async function AccountPage() {
 
   // The dashboard layout above has already read this row this render; through
   // getMyProfile() both share one lookup. See lib/account/profile.ts.
-  const [profile, { t }] = await Promise.all([getMyProfile(), getTranslations()]);
+  const [profile, { t }, theme] = await Promise.all([getMyProfile(), getTranslations(), getTheme()]);
 
   /**
    * Which sign-in methods this account actually has.
@@ -128,6 +130,22 @@ export default async function AccountPage() {
         <div className="mt-4">
           <PasswordForm hasPassword={hasPassword} />
         </div>
+      </section>
+
+      {/*
+        The theme, in full, because the header can only show two of the three.
+
+        Kept per device rather than per account — see the note in
+        `packages/core/src/theme.ts`. A phone under shopfloor lighting and the
+        same person's desktop at six in the evening want different answers, and
+        syncing this to the profile would fix one by breaking the other.
+      */}
+      <section>
+        <h2 className="text-lg font-semibold">{t('account.appearanceSection')}</h2>
+        <p className="mt-1 mb-4 text-sm text-[var(--color-muted-foreground)]">
+          {t('account.appearanceIntro')}
+        </p>
+        <ThemeChoice current={theme} />
       </section>
 
       {/*
