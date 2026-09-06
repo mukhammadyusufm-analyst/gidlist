@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { saveTranslation } from '@/lib/translations/actions';
+import { stringSections } from '@/lib/i18n/sections';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { FormNotice } from '@/components/ui/field-error';
@@ -58,6 +59,14 @@ export function StringEditor({
       // would currently be reading English.
       if (untranslatedOnly && effective) return false;
       if (!term) return true;
+      /*
+       * FIND BY VALUE, WHICH IS HOW ANYBODY ACTUALLY ARRIVES HERE.
+       *
+       * Nobody opens this screen knowing a key. They saw a sentence on a screen
+       * and disliked it, so the sentence is the thing they have — in English, or
+       * in the language they were reading. Searching the key alone would serve
+       * only the person who wrote it.
+       */
       return (
         row.key.toLowerCase().includes(term) ||
         row.english.toLowerCase().includes(term) ||
@@ -65,6 +74,30 @@ export function StringEditor({
       );
     });
   }, [rows, query, editedOnly, untranslatedOnly]);
+
+  /*
+   * The surviving rows, put back into their sections.
+   *
+   * Grouping AFTER filtering rather than filtering inside each section, so a
+   * section with no matches disappears entirely instead of sitting there empty.
+   * Searching a 500-string catalogue and being shown ten headings with nothing
+   * under them is worse than a flat list, which is what this replaced.
+   */
+  const grouped = useMemo(() => {
+    const bySection = stringSections(filtered.map((r) => r.key));
+    const byKey = new Map(filtered.map((r) => [r.key, r]));
+
+    return bySection.map((section) => ({
+      ...section,
+      rows: section.keys.map((key) => byKey.get(key)!).filter(Boolean),
+    }));
+  }, [filtered]);
+
+  // Narrowed to something small: open everything, because the person is looking
+  // at a handful of rows and closing them again is pure friction. Otherwise the
+  // first section only, so the page opens as a readable list of places rather
+  // than five hundred fields.
+  const expandAll = filtered.length <= 25;
 
   function save(key: string, value: string) {
     setError(null);
@@ -118,9 +151,44 @@ export function StringEditor({
           {labels.none}
         </p>
       ) : (
-        <ul className="divide-y divide-[var(--color-border)] rounded-xl border border-[var(--color-border)]">
-          {filtered.map((row) => (
-            <StringRow
+        /*
+         * Keyed on the search term, and ONLY this list.
+         *
+         * `<details open>` is an initial state rather than a binding, so a new
+         * search would otherwise leave every section exactly as the last one
+         * left it — you would search for a sentence, get one match, and be
+         * looking at a collapsed heading. Remounting re-applies the rule above.
+         *
+         * The key must not go on the whole section: that contains the search
+         * field, which would then remount on every keystroke and lose focus
+         * after one character.
+         */
+        <div className="space-y-3" key={query.trim().toLowerCase()}>
+          {grouped.map((section, index) => (
+          <details
+            key={section.id}
+            /*
+             * `open` on a `<details>` is an initial state, not a binding — React
+             * will not force a section shut once somebody has opened it, which
+             * is the behaviour wanted here. The `key` carries the search term
+             * so a NEW search does remount and re-apply this.
+             */
+            open={expandAll || index === 0}
+            className="rounded-xl border border-[var(--color-border)]"
+          >
+            <summary className="cursor-pointer px-4 py-3">
+              <span className="text-sm font-medium">{section.title}</span>
+              <span className="ml-2 text-xs text-[var(--color-muted-foreground)] tabular-nums">
+                {section.rows.length}
+              </span>
+              <span className="mt-0.5 block text-xs text-[var(--color-muted-foreground)]">
+                {section.hint}
+              </span>
+            </summary>
+
+            <ul className="divide-y divide-[var(--color-border)] border-t border-[var(--color-border)]">
+              {section.rows.map((row) => (
+                <StringRow
               /*
                * Locale and value both belong in this key, and neither was here.
                *
@@ -140,15 +208,18 @@ export function StringEditor({
                * would produce the same key and the stale draft would survive
                * exactly where it is least obvious — a field that looks blank.
                */
-              key={`${locale}:${row.key}:${row.override || row.shipped}`}
-              row={row}
-              labels={labels}
-              localeName={localeName}
-              justSaved={savedKey === row.key}
-              onSave={save}
-            />
+                  key={`${locale}:${row.key}:${row.override || row.shipped}`}
+                  row={row}
+                  labels={labels}
+                  localeName={localeName}
+                  justSaved={savedKey === row.key}
+                  onSave={save}
+                />
+              ))}
+            </ul>
+          </details>
           ))}
-        </ul>
+        </div>
       )}
     </section>
   );
