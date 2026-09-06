@@ -129,6 +129,27 @@ export default async function AccountPage() {
           <PasswordForm hasPassword={hasPassword} />
         </div>
       </section>
+
+      {/*
+        The way into the service hatch, and it is here rather than in the
+        navigation on purpose.
+
+        The page itself explains why it is unlinked: nobody filling in a
+        checklist has any use for it. But "type this address" turned out to be a
+        real obstacle — a phone keyboard, an address bar that would rather search
+        than navigate, and a person who is only doing this because something is
+        already broken. A quiet line at the bottom of the account page costs
+        nothing and removes that failure entirely.
+
+        Untranslated, like the page it leads to: it is read by whoever is fixing
+        the fault, not by whoever hit it.
+      */}
+      <p className="border-t border-[var(--color-border)] pt-4 text-xs text-[var(--color-muted-foreground)]">
+        <Link href="/dashboard/diagnostics" className="underline underline-offset-2">
+          Diagnostics
+        </Link>{' '}
+        — device and sync state, for support.
+      </p>
     </div>
   );
 }
