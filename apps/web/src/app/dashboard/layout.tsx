@@ -54,11 +54,21 @@ export default async function DashboardLayout({ children }: { children: React.Re
       {/* Sticky, translucent and blurred: on a phone the header stays reachable
           while scrolling a long checklist, and the blur keeps it legible over
           whatever passes beneath. */}
-      <header className="sticky top-0 z-30 border-b border-[var(--color-border)] bg-[var(--color-background)]/85 backdrop-blur-md">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-2.5">
+      {/*
+        `overflow-x-clip` is the backstop, not the fix.
+
+        The header is a row of fixed-width controls, and on a 360px phone their
+        sum came to more than the screen — so the whole PAGE scrolled sideways,
+        which reads as the app being broken rather than as one strip being full.
+        The controls themselves were narrowed (language codes rather than names,
+        two theme buttons rather than three, a count rather than a sentence);
+        this stops any future addition doing the same thing silently.
+      */}
+      <header className="sticky top-0 z-30 overflow-x-clip border-b border-[var(--color-border)] bg-[var(--color-background)]/85 backdrop-blur-md">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-4 py-2.5 sm:gap-3">
           <Link
             href="/dashboard"
-            className="flex shrink-0 items-center gap-2 font-semibold tracking-tight"
+            className="flex min-w-0 shrink items-center gap-2 font-semibold tracking-tight"
           >
             <span className="flex size-7 items-center justify-center rounded-md bg-[var(--color-primary)] text-[var(--color-primary-foreground)]">
               <CircleCheckBig className="size-4" aria-hidden="true" />
@@ -66,7 +76,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <span className="hidden sm:inline">Gidlist</span>
           </Link>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
             {isAdmin ? (
               <Link
                 href="/dashboard/admin"

@@ -1,32 +1,42 @@
 'use client';
 
-import { useOptimistic, useTransition } from 'react';
+import { useOptimistic, useSyncExternalStore, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Monitor, Moon, Sun } from 'lucide-react';
-import { THEMES, type Theme } from '@app/core/theme';
+import { Moon, Sun } from 'lucide-react';
+import type { Theme } from '@app/core/theme';
 
 import { setTheme } from '@/lib/theme/actions';
 import { cn } from '@/lib/utils';
 import { useT } from '@/components/i18n/provider';
 
-const ICONS: Record<Theme, typeof Sun> = {
-  light: Sun,
-  dark: Moon,
-  system: Monitor,
-};
-
-const TITLE_KEYS: Record<Theme, string> = {
-  light: 'theme.light',
-  dark: 'theme.dark',
-  system: 'theme.system',
-};
-
 /**
- * A three-way segmented control rather than a two-state switch.
+ * Day and night. Two buttons, not three.
  *
- * "Match device" has to be reachable: someone whose phone flips to dark at
- * sunset wants the app to follow, and a plain light/dark toggle silently takes
- * that away the first time it is touched.
+ * =============================================================================
+ * "MATCH DEVICE" IS STILL THERE — IT IS JUST NOT A BUTTON ANY MORE
+ *
+ * The previous version argued that a third control had to exist, because
+ * somebody whose phone flips to dark at sunset wants the app to follow, and a
+ * plain toggle takes that away the first time it is touched.
+ *
+ * That was right about the behaviour and wrong about the interface. Following
+ * the device is the DEFAULT — `DEFAULT_THEME` is `system`, so every account
+ * starts there and stays there until somebody deliberately chooses otherwise.
+ * The third button was a control for the state you are already in, occupying
+ * width in a header that overflows a phone screen.
+ *
+ * What is genuinely lost: no way back to "follow my device" once a choice is
+ * made. That belongs on the account page, where a setting can be explained,
+ * rather than in a strip of icons with no room to explain anything.
+ *
+ * =============================================================================
+ * WHICH BUTTON LOOKS ACTIVE WHILE THE SETTING IS `system`
+ *
+ * Neither, if this only read the cookie — and a pair of buttons where neither
+ * is pressed reads as broken. So while the setting is `system` the effective
+ * theme is resolved from the device itself, and that button is shown as active.
+ * It tells the truth about what is on screen, which is what somebody looking at
+ * a toggle is actually asking.
  */
 export function ThemeToggle({ current }: { current: Theme }) {
   const router = useRouter();
@@ -34,21 +44,27 @@ export function ThemeToggle({ current }: { current: Theme }) {
   const [optimistic, setOptimistic] = useOptimistic(current, (_c, next: Theme) => next);
   const { t } = useT();
 
+  const prefersDark = usePrefersDark();
+
+  // What the person is actually looking at, which is not always what is stored.
+  const effective: Exclude<Theme, 'system'> =
+    optimistic === 'system' ? (prefersDark ? 'dark' : 'light') : optimistic;
+
   return (
     <div
       role="group"
       aria-label={t('theme.label')}
-      className="inline-flex items-center gap-0.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] p-0.5"
+      className="inline-flex shrink-0 items-center gap-0.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] p-0.5"
     >
-      {THEMES.map((theme) => {
-        const Icon = ICONS[theme];
-        const active = optimistic === theme;
+      {(['light', 'dark'] as const).map((theme) => {
+        const Icon = theme === 'light' ? Sun : Moon;
+        const active = effective === theme;
 
         return (
           <button
             key={theme}
             type="button"
-            title={t(TITLE_KEYS[theme])}
+            title={t(theme === 'light' ? 'theme.light' : 'theme.dark')}
             aria-pressed={active}
             onClick={() => {
               startTransition(async () => {
@@ -68,10 +84,30 @@ export function ThemeToggle({ current }: { current: Theme }) {
             )}
           >
             <Icon className="size-4" aria-hidden="true" />
-            <span className="sr-only">{t(TITLE_KEYS[theme])}</span>
+            <span className="sr-only">{t(theme === 'light' ? 'theme.light' : 'theme.dark')}</span>
           </button>
         );
       })}
     </div>
+  );
+}
+
+/**
+ * What the device asks for, kept in step with it.
+ *
+ * `useSyncExternalStore` rather than an effect: this is an external system with
+ * a subscribe method, which is exactly what the hook is for, and it avoids
+ * setting state during render on the server — where `matchMedia` does not
+ * exist and the honest answer is "assume light".
+ */
+function usePrefersDark(): boolean {
+  return useSyncExternalStore(
+    (fn) => {
+      const query = window.matchMedia('(prefers-color-scheme: dark)');
+      query.addEventListener('change', fn);
+      return () => query.removeEventListener('change', fn);
+    },
+    () => window.matchMedia('(prefers-color-scheme: dark)').matches,
+    () => false,
   );
 }
