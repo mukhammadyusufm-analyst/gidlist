@@ -491,7 +491,6 @@ function ItemRow({
   depth: number;
 } & TickState) {
   const [pending, startTransition] = useTransition();
-  const [showComment, setShowComment] = useState(Boolean(item.answer?.comment));
   const offline = useOffline();
   const { t } = useT();
 
@@ -681,32 +680,6 @@ function ItemRow({
     });
   }
 
-  function onCommentBlur(value: string) {
-    if (!answerId || readOnly) return;
-    if ((item.answer?.comment ?? '') === value.trim()) return;
-
-    // Decided before the transition — see the long note in `upload`. A caught
-    // Server Action error is still reported to the error boundary, so the only
-    // reliable defence is not to dispatch one.
-    if (typeof navigator !== 'undefined' && !navigator.onLine) {
-      trace('comment.offline', offline ? 'queueing' : 'NO PROVIDER');
-      if (offline) void offline.enqueue({ kind: 'comment', answerId, comment: value });
-      else onError(t('fill.offlineUnavailable'));
-      return;
-    }
-
-    startTransition(async () => {
-      try {
-        const result = await saveComment(answerId, value);
-        if (result.error) onError(result.error);
-      } catch (e) {
-        trace('comment.threw', e);
-        if (offline) await offline.enqueue({ kind: 'comment', answerId, comment: value });
-        else onError(t('fill.offlineUnavailable'));
-      }
-    });
-  }
-
   // Indentation is the cue for nesting, and it has to survive five levels on a
   // phone. A 1.25rem step reaches 5rem at the deepest level — noticeable, but
   // still leaving room for the text rather than squeezing it into a column.
@@ -825,27 +798,16 @@ function ItemRow({
           </div>
         ) : null}
 
-        <div className="px-3 pb-3">
-          {showComment ? (
-            <textarea
-              defaultValue={item.answer?.comment ?? ''}
+        {answerId ? (
+          <div className="px-3 pb-3">
+            <CommentControl
+              answerId={answerId}
+              initial={item.answer?.comment ?? ''}
               readOnly={readOnly}
-              rows={2}
-              placeholder={t('fill.addNote')}
-              onBlur={(e) => onCommentBlur(e.target.value)}
-              className="w-full rounded-lg border border-[var(--color-input)] bg-[var(--color-surface)] px-3 py-2 text-base sm:text-sm"
+              onError={onError}
             />
-          ) : !readOnly ? (
-            <button
-              type="button"
-              onClick={() => setShowComment(true)}
-              className="inline-flex items-center gap-1.5 text-xs text-[var(--color-muted-foreground)] transition-colors hover:text-[var(--color-foreground)]"
-            >
-              <MessageSquarePlus className="size-3.5" aria-hidden="true" />
-              {t('fill.addNote')}
-            </button>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
       </div>
 
       {hasChildren ? (
@@ -861,6 +823,167 @@ function ItemRow({
           />
         </div>
       ) : null}
+    </div>
+  );
+}
+
+/**
+ * The note on one answer.
+ *
+ * =============================================================================
+ * SAVED ON A BUTTON, NOT ON BLUR, AND THE DIFFERENCE IS NOT COSMETIC
+ *
+ * It used to save when the field lost focus. That is a perfectly ordinary
+ * pattern on a desktop form and a poor one here: on a phone, a note is finished
+ * by pressing the keyboard's Done key or by tapping something else, and neither
+ * feels like an act of saving. So there was no moment that said the words had
+ * been kept, and no moment that said they had not. Somebody typing an
+ * explanation of why a fridge was two degrees warm — which is precisely the
+ * thing this field exists to capture — had to take it on trust.
+ *
+ * Worse, blur is not reliably reached. Submitting the checklist from a
+ * half-typed note, or the tab going away, could take the words with it.
+ *
+ * A saved note is then shown as text rather than left in a box, so the screen
+ * distinguishes between what has been recorded and what is still being written.
+ * It stays editable and deletable until the checklist is submitted, and not
+ * after — the record is fixed at the moment somebody stands behind it.
+ */
+function CommentControl({
+  answerId,
+  initial,
+  readOnly,
+  onError,
+}: {
+  answerId: string;
+  /** What the server holds. The local view starts here and moves ahead of it. */
+  initial: string;
+  readOnly: boolean;
+  onError: (message: string | null) => void;
+}) {
+  const [pending, startTransition] = useTransition();
+  const offline = useOffline();
+  const { t } = useT();
+
+  /*
+   * What this device believes is recorded, which is deliberately not the same
+   * as what the server has confirmed.
+   *
+   * A note written with no signal is queued, and the server will not know about
+   * it for hours. Showing the old value until then — or an empty box — would
+   * tell somebody their words were lost. This holds what they wrote, from the
+   * moment they press the button.
+   */
+  const [saved, setSaved] = useState(initial);
+  const [draft, setDraft] = useState(initial);
+  const [editing, setEditing] = useState(false);
+
+  function commit(text: string) {
+    const value = text.trim();
+    onError(null);
+    setSaved(value);
+    setEditing(false);
+
+    if (value === saved.trim()) return;
+
+    // Decided before the transition — the long note in `upload` explains why a
+    // try/catch at the call site is not enough to keep a failed Server Action
+    // away from the error boundary.
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      trace('comment.offline', offline ? 'queueing' : 'NO PROVIDER');
+      if (offline) void offline.enqueue({ kind: 'comment', answerId, comment: value });
+      else onError(t('fill.offlineUnavailable'));
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        const result = await saveComment(answerId, value);
+        if (result.error) onError(result.error);
+      } catch (e) {
+        trace('comment.threw', e);
+        if (offline) await offline.enqueue({ kind: 'comment', answerId, comment: value });
+        else onError(t('fill.offlineUnavailable'));
+      }
+    });
+  }
+
+  // Nothing written and nothing to write: the read-only case has no note to
+  // show and no way to add one, so it renders nothing at all rather than an
+  // empty heading.
+  if (readOnly && !saved) return null;
+
+  if (readOnly || !editing) {
+    return saved ? (
+      <div className="rounded-lg bg-[var(--color-surface)] px-3 py-2">
+        {/* `whitespace-pre-wrap` because somebody who pressed return between two
+            observations meant them to be two lines. */}
+        <p className="text-sm whitespace-pre-wrap">{saved}</p>
+
+        {!readOnly ? (
+          <div className="mt-1.5 flex gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setDraft(saved);
+                setEditing(true);
+              }}
+              className="text-xs text-[var(--color-muted-foreground)] underline underline-offset-4 transition-colors hover:text-[var(--color-foreground)]"
+            >
+              {t('common.edit')}
+            </button>
+            <button
+              type="button"
+              onClick={() => commit('')}
+              className="text-xs text-[var(--color-muted-foreground)] underline underline-offset-4 transition-colors hover:text-[var(--color-destructive)]"
+            >
+              {t('common.delete')}
+            </button>
+          </div>
+        ) : null}
+      </div>
+    ) : (
+      <button
+        type="button"
+        onClick={() => {
+          setDraft('');
+          setEditing(true);
+        }}
+        className="inline-flex items-center gap-1.5 text-xs text-[var(--color-muted-foreground)] transition-colors hover:text-[var(--color-foreground)]"
+      >
+        <MessageSquarePlus className="size-3.5" aria-hidden="true" />
+        {t('fill.addNote')}
+      </button>
+    );
+  }
+
+  return (
+    <div>
+      <textarea
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        rows={2}
+        autoFocus
+        placeholder={t('fill.addNote')}
+        className="w-full rounded-lg border border-[var(--color-input)] bg-[var(--color-surface)] px-3 py-2 text-base sm:text-sm"
+      />
+
+      <div className="mt-1.5 flex gap-2">
+        <Button type="button" size="sm" onClick={() => commit(draft)} disabled={pending}>
+          {t('common.save')}
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          onClick={() => {
+            setDraft(saved);
+            setEditing(false);
+          }}
+        >
+          {t('common.cancel')}
+        </Button>
+      </div>
     </div>
   );
 }

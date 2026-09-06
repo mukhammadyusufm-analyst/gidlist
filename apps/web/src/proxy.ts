@@ -71,13 +71,29 @@ function buildCsp(nonce: string): string {
   // sign-ups that were arriving before it existed.
   const turnstile = 'https://challenges.cloudflare.com';
 
+  /*
+   * The map used to pin an item to a place: tiles to draw it, and Nominatim to
+   * turn "Chilonzor bozori" into coordinates.
+   *
+   * Both have to be named or the feature fails in the way CSP failures always
+   * fail — silently. A blocked tile is not a broken image, it is nothing at all,
+   * and a blocked search request rejects with a message that says nothing about
+   * the policy. This was written before the map was ever loaded in a browser,
+   * having been caught by reading the policy rather than by watching it break.
+   *
+   * Images only for the tile host and connections only for the search host:
+   * neither needs the other, and there is no reason to grant it.
+   */
+  const tiles = 'https://tile.openstreetmap.org https://*.tile.openstreetmap.org';
+  const geocoder = 'https://nominatim.openstreetmap.org';
+
   return [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`,
     "style-src 'self' 'unsafe-inline'",
-    `img-src 'self' data: blob: ${supabase}`,
+    `img-src 'self' data: blob: ${supabase} ${tiles}`,
     "font-src 'self'",
-    `connect-src 'self' ${supabase} wss://*.supabase.co ${turnstile}`,
+    `connect-src 'self' ${supabase} wss://*.supabase.co ${turnstile} ${geocoder}`,
     /*
      * Turnstile draws its challenge in an iframe. There was no `frame-src` at
      * all, so `default-src 'self'` governed it and the widget was refused with

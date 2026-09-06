@@ -38,6 +38,7 @@ import type { ChecklistItem } from '@/lib/supabase/database.types';
 import type { ActionState } from '@/lib/checklists/actions';
 import type { GroupWithItems } from '@/lib/checklists/queries';
 import { locate, reseat } from '@/lib/checklists/tree';
+import { LocationPicker } from '@/components/checklists/location-picker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FormNotice } from '@/components/ui/field-error';
@@ -637,6 +638,19 @@ function ItemRequirements({ item }: { item: Item }) {
   const [windowEnabled, setWindowEnabled] = useState(item.window_enabled);
 
   /*
+   * The three location fields are controlled, unlike everything else here.
+   *
+   * They have three authors — typing, "use where I am now", and the map — and
+   * the previous arrangement had the last two reach into the form and set
+   * `.value` on the DOM node directly. That works until something else wants to
+   * read the current value, which the map does: it has to open on the place
+   * already chosen. State is the only version of this where all three agree.
+   */
+  const [locLat, setLocLat] = useState(item.location_lat?.toString() ?? '');
+  const [locLng, setLocLng] = useState(item.location_lng?.toString() ?? '');
+  const [locRadius, setLocRadius] = useState(item.location_radius_m?.toString() ?? '');
+
+  /*
    * These four follow the saved row because the caller remounts this component
    * when any of them changes — see the `key` on <ItemRequirements>. `useState`
    * reads its argument once, on mount, and this panel stays mounted across a
@@ -669,20 +683,15 @@ function ItemRequirements({ item }: { item: Item }) {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setLocating(false);
-        const form = formRef.current;
-        if (!form) return;
 
         // Six decimal places is about 0.1m — far finer than any consumer GPS,
         // and short enough to read.
-        (form.elements.namedItem('locationLat') as HTMLInputElement).value =
-          pos.coords.latitude.toFixed(6);
-        (form.elements.namedItem('locationLng') as HTMLInputElement).value =
-          pos.coords.longitude.toFixed(6);
+        setLocLat(pos.coords.latitude.toFixed(6));
+        setLocLng(pos.coords.longitude.toFixed(6));
 
-        const radius = form.elements.namedItem('locationRadiusM') as HTMLInputElement;
         // Seed a sensible radius rather than leaving it blank and failing
         // validation. 50m is generous enough to survive a poor indoor fix.
-        if (!radius.value) radius.value = '50';
+        setLocRadius((current) => current || '50');
       },
       () => {
         setLocating(false);
@@ -750,13 +759,23 @@ function ItemRequirements({ item }: { item: Item }) {
               <span className="mb-1 block text-xs text-[var(--color-muted-foreground)]">
                 {t('checklist.latitude')}
               </span>
-              <Input name="locationLat" defaultValue={item.location_lat ?? ''} inputMode="decimal" />
+              <Input
+                name="locationLat"
+                value={locLat}
+                onChange={(e) => setLocLat(e.target.value)}
+                inputMode="decimal"
+              />
             </label>
             <label className="block">
               <span className="mb-1 block text-xs text-[var(--color-muted-foreground)]">
                 {t('checklist.longitude')}
               </span>
-              <Input name="locationLng" defaultValue={item.location_lng ?? ''} inputMode="decimal" />
+              <Input
+                name="locationLng"
+                value={locLng}
+                onChange={(e) => setLocLng(e.target.value)}
+                inputMode="decimal"
+              />
             </label>
             <label className="block">
               <span className="mb-1 block text-xs text-[var(--color-muted-foreground)]">
@@ -764,7 +783,8 @@ function ItemRequirements({ item }: { item: Item }) {
               </span>
               <Input
                 name="locationRadiusM"
-                defaultValue={item.location_radius_m ?? ''}
+                value={locRadius}
+                onChange={(e) => setLocRadius(e.target.value)}
                 inputMode="numeric"
               />
             </label>
@@ -780,6 +800,19 @@ function ItemRequirements({ item }: { item: Item }) {
           >
             {locating ? t('checklist.locating') : t('checklist.useMyLocation')}
           </Button>
+
+          {/* For the far more common case: somebody who knows exactly which
+              door they mean and has no idea what number describes it. */}
+          <LocationPicker
+            lat={locLat}
+            lng={locLng}
+            radius={locRadius}
+            onPick={({ lat, lng }) => {
+              setLocLat(lat);
+              setLocLng(lng);
+              setLocRadius((current) => current || '50');
+            }}
+          />
 
           {/* Said plainly, because a radius chosen without knowing this will be
               too tight and the feature will look broken. */}

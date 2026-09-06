@@ -42,7 +42,11 @@ export function DiagnosticsReport({
   }, [userId, commit, builtAt]);
 
   useEffect(() => {
-    void collect();
+    // A tick later, not in the effect body: gathering this reads the service
+    // worker, the cache, IndexedDB and the network, and none of it should be
+    // between the page appearing and the person seeing it.
+    const t = setTimeout(() => void collect(), 0);
+    return () => clearTimeout(t);
   }, [collect]);
 
   return (

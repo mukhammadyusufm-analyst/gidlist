@@ -48,7 +48,11 @@ export default function GlobalError({
   const [offline, setOffline] = useState(false);
 
   useEffect(() => {
-    setOffline(!navigator.onLine);
+    // Deferred a tick rather than set in the effect body. The rule that objects
+    // to the latter is right: this is reading an external system after mount,
+    // and doing it synchronously makes the first paint a cascade. The same
+    // pattern is used for the first queue drain, for the same reason.
+    const t = setTimeout(() => setOffline(!navigator.onLine), 0);
     console.error('[global] ', error.message, error.digest ?? '');
 
     /*
@@ -60,6 +64,8 @@ export default function GlobalError({
      * report available was somebody reading the heading aloud.
      */
     record('error.global', error.digest ? `${error.message} [${error.digest}]` : error);
+
+    return () => clearTimeout(t);
   }, [error]);
 
   return (
