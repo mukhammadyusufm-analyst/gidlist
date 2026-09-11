@@ -560,4 +560,12 @@ export const uz = {
   'compliance.completedOnDevice': 'Qurilmada tugatilgan, oʻz soati boʻyicha — bildirilgan, tasdiqlanmagan',
   'compliance.receivedByServer': 'Server qabul qilgan vaqt',
   'compliance.deviceClockWrong': 'Qurilma soati serverdan oldinda edi, shuning uchun vaqt cheklandi',
+
+  'compliance.submissionRate': 'Topshirish darajasi',
+  'compliance.submittedOf': 'Muddati kelgan {total} ta nazorat roʻyxatidan {done} tasi topshirildi',
+  'compliance.submissionByDay': 'Kunlar boʻyicha topshirish darajasi',
+  'compliance.workCompleted': 'Bajarilgan ish',
+  'compliance.itemsTickedOf': 'Topshirilgan roʻyxatlardagi {total} ta banddan {done} tasi belgilandi',
+  'compliance.nothingSubmitted': 'Bu davrda hali hech narsa topshirilmagan.',
+  'compliance.itemsTicked': '{total} tadan {done} tasi belgilandi',
 } satisfies Messages;

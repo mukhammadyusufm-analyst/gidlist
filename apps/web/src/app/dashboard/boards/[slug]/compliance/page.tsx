@@ -128,10 +128,13 @@ export default async function CompliancePage({
         assignees={data.assignees}
       />
 
-      <StatTiles counts={data.counts} total={data.total} />
+      <StatTiles counts={data.counts} total={data.total} work={data.work} />
 
       <section>
-        <h3 className="mb-3 text-sm font-medium">{t('compliance.byDay')}</h3>
+        {/* The chart plots the submission rate, and now says so. It was titled
+            "Completion rate by day" while counting statuses — the same
+            conflation the tiles above had. */}
+        <h3 className="mb-3 text-sm font-medium">{t('compliance.submissionByDay')}</h3>
         <CompletionChart data={data.trend} />
       </section>
 

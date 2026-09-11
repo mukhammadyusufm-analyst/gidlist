@@ -566,6 +566,17 @@ export const en = {
   'compliance.completedOnDevice': 'Finished on the device, by its own clock — reported, not verified',
   'compliance.receivedByServer': 'Received by the server',
   'compliance.deviceClockWrong': 'The device clock was ahead of ours, so the time was clamped',
+
+  // Submitting and completing, reported as the two facts they are. New keys
+  // rather than rewording completionRate / completedOf / byDay, which may carry
+  // overrides with the old meaning.
+  'compliance.submissionRate': 'Submission rate',
+  'compliance.submittedOf': '{done} of {total} due checklists submitted',
+  'compliance.submissionByDay': 'Submission rate by day',
+  'compliance.workCompleted': 'Work completed',
+  'compliance.itemsTickedOf': '{done} of {total} items ticked in submitted checklists',
+  'compliance.nothingSubmitted': 'Nothing has been submitted in this period yet.',
+  'compliance.itemsTicked': '{done} of {total} ticked',
 } satisfies Messages;
 
 export type MessageKey = keyof typeof en;

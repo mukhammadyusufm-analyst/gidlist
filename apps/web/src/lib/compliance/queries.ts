@@ -65,6 +65,13 @@ export type ComplianceRow = {
   completed_clock_skewed: boolean | null;
   /** How many photographs and files are attached across the whole submission. */
   attachments: number;
+  /**
+   * How much of the work was ticked — the second of the two questions this
+   * report answers. Zero and zero for a record nobody has opened, which has no
+   * answer rows yet.
+   */
+  items_total: number;
+  items_ticked: number;
   /** Set when somebody decided this record should not count. */
   voided_at: string | null;
   void_reason: string | null;
@@ -79,6 +86,18 @@ export type ComplianceData = {
   /** Matching rows across the whole range, not just this page. */
   total: number;
   trend: { date: string; rate: number; done: number; total: number }[];
+  /**
+   * Items ticked across every SUBMITTED record in the range.
+   *
+   * Separate from `counts`, and that separation is the fix. `counts` says
+   * whether checklists were handed in; this says how much of the work inside
+   * them was done. One figure used to stand for both, so a checklist submitted
+   * with nothing ticked read as 100% complete.
+   *
+   * Null when the database function is not there yet — a database that has
+   * not had the migration applied still renders the report, without this tile.
+   */
+  work: { total: number; ticked: number } | null;
   checklists: { id: string; title: string }[];
   assignees: string[];
   /** Distinct people who actually submitted something in the range. */
@@ -127,6 +146,7 @@ export async function getComplianceData(
       counts: EMPTY_COUNTS,
       total: 0,
       trend: [],
+      work: null,
       checklists: [],
       assignees: [],
       submitters: [],
@@ -182,21 +202,25 @@ export async function getComplianceData(
     rowQuery = rowQuery.eq('submitted_by_email', filters.filledBy);
   }
 
-  const [rowResult, countResult, trendResult, assigneeResult, submitterResult] = await Promise.all([
-    rowQuery,
-    supabase.rpc('compliance_counts', shared),
-    supabase.rpc('compliance_trend', { ...shared, p_status: filters.status ?? null }),
-    supabase.rpc('compliance_assignees', {
-      p_board_id: boardId,
-      p_from: filters.from,
-      p_to: filters.to,
-    }),
-    supabase.rpc('compliance_submitters', {
-      p_board_id: boardId,
-      p_from: filters.from,
-      p_to: filters.to,
-    }),
-  ]);
+  const [rowResult, countResult, trendResult, assigneeResult, submitterResult, workResult] =
+    await Promise.all([
+      rowQuery,
+      supabase.rpc('compliance_counts', shared),
+      supabase.rpc('compliance_trend', { ...shared, p_status: filters.status ?? null }),
+      supabase.rpc('compliance_assignees', {
+        p_board_id: boardId,
+        p_from: filters.from,
+        p_to: filters.to,
+      }),
+      supabase.rpc('compliance_submitters', {
+        p_board_id: boardId,
+        p_from: filters.from,
+        p_to: filters.to,
+      }),
+      // Same filters as the counts, so both headline figures describe the same
+      // records.
+      supabase.rpc('compliance_work', shared),
+    ]);
 
   if (rowResult.error) {
     throw new Error(`Could not load compliance data: ${rowResult.error.message}`);
@@ -217,27 +241,34 @@ export async function getComplianceData(
   const matched = rowResult.count ?? 0;
 
   /*
-   * How much evidence each record carries, asked for only the rows on screen.
+   * How much evidence each record carries, and how much of it was ticked —
+   * asked for only the rows on screen.
    *
-   * A separate query rather than an embedded count, because PostgREST's
-   * embedded aggregate counts CHILD ROWS, not the ones with a file on them —
-   * every item in the checklist would be counted, attached or not, and the
-   * column would report the length of the checklist while looking like a
-   * number of photographs.
+   * Evidence is a separate query rather than an embedded count, because
+   * PostgREST's embedded aggregate counts CHILD ROWS, not the ones with a file
+   * on them — every item in the checklist would be counted, attached or not,
+   * and the column would report the length of the checklist while looking like
+   * a number of photographs.
    *
-   * Bounded by the page: at most `PAGE_SIZE` submissions' worth of items, and
-   * only those with something attached. RLS applies here as everywhere, so a
-   * viewer counts exactly what they could open.
+   * Ticks come from `submission_progress`, aggregated in the database. Loading
+   * the item rows here instead would pass a thousand rows on a busy page, which
+   * is where a Supabase query silently stops returning more.
+   *
+   * RLS applies to both, so a viewer counts exactly what they could open.
    */
   const ids = (rowResult.data ?? []).map((r) => r.id);
   const attachments = new Map<string, number>();
+  const progress = new Map<string, { total: number; ticked: number }>();
 
   if (ids.length > 0) {
-    const { data: withFiles } = await supabase
-      .from('submission_items')
-      .select('submission_id, photo_path, file_path')
-      .in('submission_id', ids)
-      .or('photo_path.not.is.null,file_path.not.is.null');
+    const [{ data: withFiles }, { data: ticks }] = await Promise.all([
+      supabase
+        .from('submission_items')
+        .select('submission_id, photo_path, file_path')
+        .in('submission_id', ids)
+        .or('photo_path.not.is.null,file_path.not.is.null'),
+      supabase.rpc('submission_progress', { p_submission_ids: ids }),
+    ]);
 
     for (const item of withFiles ?? []) {
       // An item can carry both a photograph and a file, and they are two pieces
@@ -245,7 +276,16 @@ export async function getComplianceData(
       const n = (item.photo_path ? 1 : 0) + (item.file_path ? 1 : 0);
       attachments.set(item.submission_id, (attachments.get(item.submission_id) ?? 0) + n);
     }
+
+    for (const row of ticks ?? []) {
+      progress.set(row.submission_id, {
+        total: Number(row.items_total),
+        ticked: Number(row.items_ticked),
+      });
+    }
   }
+
+  const workRow = workResult.error ? null : (workResult.data ?? [])[0];
 
   return {
     rows: (rowResult.data ?? []).map((r) => ({
@@ -253,6 +293,8 @@ export async function getComplianceData(
       status: r.status,
       checklist_title: titles.get(r.checklist_id) ?? 'Checklist',
       attachments: attachments.get(r.id) ?? 0,
+      items_total: progress.get(r.id)?.total ?? 0,
+      items_ticked: progress.get(r.id)?.ticked ?? 0,
     })),
     page,
     pageCount: Math.max(1, Math.ceil(matched / PAGE_SIZE)),
@@ -261,6 +303,11 @@ export async function getComplianceData(
     // the same number, whatever filters are applied.
     total: Object.values(counts).reduce((sum, n) => sum + n, 0),
     trend,
+    work: workRow
+      ? { total: Number(workRow.items_total), ticked: Number(workRow.items_ticked) }
+      : workResult.error
+        ? null
+        : { total: 0, ticked: 0 },
     checklists: checklistList,
     assignees: (assigneeResult.data ?? []).map((a) => a.email).filter(Boolean),
     /*

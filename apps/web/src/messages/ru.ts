@@ -553,4 +553,12 @@ export const ru = {
   'compliance.completedOnDevice': 'Завершено на устройстве, по его часам — со слов устройства, не проверено',
   'compliance.receivedByServer': 'Получено сервером',
   'compliance.deviceClockWrong': 'Часы устройства шли впереди наших, время ограничено',
+
+  'compliance.submissionRate': 'Доля отправленных',
+  'compliance.submittedOf': 'Отправлено {done} из {total} чек-листов со сроком',
+  'compliance.submissionByDay': 'Доля отправленных по дням',
+  'compliance.workCompleted': 'Выполнено работы',
+  'compliance.itemsTickedOf': 'Отмечено {done} из {total} пунктов в отправленных чек-листах',
+  'compliance.nothingSubmitted': 'За этот период ещё ничего не отправлено.',
+  'compliance.itemsTicked': 'Отмечено {done} из {total}',
 } satisfies Messages;

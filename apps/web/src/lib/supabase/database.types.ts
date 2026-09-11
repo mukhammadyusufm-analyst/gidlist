@@ -1174,6 +1174,25 @@ export type Database = {
         Args: { p_board_id: string; p_from: string; p_to: string };
         Returns: { email: string }[];
       };
+      // How much of the submitted work was ticked — the second of the report's
+      // two questions, beside the status counts. Same filters as
+      // compliance_counts, so both figures describe the same records.
+      compliance_work: {
+        Args: {
+          p_board_id: string;
+          p_from: string;
+          p_to: string;
+          p_checklist?: string | null;
+          p_assignee?: string | null;
+        };
+        Returns: { items_total: number; items_ticked: number }[];
+      };
+      // Ticks per record for one page of the table, aggregated in the database
+      // so a busy page never meets the row ceiling.
+      submission_progress: {
+        Args: { p_submission_ids: string[] };
+        Returns: { submission_id: string; items_total: number; items_ticked: number }[];
+      };
       accept_invitation: { Args: { p_membership_id: string }; Returns: undefined };
       decline_invitation: { Args: { p_membership_id: string }; Returns: undefined };
       invited_board_names: {

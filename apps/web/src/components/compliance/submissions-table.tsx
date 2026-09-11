@@ -320,6 +320,33 @@ export function SubmissionsTable({
                 <td className="px-4 py-2.5">
                   <div className="flex flex-wrap items-center gap-2">
                     <StatusBadge status={row.status} voided={row.voided_at !== null} />
+
+                    {/*
+                      HOW MUCH WAS TICKED, BESIDE WHETHER IT WAS HANDED IN.
+
+                      "Done" says the checklist was submitted; it never said the
+                      work inside it was. Submitting with unticked items is
+                      allowed on purpose, so this is the only place a reviewer
+                      can see that a "Done" record has two of its eight items
+                      empty. Shown for submitted and in-progress records — an
+                      upcoming or missed one has no answers to count — and
+                      coloured only when a submitted record is incomplete, since
+                      an unfinished draft is simply unfinished.
+                    */}
+                    {row.items_total > 0 && (row.status === 'done' || row.status === 'draft') ? (
+                      <span
+                        className={
+                          row.status === 'done' && row.items_ticked < row.items_total
+                            ? 'text-xs font-medium text-[var(--color-warning)] tabular-nums'
+                            : 'text-xs text-[var(--color-muted-foreground)] tabular-nums'
+                        }
+                      >
+                        {t('compliance.itemsTicked', {
+                          done: row.items_ticked,
+                          total: row.items_total,
+                        })}
+                      </span>
+                    ) : null}
                     {canVoid || (row.assignee_email ? voidableEmails?.has(row.assignee_email) : false) ? (
                       <VoidControl
                         submissionId={row.id}
