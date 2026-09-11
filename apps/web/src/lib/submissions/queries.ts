@@ -25,10 +25,23 @@ export async function listSubmissionsForDate(
 ): Promise<SubmissionWithChecklist[]> {
   const supabase = await createClient();
 
+  /*
+   * Archived checklists are left out, and that is the whole of the first fix.
+   *
+   * This read every checklist in the space, so a checklist archived yesterday
+   * went on appearing in Fill in with its scheduled rows — archiving it looked
+   * like it had done nothing. Archiving means "stop asking anybody to do this",
+   * and Fill in is the list of things somebody is being asked to do.
+   *
+   * Its history is not hidden by this: completed and missed records stay in the
+   * compliance report, which reads submissions directly. The migration that
+   * clears the untouched future rows is 20260912090000_archive_stops_obligations.
+   */
   const { data: checklists } = await supabase
     .from('checklists')
     .select('id, title')
-    .eq('board_id', boardId);
+    .eq('board_id', boardId)
+    .is('archived_at', null);
 
   if (!checklists?.length) return [];
 
