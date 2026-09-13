@@ -25,13 +25,10 @@ export const SIGNIN_URL = `${APP_URL}/login`;
  * a person, not a free account that stops them at one space. The contract then
  * sets their limits in Admin → Accounts.
  *
- * An environment variable first, so the channel can change without a release:
- * set `NEXT_PUBLIC_SALES_URL` on the `gidlist-site` Vercel project to a Telegram
- * link such as `https://t.me/<handle>` and redeploy. The fallback is the address
- * already published as the legal contact (`LEGAL_CONTACT_EMAIL` in `./legal`),
- * with the subject filled in so an enquiry is recognisable in the inbox. It is
- * written out rather than imported to keep this module free of dependencies.
+ * The support account on Telegram, which is where customers in Uzbekistan
+ * expect to reach a business — an email address reads as slower and more
+ * formal. An environment variable still overrides it, so the channel can change
+ * without a release: set `NEXT_PUBLIC_SALES_URL` on the `gidlist-site` Vercel
+ * project and redeploy.
  */
-export const SALES_URL =
-  process.env.NEXT_PUBLIC_SALES_URL ??
-  'mailto:gidlist.operations@gmail.com?subject=Gidlist%20Enterprise';
+export const SALES_URL = process.env.NEXT_PUBLIC_SALES_URL ?? 'https://t.me/gidlist_support';
