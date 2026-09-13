@@ -207,6 +207,11 @@ export type Database = {
           owner_id: string;
           /** Archived spaces are hidden, generate nothing, and keep all history. */
           archived_at: string | null;
+          /**
+           * The practice space from `ensure_getting_started()`. Not counted
+           * toward the space limit; only that function can set it.
+           */
+          is_tutorial: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -1216,6 +1221,12 @@ export type Database = {
        *
        * Returns the new schedule's id.
        */
+      /**
+       * Creates a brand-new person's "Getting started" space, once. Returns the
+       * space's id, or null when there is nothing to do: already done, or they
+       * arrived by invitation. Safe to call on every visit.
+       */
+      ensure_getting_started: { Args: Record<string, never>; Returns: string | null };
       create_schedule_with_assignees: {
         Args: {
           p_checklist_id: string;

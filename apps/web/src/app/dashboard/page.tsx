@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { LayoutGrid, Plus } from 'lucide-react';
 
 import { listArchivedBoards, listMyBoards } from '@/lib/boards/queries';
-import { getUser } from '@/lib/supabase/server';
+import { createClient, getUser } from '@/lib/supabase/server';
 import { getTranslations } from '@/lib/i18n/server';
 import { listPendingInvitations } from '@/lib/invitations/queries';
 import { InvitationList } from '@/components/invitations/invitation-list';
@@ -21,6 +21,23 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function DashboardPage() {
+  /*
+   * A guided start, once, for somebody brand new (README item 56).
+   *
+   * The database decides everything: whether this person has already had one,
+   * whether they arrived by invitation into somebody else's space (they get
+   * none — their employer's checklists are the introduction), and the language
+   * it is written in. Calling it on every visit is therefore safe and cheap:
+   * after the first time it returns at once without writing.
+   *
+   * It runs BEFORE the spaces are listed, so the new space is on the page the
+   * person is looking at rather than appearing on their next visit. A failure
+   * is ignored on purpose — a tutorial that could not be created must never
+   * stand between somebody and the product.
+   */
+  const supabase = await createClient();
+  await supabase.rpc('ensure_getting_started');
+
   const [boards, archived, invitations, { t }, user] = await Promise.all([
     listMyBoards(),
     listArchivedBoards(),
