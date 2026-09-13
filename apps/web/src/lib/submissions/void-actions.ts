@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache';
 
 import { createClient } from '@/lib/supabase/server';
+import { getTranslations } from '@/lib/i18n/server';
+import { describeDatabaseError } from '@/lib/errors';
 
 export type VoidState = { error?: string; notice?: string };
 
@@ -22,6 +24,8 @@ export async function setSubmissionVoid(
   _prev: VoidState,
   formData: FormData,
 ): Promise<VoidState> {
+  const { t } = await getTranslations();
+
   const submissionId = String(formData.get('submissionId') ?? '');
   const raw = String(formData.get('reason') ?? '').trim();
   const lifting = String(formData.get('lift') ?? '') === 'true';
@@ -30,7 +34,7 @@ export async function setSubmissionVoid(
   // empty submission would silently un-void a record instead of failing. The
   // caller has to say which it meant.
   if (!lifting && raw.length < 3) {
-    return { error: 'Give a reason of at least three characters.' };
+    return { error: t('errors.voidReasonShort') };
   }
 
   const supabase = await createClient();
@@ -39,14 +43,8 @@ export async function setSubmissionVoid(
     p_reason: lifting ? null : raw,
   });
 
-  if (error) {
-    return {
-      error: error.message.includes('Only a space admin')
-        ? 'Only a space admin can void a record.'
-        : error.message,
-    };
-  }
+  if (error) return { error: describeDatabaseError(error.message, t) };
 
   revalidatePath('/dashboard/boards/[slug]/compliance', 'page');
-  return { notice: lifting ? 'Void lifted.' : 'Record voided.' };
+  return { notice: lifting ? t('notices.voidLifted') : t('notices.recordVoided') };
 }

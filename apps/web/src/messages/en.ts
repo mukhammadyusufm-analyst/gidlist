@@ -577,6 +577,232 @@ export const en = {
   'compliance.itemsTickedOf': '{done} of {total} items ticked in submitted checklists',
   'compliance.nothingSubmitted': 'Nothing has been submitted in this period yet.',
   'compliance.itemsTicked': '{done} of {total} ticked',
+
+  // --- messages and errors -----------------------------------------------
+  // Everything the product says when something is refused or goes wrong, and
+  // when something succeeds. Until 13 Sep 2026 all of it was hard-coded English
+  // — in the actions, in the validation schemas, and passed straight through
+  // from the database — whatever language the person had chosen.
+
+  // Validation
+  'errors.emailInvalid': 'Enter a valid email address.',
+  'errors.passwordTooShort': 'Password must be at least 8 characters.',
+  'errors.passwordTooLong': 'Password must be 72 characters or fewer.',
+  'errors.passwordRequired': 'Enter your password.',
+  'errors.passwordsDontMatch': 'The two passwords do not match.',
+  'errors.nameRequired': 'Enter your name.',
+  'errors.nameTooLong120': 'Name must be 120 characters or fewer.',
+  'errors.nameTooLong200': 'Name must be 200 characters or fewer.',
+  'errors.spaceNameRequired': 'Give the space a name.',
+  'errors.descriptionTooLong500': 'Description must be 500 characters or fewer.',
+  'errors.descriptionTooLong2000': 'Description must be 2,000 characters or fewer.',
+  'errors.checklistTitleRequired': 'Give the checklist a title.',
+  'errors.titleTooLong200': 'Title must be 200 characters or fewer.',
+  'errors.titleTooLong500': 'Title must be 500 characters or fewer.',
+  'errors.sectionNameRequired': 'Give the section a name.',
+  'errors.itemTitleRequired': 'Give the item a title.',
+  'errors.useTimePicker': 'Use the time picker.',
+  'errors.useDatePicker': 'Use the date picker.',
+  'errors.windowNeedsBoth': 'A time window needs both a start and an end.',
+  'errors.windowSameTime': 'The start and end cannot be the same time.',
+  'errors.windowOnBeforeRequired': 'Turn the time window on before making it required.',
+  'errors.locationAllOrNone': 'A location needs coordinates and a radius, or none of the three.',
+  'errors.photoOnBeforeRequired': 'Turn the photo on before making it required.',
+  'errors.fileOnBeforeRequired': 'Turn the file on before making it required.',
+  'errors.locationOnBeforeRequired': 'Turn the location on before making it required.',
+  'errors.locationSetCoordinates': 'Set the coordinates and radius for the location.',
+  'errors.radiusRange': 'The radius must be between 25 and 100,000 metres.',
+  'errors.chooseWeekday': 'Choose at least one day of the week.',
+  'errors.chooseMonthDay': 'Choose at least one day of the month.',
+  'errors.addDate': 'Add at least one date.',
+  'errors.chooseAssignment': 'Choose who this checklist is for.',
+  'errors.endBeforeStart': 'The end date cannot be before the start date.',
+  'errors.choosePerson': 'Choose at least one person, or assign this to everyone.',
+
+  // General
+  'errors.unknown': 'Something went wrong. Try again.',
+  'errors.sessionExpired': 'Your session has expired. Sign in again.',
+  'errors.noPermission': 'You do not have permission to do that.',
+  'errors.ownerOnly': 'Only the owner of this space can do that.',
+  'errors.couldNotSave': 'Could not save: {reason}',
+  'errors.couldNotCreateSpace': 'Could not create the space: {reason}',
+  'errors.couldNotArchive': 'Could not archive: {reason}',
+  'errors.couldNotRestore': 'Could not restore: {reason}',
+  'errors.couldNotDelete': 'Could not delete: {reason}',
+  'errors.couldNotInvite': 'Could not invite: {reason}',
+  'errors.couldNotChangeRole': 'Could not change the role: {reason}',
+  'errors.couldNotChangeManager': 'Could not change who this member reports to: {reason}',
+  'errors.couldNotRemove': 'Could not remove: {reason}',
+  'errors.couldNotCreateChecklist': 'Could not create the checklist: {reason}',
+  'errors.couldNotStartEditing': 'Could not start editing: {reason}',
+  'errors.couldNotPublish': 'Could not publish: {reason}',
+  'errors.couldNotUpdate': 'Could not update: {reason}',
+
+  // Plans and limits
+  'errors.spaceLimit':
+    'You have reached the number of spaces your plan includes. Archive one you are no longer using, or move up a plan.',
+  'errors.memberLimit':
+    'You have reached the number of people your plan includes. Archive a space you are no longer using, or move up a plan.',
+  'errors.rateLimit':
+    'That is a lot of invitations at once. Wait a few minutes and continue — the ones already sent are fine.',
+
+  // Spaces and members
+  'errors.alreadyInvited': 'That person has already been invited to this space.',
+  'errors.roleInvalid': 'That role is not valid.',
+  'errors.memberInvalid': 'That member is not valid.',
+  'errors.reportingLoop': 'That would make a loop in the reporting lines.',
+  'errors.reportingTooDeep': 'The reporting lines are nested too deeply to be valid.',
+  'errors.managerSameSpace': 'A manager has to be a member of the same space.',
+  'errors.reportToSelf': 'Somebody cannot report to themselves.',
+  'errors.ownerCannotBeRemoved': 'The owner cannot be removed. Transfer ownership first.',
+  'errors.ownershipTransfer':
+    'Ownership can only be transferred by the current owner, to an active member of the space.',
+  'errors.spaceHasHistory':
+    'This space has checklist history, so it can only be archived. Archiving keeps the record and hides the space.',
+
+  // Building checklists
+  'errors.checklistHasHistory':
+    'This checklist has been filled in, so it can only be archived — the record has to stay.',
+  'errors.nestingLimit': 'Items can only be nested 5 levels deep.',
+  'errors.versionPublished':
+    'This version is published and frozen. Create a new draft to make changes.',
+  'errors.publishNeedsItem': 'Add at least one item before publishing.',
+  'errors.versionNotDraft': 'That version is no longer a draft. Refresh the page.',
+  'errors.itemParentInvalid': 'That item can no longer be placed there. Refresh the page and try again.',
+
+  // Filling in
+  'errors.parentAutoCompletes': 'That task completes on its own once all of its sub-tasks are ticked.',
+  'errors.assignedToSomeoneElse': 'This checklist is assigned to someone else.',
+  'errors.noPublishedVersion':
+    'This checklist has not been published yet, so there is nothing to fill in.',
+  'errors.alreadySubmitted': 'This checklist has already been submitted.',
+  'errors.cannotSubmitState': 'This checklist cannot be submitted in its current state.',
+  'errors.submissionMissing': 'That checklist is no longer available.',
+  'errors.photoRequiredToTick': 'Take the photo for this item before ticking it.',
+  'errors.fileRequiredToTick': 'Attach the file for this item before ticking it.',
+  'errors.evidenceRequiredToTick': 'Attach the photo or file for this item before ticking it.',
+  'errors.locationRequiredToTick':
+    'This item has to be ticked at its location. Allow location access and try again.',
+  'errors.tooFarAway':
+    'You appear to be about {distance} metres away, and this item has to be ticked within {radius} metres.',
+  'errors.outsideWindow': 'This item can only be ticked between {from} and {to}. It is now {now}.',
+  'errors.invitationUnavailable': 'That invitation is no longer available.',
+
+  // Attachments
+  'errors.unknownAttachmentType': 'That attachment type is not supported.',
+  'errors.itemUnavailable': 'That item is no longer available.',
+  'errors.chooseFileFirst': 'Choose a file first.',
+  'errors.fileTooLarge': 'That file is over {mb} MB.',
+  'errors.attachPhotoOrPdf': 'Attach a photo or a PDF.',
+  'errors.signInToAttach': 'Sign in again to attach this.',
+
+  // Schedules
+  'errors.alreadyAssigned': 'That person is already assigned to this schedule.',
+  'errors.notInSpaceYet': 'That person is not in this space yet. Invite them first.',
+  'errors.scheduleNeedsPerson':
+    'A schedule assigned to specific people must name at least one. Choose everyone, or the creator, instead.',
+  'errors.assignByName': 'Assign specific people by adding them by name.',
+  'errors.scheduleMissing': 'That schedule no longer exists.',
+
+  // Voiding
+  'errors.voidReasonShort': 'Give a reason of at least three characters.',
+  'errors.voidNotAllowed':
+    'Voiding a record needs a space admin, or the manager of whoever it was assigned to.',
+  'errors.recordMissing': 'That record no longer exists.',
+
+  // Account and sign-in
+  'errors.alreadyYourEmail': 'That is already your email address.',
+  'errors.imageNotYours': 'That image does not belong to your account.',
+  'errors.captchaFailed': 'The verification check did not pass. Try again in a moment.',
+  'errors.wrongCredentials': 'That email and password combination is not correct.',
+  'errors.authAlreadyRegistered': 'An account with that email address already exists. Sign in instead.',
+  'errors.authRateLimit': 'Too many attempts. Wait a few minutes and try again.',
+  'errors.authSamePassword': 'Choose a password different from your current one.',
+
+  // Images
+  'errors.unknownImageType': 'That image type is not supported.',
+  'errors.imageNotThisSpace': 'That image does not belong to this space.',
+  'errors.unknownBanner': 'That banner is not available.',
+  'errors.noUploadedBanner': 'There is no uploaded banner to adjust.',
+
+  // Administration
+  'errors.accountInvalid': 'That account is not valid.',
+  'errors.needsBillingCapability': 'Changing account limits needs the billing capability.',
+  'errors.rootCapabilitySqlOnly':
+    'That capability can only be granted with SQL, so nobody can promote themselves from inside the app.',
+  'errors.cannotDeleteSelf': 'You cannot delete the account you are signed in with.',
+  'errors.accountOwnsSpace':
+    'This account owns a space, which holds compliance history. Remove or transfer the space first.',
+  'errors.accountHasAccess':
+    'This account holds platform access. Remove that first if you really mean to delete it.',
+  'errors.accessPeriodEnded': 'That access period has already ended.',
+  'errors.builtinLanguage': 'Built-in languages cannot be removed.',
+  'errors.planEditRefused': 'That change to a plan has to be made in SQL.',
+  'errors.noCapabilities': 'No capabilities to grant.',
+  'errors.stoppedAt': 'Stopped at "{code}": {reason}',
+  'errors.planNameLength': 'A plan needs a name of 60 characters or fewer.',
+  'errors.planPriceInvalid': 'The price must be a whole number of cents, and not negative.',
+  'errors.planPriceTooHigh':
+    'That is over {max} a month. If it is deliberate, set it in SQL — this guard exists to catch a missing decimal point.',
+  'errors.planMemberLimitMin': 'The member limit must be at least 1, or empty for unlimited.',
+  'errors.planSpaceLimitMin': 'The space limit must be at least 1, or empty for unlimited.',
+  'errors.planMemberLimitHigh': 'The member limit is implausibly high. Leave it empty for unlimited.',
+  'errors.planSpaceLimitHigh': 'The space limit is implausibly high. Leave it empty for unlimited.',
+  'errors.priceNotNumber': 'The price must be a number.',
+  'errors.unknownString': 'Unknown string.',
+  'errors.localeCodeFormat': 'Use a two-letter code such as kk or tr.',
+  'errors.localeNameRequired': 'Give the language a name.',
+  'errors.localeExists': 'That language already exists.',
+  'errors.unknownLanguage': 'Unknown language.',
+  'errors.unknownTheme': 'Unknown theme.',
+
+  // The error screen inside the dashboard
+  'errors.boundaryOfflineTitle': 'No connection',
+  'errors.boundaryOfflineBody':
+    'This needs a connection. Anything you have ticked is saved on this device and will be sent when you have signal.',
+  'errors.boundaryTitle': 'That did not load',
+  'errors.boundaryBody': 'Something went wrong loading this page. Nothing you have ticked has been lost.',
+  'errors.tryAgain': 'Try again',
+
+  // Confirmations
+  'notices.spaceArchived': 'Space archived.',
+  'notices.spaceRestored': 'Space restored.',
+  'notices.invitedAndEmailed': '{email} was invited and has been emailed.',
+  'notices.invitedNoEmail':
+    '{email} was invited. No email was sent — tell them to sign in and check their Spaces page.',
+  'notices.roleUpdated': 'Role updated.',
+  'notices.reportingLineUpdated': 'Reporting line updated.',
+  'notices.memberRemoved': 'Member removed.',
+  'notices.draftCreated': 'New draft created. The published version is unchanged.',
+  'notices.published': 'Published. This version is now frozen and can no longer be edited.',
+  'notices.checklistArchived': 'Checklist archived.',
+  'notices.checklistRestored': 'Checklist restored.',
+  'notices.scheduleSavedDatesLater':
+    'Schedule saved, but its dates are not ready yet. They will appear overnight.',
+  'notices.scheduleCreated': 'Schedule created.',
+  'notices.scheduleDeleted': 'Schedule deleted.',
+  'notices.invitedEmailedAssigned': '{email} was invited, emailed, and assigned.',
+  'notices.invitedAssignedNoEmail':
+    '{email} was invited and assigned. No email was sent — tell them to sign in and accept.',
+  'notices.assigned': '{email} assigned.',
+  'notices.assignedToYou': 'Assigned to you.',
+  'notices.assignedToEveryone': 'Assigned to everyone in this space.',
+  'notices.confirmEmailChange':
+    'Check {email} and click the link to confirm. Your address stays the same until you do.',
+  'notices.passwordUpdated': 'Password updated.',
+  'notices.checkEmailToConfirm': 'Check {email} for a confirmation link to finish creating your account.',
+  'notices.resetLinkSent': 'If an account exists for that address, a reset link is on its way.',
+  'notices.localeAdded': 'Language added. Untranslated strings fall back to English.',
+  'notices.voidLifted': 'Void lifted.',
+  'notices.recordVoided': 'Record voided.',
+  'notices.accessGranted': 'Access granted.',
+  'notices.accessRemoved': 'Access removed.',
+  'notices.limitsLifted': 'Limits lifted for this account.',
+  'notices.planLimitsRestored': 'Plan limits restored.',
+  'notices.limitsSaved': 'Limits saved.',
+  'notices.allAccessGranted': 'All access granted, except the root capability, which needs SQL.',
+  'notices.allAccessRemoved': 'All access removed.',
+  'notices.accountDeleted': 'Account deleted.',
 } satisfies Messages;
 
 export type MessageKey = keyof typeof en;

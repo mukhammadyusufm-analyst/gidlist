@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { addAssigneeSchema, createScheduleSchema } from '@app/core';
 
 import { createClient, getUser } from '@/lib/supabase/server';
-import { friendlyDatabaseError } from '@/lib/errors';
+import { explainFailure, translateFieldErrors } from '@/lib/errors';
 import { isEmailConfigured } from '@/lib/email/send';
 import { sendInvitationEmail } from '@/lib/email/invitation';
 import { getTranslations } from '@/lib/i18n/server';
@@ -60,6 +60,8 @@ function configFromForm(kind: string, formData: FormData): unknown {
 }
 
 export async function createSchedule(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const { t } = await getTranslations();
+
   const kind = String(formData.get('kind') ?? '');
   const endDateRaw = String(formData.get('endDate') ?? '').trim();
 
@@ -79,8 +81,8 @@ export async function createSchedule(_prev: ActionState, formData: FormData): Pr
   if (!parsed.success) {
     const flat = parsed.error.flatten();
     return {
-      formError: flat.formErrors[0],
-      fieldErrors: flat.fieldErrors as Record<string, string[]>,
+      formError: flat.formErrors[0] ? t(flat.formErrors[0]) : undefined,
+      fieldErrors: translateFieldErrors(flat.fieldErrors as Record<string, string[] | undefined>, t),
     };
   }
 
@@ -109,7 +111,13 @@ export async function createSchedule(_prev: ActionState, formData: FormData): Pr
   });
 
   if (error || !data) {
-    return { formError: friendlyDatabaseError(error?.message ?? 'unknown error') };
+    /*
+     * This used to return `friendlyDatabaseError(...)` alone, which is undefined
+     * for anything that helper did not recognise — so an unrecognised failure
+     * produced a form that refused to save and said nothing at all. It now always
+     * says something.
+     */
+    return { formError: explainFailure(error?.message, 'errors.couldNotSave', t) };
   }
 
   // Generate this schedule's obligations straight away. Waiting for the nightly
@@ -123,12 +131,10 @@ export async function createSchedule(_prev: ActionState, formData: FormData): Pr
   revalidatePath(SCHEDULES_PATH, 'page');
 
   if (matError) {
-    return {
-      notice: 'Schedule saved, but its dates are not ready yet. They will appear overnight.',
-    };
+    return { notice: t('notices.scheduleSavedDatesLater') };
   }
 
-  return { notice: 'Schedule created.' };
+  return { notice: t('notices.scheduleCreated') };
 }
 
 export async function deleteSchedule(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -139,10 +145,12 @@ export async function deleteSchedule(_prev: ActionState, formData: FormData): Pr
   // schedule created, and leaving orphans would show phantom "Missed" rows for
   // a rule nobody is bound by any more.
   const { error } = await supabase.from('schedules').delete().eq('id', scheduleId);
-  if (error) return { formError: `Could not delete: ${error.message}` };
+
+  const { t } = await getTranslations();
+  if (error) return { formError: explainFailure(error.message, 'errors.couldNotDelete', t) };
 
   revalidatePath(SCHEDULES_PATH, 'page');
-  return { notice: 'Schedule deleted.' };
+  return { notice: t('notices.scheduleDeleted') };
 }
 
 export async function toggleSchedule(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -157,7 +165,10 @@ export async function toggleSchedule(_prev: ActionState, formData: FormData): Pr
     .update({ active: !active })
     .eq('id', scheduleId);
 
-  if (error) return { formError: `Could not update: ${error.message}` };
+  if (error) {
+    const { t } = await getTranslations();
+    return { formError: explainFailure(error.message, 'errors.couldNotUpdate', t) };
+  }
 
   revalidatePath(SCHEDULES_PATH, 'page');
   return {};
@@ -175,11 +186,15 @@ export async function inviteAndAssign(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  const { t } = await getTranslations();
+
   const parsed = addAssigneeSchema.safeParse({
     scheduleId: formData.get('scheduleId'),
     email: formData.get('email'),
   });
-  if (!parsed.success) return { fieldErrors: parsed.error.flatten().fieldErrors };
+  if (!parsed.success) {
+    return { fieldErrors: translateFieldErrors(parsed.error.flatten().fieldErrors, t) };
+  }
 
   const boardId = String(formData.get('boardId') ?? '');
   const email = parsed.data.email.toLowerCase().trim();
@@ -199,7 +214,7 @@ export async function inviteAndAssign(
   // 23505 means they are already in the space, which is fine here — the point
   // was to make sure they are a member, and they are.
   if (inviteError && inviteError.code !== '23505') {
-    return { formError: friendlyDatabaseError(inviteError.message) ?? `Could not invite: ${inviteError.message}` };
+    return { formError: explainFailure(inviteError.message, 'errors.couldNotInvite', t) };
   }
 
   const { error } = await supabase
@@ -208,9 +223,9 @@ export async function inviteAndAssign(
 
   if (error) {
     if (error.code === '23505') {
-      return { formError: 'That person is already assigned to this schedule.' };
+      return { formError: t('errors.alreadyAssigned') };
     }
-    return { formError: friendlyAssigneeError(error.message) };
+    return { formError: explainFailure(error.message, 'errors.couldNotSave', t) };
   }
 
   await supabase.rpc('materialise_schedule', {
@@ -223,8 +238,8 @@ export async function inviteAndAssign(
   revalidatePath(SCHEDULES_PATH, 'page');
   return {
     notice: delivered
-      ? `${email} was invited, emailed, and assigned.`
-      : `${email} was invited and assigned. No email was sent — tell them to sign in and accept.`,
+      ? t('notices.invitedEmailedAssigned', { email })
+      : t('notices.invitedAssignedNoEmail', { email }),
   };
 }
 
@@ -267,20 +282,22 @@ async function notifyNewMember(boardId: string, email: string): Promise<boolean>
   }
 }
 
-/** Turn the database's membership rule into something worth reading. */
-function friendlyAssigneeError(message: string): string {
-  if (message.includes('before assigning them a schedule')) {
-    return 'That person is not in this space yet. Use "Invite someone new" instead.';
-  }
-  return message;
-}
+/*
+ * `friendlyAssigneeError` used to live here, turning "Add x to the space before
+ * assigning them a schedule" into English. That refusal is recognised in
+ * `lib/errors.ts` now, with every other one, and leaves in the reader's language.
+ */
 
 export async function addAssignee(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const { t } = await getTranslations();
+
   const parsed = addAssigneeSchema.safeParse({
     scheduleId: formData.get('scheduleId'),
     email: formData.get('email'),
   });
-  if (!parsed.success) return { fieldErrors: parsed.error.flatten().fieldErrors };
+  if (!parsed.success) {
+    return { fieldErrors: translateFieldErrors(parsed.error.flatten().fieldErrors, t) };
+  }
 
   const supabase = await createClient();
 
@@ -294,9 +311,9 @@ export async function addAssignee(_prev: ActionState, formData: FormData): Promi
 
   if (error) {
     if (error.code === '23505') {
-      return { formError: 'That person is already assigned to this schedule.' };
+      return { formError: t('errors.alreadyAssigned') };
     }
-    return { formError: friendlyAssigneeError(error.message) };
+    return { formError: explainFailure(error.message, 'errors.couldNotSave', t) };
   }
 
   /*
@@ -322,7 +339,7 @@ export async function addAssignee(_prev: ActionState, formData: FormData): Promi
   });
 
   revalidatePath(SCHEDULES_PATH, 'page');
-  return { notice: `${parsed.data.email} assigned.` };
+  return { notice: t('notices.assigned', { email: parsed.data.email }) };
 }
 
 /**
@@ -337,11 +354,13 @@ export async function setAssignmentMode(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  const { t } = await getTranslations();
+
   const scheduleId = String(formData.get('scheduleId') ?? '');
   const mode = String(formData.get('mode') ?? '');
 
   if (mode !== 'creator' && mode !== 'everyone') {
-    return { formError: 'Assign specific people by adding them by name.' };
+    return { formError: t('errors.assignByName') };
   }
 
   const supabase = await createClient();
@@ -367,7 +386,7 @@ export async function setAssignmentMode(
     .update({ assignment_mode: mode })
     .eq('id', scheduleId);
 
-  if (error) return { formError: friendlyDatabaseError(error.message) };
+  if (error) return { formError: explainFailure(error.message, 'errors.couldNotUpdate', t) };
 
   // Names left behind on a schedule that no longer uses them would reappear the
   // moment somebody switched back, having quietly survived a decision that
@@ -377,7 +396,9 @@ export async function setAssignmentMode(
     .delete()
     .eq('schedule_id', scheduleId);
 
-  if (clearError) return { formError: `Could not update: ${clearError.message}` };
+  if (clearError) {
+    return { formError: explainFailure(clearError.message, 'errors.couldNotUpdate', t) };
+  }
 
   await supabase.rpc('materialise_schedule', {
     p_schedule_id: scheduleId,
@@ -385,7 +406,9 @@ export async function setAssignmentMode(
   });
 
   revalidatePath(SCHEDULES_PATH, 'page');
-  return { notice: mode === 'creator' ? 'Assigned to you.' : 'Assigned to everyone in this space.' };
+  return {
+    notice: mode === 'creator' ? t('notices.assignedToYou') : t('notices.assignedToEveryone'),
+  };
 }
 
 export async function removeAssignee(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -393,7 +416,10 @@ export async function removeAssignee(_prev: ActionState, formData: FormData): Pr
   const supabase = await createClient();
 
   const { error } = await supabase.from('schedule_assignees').delete().eq('id', assigneeId);
-  if (error) return { formError: `Could not remove: ${error.message}` };
+  if (error) {
+    const { t } = await getTranslations();
+    return { formError: explainFailure(error.message, 'errors.couldNotRemove', t) };
+  }
 
   revalidatePath(SCHEDULES_PATH, 'page');
   return {};

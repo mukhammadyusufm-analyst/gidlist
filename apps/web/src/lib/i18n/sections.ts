@@ -96,6 +96,12 @@ const SECTION_DEFINITIONS: { id: string; title: string; hint: string; prefixes: 
     prefixes: ['admin.'],
   },
   {
+    id: 'messages',
+    title: 'Messages and errors',
+    hint: 'What the product says when something is saved, refused or goes wrong — including refusals from the database and form validation.',
+    prefixes: ['errors.', 'notices.'],
+  },
+  {
     id: 'shared',
     title: 'Words used everywhere',
     hint: 'Buttons, statuses and dates that appear across the whole product. Changing one changes many screens.',

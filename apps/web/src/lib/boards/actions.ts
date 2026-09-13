@@ -11,7 +11,7 @@ import {
 } from '@app/core';
 
 import { createClient, getUser } from '@/lib/supabase/server';
-import { friendlyDatabaseError } from '@/lib/errors';
+import { explainFailure, translateFieldErrors } from '@/lib/errors';
 import { isEmailConfigured } from '@/lib/email/send';
 import { sendInvitationEmail } from '@/lib/email/invitation';
 import { getTranslations } from '@/lib/i18n/server';
@@ -28,12 +28,17 @@ export type ActionState = {
  * in this file exist to produce good error messages, not to provide security —
  * Row Level Security does that, and would still refuse if this file were
  * bypassed entirely.
+ *
+ * Every message leaves in the reader's language. See `lib/errors.ts` for how a
+ * database refusal becomes a translated sentence.
  */
 
 export async function createBoard(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const { t } = await getTranslations();
+
   const parsed = createBoardSchema.safeParse({ name: formData.get('name') });
   if (!parsed.success) {
-    return { fieldErrors: parsed.error.flatten().fieldErrors };
+    return { fieldErrors: translateFieldErrors(parsed.error.flatten().fieldErrors, t) };
   }
 
   const supabase = await createClient();
@@ -66,7 +71,7 @@ export async function createBoard(_prev: ActionState, formData: FormData): Promi
   }
 
   if (error || !data) {
-    return { formError: friendlyDatabaseError(error?.message) ?? `Could not create the space: ${error?.message ?? 'unknown error'}` };
+    return { formError: explainFailure(error?.message, 'errors.couldNotCreateSpace', t) };
   }
 
   revalidatePath('/dashboard');
@@ -86,6 +91,8 @@ export async function setBoardArchived(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  const { t } = await getTranslations();
+
   const boardId = String(formData.get('boardId') ?? '');
   const archived = String(formData.get('archived') ?? '') === 'true';
 
@@ -95,10 +102,18 @@ export async function setBoardArchived(
     p_archived: archived,
   });
 
-  if (error) return { formError: `Could not ${archived ? 'archive' : 'restore'}: ${error.message}` };
+  if (error) {
+    return {
+      formError: explainFailure(
+        error.message,
+        archived ? 'errors.couldNotArchive' : 'errors.couldNotRestore',
+        t,
+      ),
+    };
+  }
 
   revalidatePath('/dashboard', 'layout');
-  return { notice: archived ? 'Space archived.' : 'Space restored.' };
+  return { notice: archived ? t('notices.spaceArchived') : t('notices.spaceRestored') };
 }
 
 /**
@@ -114,11 +129,10 @@ export async function deleteBoard(_prev: ActionState, formData: FormData): Promi
   const { error } = await supabase.rpc('delete_board_if_unused', { p_board_id: boardId });
 
   if (error) {
-    return {
-      formError: error.message.includes('cannot be deleted')
-        ? 'This space has checklist history, so it can only be archived. Archiving keeps the record and hides the space.'
-        : `Could not delete: ${error.message}`,
-    };
+    const { t } = await getTranslations();
+    // "This space has checklist history" is recognised in lib/errors.ts and
+    // explains the archive alternative; anything else is prefixed.
+    return { formError: explainFailure(error.message, 'errors.couldNotDelete', t) };
   }
 
   revalidatePath('/dashboard', 'layout');
@@ -129,13 +143,15 @@ export async function updateBoardDetails(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  const { t } = await getTranslations();
+
   const parsed = updateBoardSchema.safeParse({
     boardId: formData.get('boardId'),
     name: formData.get('name'),
     description: formData.get('description') || undefined,
   });
   if (!parsed.success) {
-    return { fieldErrors: parsed.error.flatten().fieldErrors };
+    return { fieldErrors: translateFieldErrors(parsed.error.flatten().fieldErrors, t) };
   }
 
   const supabase = await createClient();
@@ -151,24 +167,26 @@ export async function updateBoardDetails(
     .eq('id', parsed.data.boardId);
 
   if (error) {
-    return { formError: `Could not save: ${error.message}` };
+    return { formError: explainFailure(error.message, 'errors.couldNotSave', t) };
   }
 
   revalidatePath('/dashboard', 'layout');
-  return { notice: 'Saved.' };
+  return { notice: t('common.saved') };
 }
 
 // Image uploads live in `lib/media/actions.ts`. The file goes from the browser
 // straight to Supabase Storage, so nothing here handles file data.
 
 export async function inviteMember(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const { t } = await getTranslations();
+
   const parsed = inviteMemberSchema.safeParse({
     boardId: formData.get('boardId'),
     email: formData.get('email'),
     role: formData.get('role'),
   });
   if (!parsed.success) {
-    return { fieldErrors: parsed.error.flatten().fieldErrors };
+    return { fieldErrors: translateFieldErrors(parsed.error.flatten().fieldErrors, t) };
   }
 
   const { boardId, email, role } = parsed.data;
@@ -189,9 +207,9 @@ export async function inviteMember(_prev: ActionState, formData: FormData): Prom
     // key value violates unique constraint board_members_board_email_key" is
     // not something to show a user.
     if (error.code === '23505') {
-      return { formError: 'That person has already been invited to this board.' };
+      return { formError: t('errors.alreadyInvited') };
     }
-    return { formError: friendlyDatabaseError(error.message) ?? `Could not invite: ${error.message}` };
+    return { formError: explainFailure(error.message, 'errors.couldNotInvite', t) };
   }
 
   revalidatePath(`/dashboard/boards/[slug]/members`, 'page');
@@ -203,8 +221,8 @@ export async function inviteMember(_prev: ActionState, formData: FormData): Prom
   // no message went out, somebody has to tell them by other means.
   return {
     notice: delivered
-      ? `${email} was invited and has been emailed.`
-      : `${email} was invited. No email was sent — tell them to sign in and check their Spaces page.`,
+      ? t('notices.invitedAndEmailed', { email })
+      : t('notices.invitedNoEmail', { email }),
   };
 }
 
@@ -262,13 +280,15 @@ export async function updateMemberRole(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  const { t } = await getTranslations();
+
   const parsed = updateMemberRoleSchema.safeParse({
     memberId: formData.get('memberId'),
     boardId: formData.get('boardId'),
     role: formData.get('role'),
   });
   if (!parsed.success) {
-    return { formError: 'That role is not valid.' };
+    return { formError: t('errors.roleInvalid') };
   }
 
   const supabase = await createClient();
@@ -278,11 +298,11 @@ export async function updateMemberRole(
     .eq('id', parsed.data.memberId);
 
   if (error) {
-    return { formError: `Could not change the role: ${error.message}` };
+    return { formError: explainFailure(error.message, 'errors.couldNotChangeRole', t) };
   }
 
   revalidatePath('/dashboard/boards/[slug]/members', 'page');
-  return { notice: 'Role updated.' };
+  return { notice: t('notices.roleUpdated') };
 }
 
 /**
@@ -290,23 +310,20 @@ export async function updateMemberRole(
  *
  * The rules — same space, no self-reference, no loops — are enforced by a
  * trigger rather than here, because they have to hold for any writer and not
- * just for this form. This only turns the refusals into sentences.
- *
- * Reporting lines are recorded but do not yet affect what anybody can see. That
- * is deliberate and is README item 11: visibility today has two cases, and
- * adding "mine and my reports'" touches every submission and compliance policy,
- * which is a separate piece of work from recording the chart.
+ * just for this form. The refusals become sentences in `lib/errors.ts`.
  */
 export async function setMemberManager(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  const { t } = await getTranslations();
+
   const memberId = String(formData.get('memberId') ?? '');
   // An empty select means "reports to nobody", which is a real state — the top
   // of a chart — and not a missing value.
   const managerId = String(formData.get('managerId') ?? '') || null;
 
-  if (!memberId) return { formError: 'That member is not valid.' };
+  if (!memberId) return { formError: t('errors.memberInvalid') };
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -315,27 +332,22 @@ export async function setMemberManager(
     .eq('id', memberId);
 
   if (error) {
-    const message = error.message.includes('loop')
-      ? 'That would make a loop in the reporting lines.'
-      : error.message.includes('same space')
-        ? 'A manager has to be a member of the same space.'
-        : error.message.includes('report to themselves')
-          ? 'Somebody cannot report to themselves.'
-          : `Could not change who this member reports to: ${error.message}`;
-    return { formError: message };
+    return { formError: explainFailure(error.message, 'errors.couldNotChangeManager', t) };
   }
 
   revalidatePath('/dashboard/boards/[slug]/members', 'page');
-  return { notice: 'Reporting line updated.' };
+  return { notice: t('notices.reportingLineUpdated') };
 }
 
 export async function removeMember(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const { t } = await getTranslations();
+
   const parsed = removeMemberSchema.safeParse({
     memberId: formData.get('memberId'),
     boardId: formData.get('boardId'),
   });
   if (!parsed.success) {
-    return { formError: 'That member is not valid.' };
+    return { formError: t('errors.memberInvalid') };
   }
 
   const supabase = await createClient();
@@ -343,14 +355,10 @@ export async function removeMember(_prev: ActionState, formData: FormData): Prom
 
   if (error) {
     // The database refuses to remove the owner's membership, which would leave
-    // the board headless. Surface that as an instruction rather than an error.
-    return {
-      formError: error.message.includes('owner cannot be removed')
-        ? 'The owner cannot be removed. Transfer ownership first.'
-        : `Could not remove: ${error.message}`,
-    };
+    // the board headless. `lib/errors.ts` turns that into an instruction.
+    return { formError: explainFailure(error.message, 'errors.couldNotRemove', t) };
   }
 
   revalidatePath('/dashboard/boards/[slug]/members', 'page');
-  return { notice: 'Member removed.' };
+  return { notice: t('notices.memberRemoved') };
 }

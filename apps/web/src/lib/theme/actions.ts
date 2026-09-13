@@ -4,10 +4,14 @@ import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { isTheme } from '@app/core';
 
+import { getTranslations } from '@/lib/i18n/server';
 import { THEME_COOKIE } from './server';
 
 export async function setTheme(value: string): Promise<{ error?: string }> {
-  if (!isTheme(value)) return { error: 'Unknown theme.' };
+  if (!isTheme(value)) {
+    const { t } = await getTranslations();
+    return { error: t('errors.unknownTheme') };
+  }
 
   const store = await cookies();
   store.set(THEME_COOKIE, value, {

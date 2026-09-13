@@ -5,6 +5,8 @@ import { z } from 'zod';
 import { emailSchema, passwordSchema } from '@app/core';
 
 import { createClient, getUser } from '@/lib/supabase/server';
+import { getTranslations } from '@/lib/i18n/server';
+import { describeDatabaseError, translateAuthError, translateFieldErrors } from '@/lib/errors';
 
 export type AccountState = {
   formError?: string;
@@ -12,35 +14,38 @@ export type AccountState = {
   notice?: string;
 };
 
+// Keys, not sentences — translated on the way out. See `packages/core/src/auth.ts`.
 const nameSchema = z.object({
   fullName: z
     .string()
     .trim()
-    .min(1, { error: 'Enter your name.' })
-    .max(120, { error: 'Name must be 120 characters or fewer.' }),
+    .min(1, { error: 'errors.nameRequired' })
+    .max(120, { error: 'errors.nameTooLong120' }),
 });
 
 export async function updateProfileName(
   _prev: AccountState,
   formData: FormData,
 ): Promise<AccountState> {
+  const { t } = await getTranslations();
+
   const parsed = nameSchema.safeParse({ fullName: formData.get('fullName') });
-  if (!parsed.success) return { fieldErrors: parsed.error.flatten().fieldErrors };
+  if (!parsed.success) return { fieldErrors: translateFieldErrors(parsed.error.flatten().fieldErrors, t) };
 
   const supabase = await createClient();
   const user = await getUser();
-  if (!user) return { formError: 'Your session has expired. Sign in again.' };
+  if (!user) return { formError: t('errors.sessionExpired') };
 
   const { error } = await supabase
     .from('profiles')
     .update({ full_name: parsed.data.fullName })
     .eq('id', user.id);
 
-  if (error) return { formError: error.message };
+  if (error) return { formError: describeDatabaseError(error.message, t) };
 
   // 'layout' because the name shows in the header on every page.
   revalidatePath('/', 'layout');
-  return { notice: 'Saved.' };
+  return { notice: t('common.saved') };
 }
 
 /**
@@ -54,23 +59,23 @@ export async function updateEmail(
   _prev: AccountState,
   formData: FormData,
 ): Promise<AccountState> {
+  const { t } = await getTranslations();
+
   const parsed = z.object({ email: emailSchema }).safeParse({ email: formData.get('email') });
-  if (!parsed.success) return { fieldErrors: parsed.error.flatten().fieldErrors };
+  if (!parsed.success) return { fieldErrors: translateFieldErrors(parsed.error.flatten().fieldErrors, t) };
 
   const supabase = await createClient();
   const user = await getUser();
-  if (!user) return { formError: 'Your session has expired. Sign in again.' };
+  if (!user) return { formError: t('errors.sessionExpired') };
 
   if (user.email?.toLowerCase() === parsed.data.email.toLowerCase()) {
-    return { formError: 'That is already your email address.' };
+    return { formError: t('errors.alreadyYourEmail') };
   }
 
   const { error } = await supabase.auth.updateUser({ email: parsed.data.email });
-  if (error) return { formError: error.message };
+  if (error) return { formError: translateAuthError(error.message, t) };
 
-  return {
-    notice: `Check ${parsed.data.email} and click the link to confirm. Your address stays the same until you do.`,
-  };
+  return { notice: t('notices.confirmEmailChange', { email: parsed.data.email }) };
 }
 
 /**
@@ -85,10 +90,12 @@ export async function updatePassword(
   _prev: AccountState,
   formData: FormData,
 ): Promise<AccountState> {
+  const { t } = await getTranslations();
+
   const parsed = z
     .object({ password: passwordSchema, confirm: z.string() })
     .refine((v) => v.password === v.confirm, {
-      error: 'The two passwords do not match.',
+      error: 'errors.passwordsDontMatch',
       path: ['confirm'],
     })
     .safeParse({
@@ -98,27 +105,30 @@ export async function updatePassword(
 
   if (!parsed.success) {
     const flat = parsed.error.flatten();
-    return { fieldErrors: flat.fieldErrors as Record<string, string[]> };
+    return {
+      fieldErrors: translateFieldErrors(flat.fieldErrors as Record<string, string[] | undefined>, t),
+    };
   }
 
   const supabase = await createClient();
   const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
-  if (error) return { formError: error.message };
+  if (error) return { formError: translateAuthError(error.message, t) };
 
-  return { notice: 'Password updated.' };
+  return { notice: t('notices.passwordUpdated') };
 }
 
 /** Record a newly uploaded avatar. The file goes browser → Storage directly. */
 export async function saveAvatar(path: string): Promise<{ error?: string }> {
+  const { t } = await getTranslations();
   const supabase = await createClient();
   const user = await getUser();
-  if (!user) return { error: 'Your session has expired. Sign in again.' };
+  if (!user) return { error: t('errors.sessionExpired') };
 
   // The storage policy already restricts writes to the caller's own folder;
   // this stops a crafted request pointing the profile row at somebody else's
   // file, which is a different question from who may write one.
   if (!path.startsWith(`${user.id}/`) || path.includes('..')) {
-    return { error: 'That image does not belong to your account.' };
+    return { error: t('errors.imageNotYours') };
   }
 
   const {
@@ -130,19 +140,20 @@ export async function saveAvatar(path: string): Promise<{ error?: string }> {
     .update({ avatar_url: publicUrl })
     .eq('id', user.id);
 
-  if (error) return { error: error.message };
+  if (error) return { error: describeDatabaseError(error.message, t) };
 
   revalidatePath('/', 'layout');
   return {};
 }
 
 export async function removeAvatar(): Promise<{ error?: string }> {
+  const { t } = await getTranslations();
   const supabase = await createClient();
   const user = await getUser();
-  if (!user) return { error: 'Your session has expired. Sign in again.' };
+  if (!user) return { error: t('errors.sessionExpired') };
 
   const { error } = await supabase.from('profiles').update({ avatar_url: null }).eq('id', user.id);
-  if (error) return { error: error.message };
+  if (error) return { error: describeDatabaseError(error.message, t) };
 
   revalidatePath('/', 'layout');
   return {};

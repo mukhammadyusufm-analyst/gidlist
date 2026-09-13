@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { RefreshCw, WifiOff } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { useT } from '@/components/i18n/provider';
 import { record } from '@/lib/offline/log';
 
 /**
@@ -27,6 +28,12 @@ import { record } from '@/lib/offline/log';
  * lift than a genuine fault — and being told the connection dropped when the
  * real cause was a bug is a smaller harm than being told nothing at all.
  * `reset()` retries the render, which is the right action either way.
+ *
+ * TRANSLATED, UNLIKE `global-error.tsx`. That one replaces the root layout, so
+ * no translation provider exists there and plain English is the honest choice.
+ * This one renders INSIDE the root layout, where the provider does exist — so
+ * it was English only because nobody had wired it up, and somebody working in
+ * Uzbek met the one screen that matters most in a language they had not chosen.
  */
 export default function DashboardError({
   error,
@@ -35,6 +42,8 @@ export default function DashboardError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const { t } = useT();
+
   useEffect(() => {
     // The digest is what ties this to the structured log line written by
     // `onRequestError` in instrumentation.ts, so a report from a shop floor can
@@ -54,17 +63,15 @@ export default function DashboardError({
       )}
 
       <h1 className="mt-4 text-lg font-semibold tracking-tight">
-        {offline ? 'No connection' : 'That did not load'}
+        {offline ? t('errors.boundaryOfflineTitle') : t('errors.boundaryTitle')}
       </h1>
 
       <p className="mt-2 text-sm leading-relaxed text-[var(--color-muted-foreground)]">
-        {offline
-          ? 'This needs a connection. Anything you have ticked is saved on this device and will be sent when you have signal.'
-          : 'Something went wrong loading this page. Nothing you have ticked has been lost.'}
+        {offline ? t('errors.boundaryOfflineBody') : t('errors.boundaryBody')}
       </p>
 
       <Button type="button" className="mt-5" onClick={reset}>
-        Try again
+        {t('errors.tryAgain')}
       </Button>
     </div>
   );

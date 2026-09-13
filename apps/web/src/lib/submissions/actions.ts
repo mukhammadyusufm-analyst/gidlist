@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
 import { createClient, getUser } from '@/lib/supabase/server';
+import { getTranslations } from '@/lib/i18n/server';
+import { describeDatabaseError } from '@/lib/errors';
 
 export type ActionState = {
   formError?: string;
@@ -11,6 +13,14 @@ export type ActionState = {
 };
 
 const FILL_PATH = '/dashboard/boards/[slug]/fill/[submissionId]';
+
+/*
+ * Every refusal here reaches somebody mid-task, usually on a phone — "this item
+ * has to be ticked at its location", "you appear to be 140 metres away". They
+ * were English whatever the person had chosen, and the database's own numbers
+ * came with them. `describeDatabaseError` now puts those numbers back into a
+ * sentence in the reader's language.
+ */
 
 /**
  * Open a submission for filling in.
@@ -26,7 +36,10 @@ export async function startSubmission(_prev: ActionState, formData: FormData): P
   const supabase = await createClient();
   const { error } = await supabase.rpc('start_submission', { p_submission_id: submissionId });
 
-  if (error) return { formError: friendly(error.message) };
+  if (error) {
+    const { t } = await getTranslations();
+    return { formError: describeDatabaseError(error.message, t) };
+  }
 
   revalidatePath(`/dashboard/boards/${slug}/fill`, 'page');
   redirect(`/dashboard/boards/${slug}/fill/${submissionId}`);
@@ -60,7 +73,10 @@ export async function setItemChecked(
 ): Promise<{ error?: string }> {
   const supabase = await createClient();
   const user = await getUser();
-  if (!user) return { error: 'Your session has expired. Sign in again.' };
+  if (!user) {
+    const { t } = await getTranslations();
+    return { error: t('errors.sessionExpired') };
+  }
 
   const { error } = await supabase
     .from('submission_items')
@@ -76,7 +92,10 @@ export async function setItemChecked(
     })
     .eq('id', submissionItemId);
 
-  if (error) return { error: friendly(error.message) };
+  if (error) {
+    const { t } = await getTranslations();
+    return { error: describeDatabaseError(error.message, t) };
+  }
 
   // The rollup runs in the database, so a parent may have changed too. Only a
   // refetch shows that reliably.
@@ -96,7 +115,10 @@ export async function saveComment(
     .update({ comment: trimmed === '' ? null : trimmed })
     .eq('id', submissionItemId);
 
-  if (error) return { error: friendly(error.message) };
+  if (error) {
+    const { t } = await getTranslations();
+    return { error: describeDatabaseError(error.message, t) };
+  }
 
   revalidatePath(FILL_PATH, 'page');
   return {};
@@ -117,7 +139,10 @@ export async function submitSubmission(
     p_completed_at: null,
   });
 
-  if (error) return { formError: friendly(error.message) };
+  if (error) {
+    const { t } = await getTranslations();
+    return { formError: describeDatabaseError(error.message, t) };
+  }
 
   revalidatePath(`/dashboard/boards/${slug}/fill`, 'page');
   redirect(`/dashboard/boards/${slug}/fill/${submissionId}?submitted=1`);
@@ -147,26 +172,13 @@ export async function submitQueued(
     p_completed_at: new Date(completedAt).toISOString(),
   });
 
-  if (error) return { error: friendly(error.message) };
+  if (error) {
+    const { t } = await getTranslations();
+    return { error: describeDatabaseError(error.message, t) };
+  }
 
   // No redirect. Refreshing whatever the person is looking at is the caller's
   // business, and it already does that once the drain finishes.
   revalidatePath('/dashboard/boards/[slug]/fill', 'page');
   return {};
-}
-
-function friendly(message: string): string {
-  if (message.includes('completes automatically')) {
-    return 'That task completes on its own once all of its sub-tasks are ticked.';
-  }
-  if (message.includes('assigned to someone else')) {
-    return 'This checklist is assigned to someone else.';
-  }
-  if (message.includes('no published version')) {
-    return 'This checklist has not been published yet, so there is nothing to fill in.';
-  }
-  if (message.includes('already been completed')) {
-    return 'This checklist has already been submitted.';
-  }
-  return message;
 }

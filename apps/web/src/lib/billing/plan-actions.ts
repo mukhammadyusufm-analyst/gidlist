@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache';
 
 import { createClient } from '@/lib/supabase/server';
+import { getTranslations } from '@/lib/i18n/server';
+import { describeDatabaseError } from '@/lib/errors';
 import type { PlanCode } from '@/lib/supabase/database.types';
 
 export type PlanEditResult = { error?: string };
@@ -47,32 +49,32 @@ export async function savePlan(input: {
   maxSpaces: number | null;
   isOfferable: boolean;
 }): Promise<PlanEditResult> {
+  const { t } = await getTranslations();
+
   const name = input.name.trim();
   if (name.length < 1 || name.length > 60) {
-    return { error: 'A plan needs a name of 60 characters or fewer.' };
+    return { error: t('errors.planNameLength') };
   }
 
   if (!Number.isInteger(input.priceMinor) || input.priceMinor < 0) {
-    return { error: 'The price must be a whole number of cents, and not negative.' };
+    return { error: t('errors.planPriceInvalid') };
   }
 
   if (input.priceMinor > MAX_PRICE_MINOR) {
-    return {
-      error: `That is over ${MAX_PRICE_MINOR / 100} a month. If it is deliberate, set it in SQL — this guard exists to catch a missing decimal point.`,
-    };
+    return { error: t('errors.planPriceTooHigh', { max: MAX_PRICE_MINOR / 100 }) };
   }
 
-  for (const [label, value, max] of [
-    ['member limit', input.maxMembers, MAX_MEMBERS],
-    ['space limit', input.maxSpaces, MAX_SPACES],
-  ] as const) {
+  // One key per limit and per failure rather than a label spliced into a
+  // sentence: "member limit" inside an Uzbek sentence would not decline.
+  const limits = [
+    [input.maxMembers, MAX_MEMBERS, 'errors.planMemberLimitMin', 'errors.planMemberLimitHigh'],
+    [input.maxSpaces, MAX_SPACES, 'errors.planSpaceLimitMin', 'errors.planSpaceLimitHigh'],
+  ] as const;
+
+  for (const [value, max, tooLow, tooHigh] of limits) {
     if (value === null) continue;
-    if (!Number.isInteger(value) || value < 1) {
-      return { error: `The ${label} must be at least 1, or empty for unlimited.` };
-    }
-    if (value > max) {
-      return { error: `The ${label} is implausibly high. Leave it empty for unlimited.` };
-    }
+    if (!Number.isInteger(value) || value < 1) return { error: t(tooLow) };
+    if (value > max) return { error: t(tooHigh) };
   }
 
   const supabase = await createClient();
@@ -88,7 +90,7 @@ export async function savePlan(input: {
     })
     .eq('code', input.code);
 
-  if (error) return { error: error.message };
+  if (error) return { error: describeDatabaseError(error.message, t) };
 
   // The billing page reads plan limits, and the account page shows what
   // somebody is paying. Both are wrong the moment this succeeds.

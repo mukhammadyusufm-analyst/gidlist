@@ -4,13 +4,16 @@ import { BOARD_ROLES } from './constants';
 
 /**
  * Board and membership validation, shared by web and mobile.
+ *
+ * Messages are translation keys, translated by the action that runs the schema
+ * — see the note in `./auth.ts`.
  */
 
 export const boardNameSchema = z
   .string()
   .trim()
-  .min(1, { error: 'Give the board a name.' })
-  .max(120, { error: 'Name must be 120 characters or fewer.' });
+  .min(1, { error: 'errors.spaceNameRequired' })
+  .max(120, { error: 'errors.nameTooLong120' });
 
 export const createBoardSchema = z.object({
   name: boardNameSchema,
@@ -22,7 +25,7 @@ export const updateBoardSchema = z.object({
   description: z
     .string()
     .trim()
-    .max(500, { error: 'Description must be 500 characters or fewer.' })
+    .max(500, { error: 'errors.descriptionTooLong500' })
     .optional(),
 });
 
@@ -39,7 +42,7 @@ export const assignableRoleSchema = z.enum(
 
 export const inviteMemberSchema = z.object({
   boardId: z.uuid(),
-  email: z.email({ error: 'Enter a valid email address.' }),
+  email: z.email({ error: 'errors.emailInvalid' }),
   role: assignableRoleSchema,
 });
 

@@ -9,37 +9,40 @@ import { MAX_ITEM_DEPTH } from './constants';
  * client renders the same structure. Two implementations of "which item belongs
  * under which" would eventually disagree, and the disagreement would show up as
  * items silently vanishing on one platform.
+ *
+ * Messages are translation keys, translated by the action that runs the schema
+ * — see the note in `./auth.ts`.
  */
 
 export const checklistTitleSchema = z
   .string()
   .trim()
-  .min(1, { error: 'Give the checklist a title.' })
-  .max(200, { error: 'Title must be 200 characters or fewer.' });
+  .min(1, { error: 'errors.checklistTitleRequired' })
+  .max(200, { error: 'errors.titleTooLong200' });
 
 export const createChecklistSchema = z.object({
   boardId: z.uuid(),
   title: checklistTitleSchema,
-  description: z.string().trim().max(2000).optional(),
+  description: z.string().trim().max(2000, { error: 'errors.descriptionTooLong2000' }).optional(),
 });
 
 export const updateChecklistSchema = z.object({
   checklistId: z.uuid(),
   title: checklistTitleSchema,
-  description: z.string().trim().max(2000).optional(),
+  description: z.string().trim().max(2000, { error: 'errors.descriptionTooLong2000' }).optional(),
 });
 
 export const groupTitleSchema = z
   .string()
   .trim()
-  .min(1, { error: 'Give the section a name.' })
-  .max(200, { error: 'Name must be 200 characters or fewer.' });
+  .min(1, { error: 'errors.sectionNameRequired' })
+  .max(200, { error: 'errors.nameTooLong200' });
 
 export const itemTitleSchema = z
   .string()
   .trim()
-  .min(1, { error: 'Give the item a title.' })
-  .max(500, { error: 'Title must be 500 characters or fewer.' });
+  .min(1, { error: 'errors.itemTitleRequired' })
+  .max(500, { error: 'errors.titleTooLong500' });
 
 export const addGroupSchema = z.object({
   versionId: z.uuid(),
@@ -72,7 +75,7 @@ export const updateItemSchema = z
   .object({
     itemId: z.uuid(),
     title: itemTitleSchema,
-    description: z.string().trim().max(2000).optional(),
+    description: z.string().trim().max(2000, { error: 'errors.descriptionTooLong2000' }).optional(),
 
     // Defaulted rather than required, so a form that predates any of these
     // still validates instead of failing on a value nobody was asked for.
@@ -90,10 +93,20 @@ export const updateItemSchema = z
      * worse indoors, which is where warehouses, kitchens and clinics are — a
      * tighter radius would reject people standing in exactly the right place,
      * and read as the product being broken rather than strict.
+     *
+     * The radius carries its own message because it is the one number here a
+     * person types freely. Zod's built-in wording for it was English and read
+     * like a type error.
      */
     locationLat: z.number().min(-90).max(90).nullable().default(null),
     locationLng: z.number().min(-180).max(180).nullable().default(null),
-    locationRadiusM: z.number().int().min(25).max(100_000).nullable().default(null),
+    locationRadiusM: z
+      .number()
+      .int()
+      .min(25, { error: 'errors.radiusRange' })
+      .max(100_000, { error: 'errors.radiusRange' })
+      .nullable()
+      .default(null),
 
     /**
      * The time of day this may be ticked within, as `HH:MM` wall clock.
@@ -109,26 +122,26 @@ export const updateItemSchema = z
     windowRequired: z.boolean().default(false),
     windowStart: z
       .string()
-      .regex(/^\d{2}:\d{2}$/, { error: 'Use the time picker.' })
+      .regex(/^\d{2}:\d{2}$/, { error: 'errors.useTimePicker' })
       .nullable()
       .default(null),
     windowEnd: z
       .string()
-      .regex(/^\d{2}:\d{2}$/, { error: 'Use the time picker.' })
+      .regex(/^\d{2}:\d{2}$/, { error: 'errors.useTimePicker' })
       .nullable()
       .default(null),
   })
   .refine((v) => !v.windowEnabled || (v.windowStart !== null && v.windowEnd !== null), {
-    error: 'A time window needs both a start and an end.',
+    error: 'errors.windowNeedsBoth',
     path: ['windowEnd'],
   })
   // Equal ends would describe a single instant, which nothing could satisfy.
   .refine((v) => !v.windowEnabled || v.windowStart !== v.windowEnd, {
-    error: 'The start and end cannot be the same time.',
+    error: 'errors.windowSameTime',
     path: ['windowEnd'],
   })
   .refine((v) => v.windowEnabled || !v.windowRequired, {
-    error: 'Turn the time window on before making it required.',
+    error: 'errors.windowOnBeforeRequired',
     path: ['windowRequired'],
   })
   .refine(
@@ -136,26 +149,26 @@ export const updateItemSchema = z
       (v.locationLat === null && v.locationLng === null && v.locationRadiusM === null) ||
       (v.locationLat !== null && v.locationLng !== null && v.locationRadiusM !== null),
     {
-      error: 'A location needs coordinates and a radius, or none of the three.',
+      error: 'errors.locationAllOrNone',
       path: ['locationRadiusM'],
     },
   )
   // Each pair on its own: enforcing something that was never switched on is a
   // rule with nothing to apply to.
   .refine((v) => v.photoEnabled || !v.photoRequired, {
-    error: 'Turn the photo on before making it required.',
+    error: 'errors.photoOnBeforeRequired',
     path: ['photoRequired'],
   })
   .refine((v) => v.fileEnabled || !v.fileRequired, {
-    error: 'Turn the file on before making it required.',
+    error: 'errors.fileOnBeforeRequired',
     path: ['fileRequired'],
   })
   .refine((v) => v.locationEnabled || !v.locationRequired, {
-    error: 'Turn the location on before making it required.',
+    error: 'errors.locationOnBeforeRequired',
     path: ['locationRequired'],
   })
   .refine((v) => !v.locationEnabled || v.locationLat !== null, {
-    error: 'Set the coordinates and radius for the location.',
+    error: 'errors.locationSetCoordinates',
     path: ['locationLat'],
   });
 

@@ -13,8 +13,17 @@ import {
 } from '@app/core';
 
 import { createClient } from '@/lib/supabase/server';
+import { getTranslations } from '@/lib/i18n/server';
+import { describeDatabaseError } from '@/lib/errors';
 
 export type SaveMediaResult = { error?: string };
+
+type Translate = Awaited<ReturnType<typeof getTranslations>>['t'];
+
+/** The same failure every save below can meet, in one place. */
+function couldNotSave(message: string, t: Translate): SaveMediaResult {
+  return { error: t('errors.couldNotSave', { reason: describeDatabaseError(message, t) }) };
+}
 
 /**
  * Record an already-uploaded image against a board or checklist.
@@ -34,12 +43,13 @@ async function saveMedia(
   bucket: string,
   boardId: string,
   path: string,
+  t: Translate,
 ): Promise<{ url: string } | { error: string }> {
   if (!isMediaBucket(bucket)) {
-    return { error: 'Unknown image type.' };
+    return { error: t('errors.unknownImageType') };
   }
   if (!pathBelongsToBoard(path, boardId)) {
-    return { error: 'That image does not belong to this board.' };
+    return { error: t('errors.imageNotThisSpace') };
   }
 
   const supabase = await createClient();
@@ -56,7 +66,9 @@ export async function saveBoardMedia(input: {
   slug: string;
   path: string;
 }): Promise<SaveMediaResult> {
-  const result = await saveMedia(input.bucket, input.boardId, input.path);
+  const { t } = await getTranslations();
+
+  const result = await saveMedia(input.bucket, input.boardId, input.path, t);
   if ('error' in result) return result;
 
   const supabase = await createClient();
@@ -70,7 +82,7 @@ export async function saveBoardMedia(input: {
   // The update is still subject to RLS, so a non-admin is refused here even
   // though they could not have uploaded the file in the first place.
   const { error } = await supabase.from('boards').update(patch).eq('id', input.boardId);
-  if (error) return { error: `Could not save: ${error.message}` };
+  if (error) return couldNotSave(error.message, t);
 
   revalidatePath(`/dashboard/boards/${input.slug}`, 'layout');
   revalidatePath('/dashboard', 'page');
@@ -89,8 +101,10 @@ export async function setBoardBanner(input: {
   slug: string;
   presetKey: string | null;
 }): Promise<SaveMediaResult> {
+  const { t } = await getTranslations();
+
   if (input.presetKey !== null && !isKnownBannerPreset(input.presetKey)) {
-    return { error: 'Unknown banner.' };
+    return { error: t('errors.unknownBanner') };
   }
 
   const supabase = await createClient();
@@ -101,7 +115,7 @@ export async function setBoardBanner(input: {
     .update({ banner_url: value })
     .eq('id', input.boardId);
 
-  if (error) return { error: `Could not save: ${error.message}` };
+  if (error) return couldNotSave(error.message, t);
 
   revalidatePath(`/dashboard/boards/${input.slug}`, 'layout');
   return {};
@@ -111,8 +125,10 @@ export async function setChecklistBanner(input: {
   checklistId: string;
   presetKey: string | null;
 }): Promise<SaveMediaResult> {
+  const { t } = await getTranslations();
+
   if (input.presetKey !== null && !isKnownBannerPreset(input.presetKey)) {
-    return { error: 'Unknown banner.' };
+    return { error: t('errors.unknownBanner') };
   }
 
   const supabase = await createClient();
@@ -123,7 +139,7 @@ export async function setChecklistBanner(input: {
     .update({ banner_url: value })
     .eq('id', input.checklistId);
 
-  if (error) return { error: `Could not save: ${error.message}` };
+  if (error) return couldNotSave(error.message, t);
 
   revalidatePath('/dashboard/boards/[slug]/checklists/[id]', 'layout');
   return {};
@@ -144,6 +160,7 @@ export async function setBannerFraming(input: {
   target: { kind: 'board'; boardId: string; slug: string } | { kind: 'checklist'; checklistId: string };
   framing: BannerFraming;
 }): Promise<SaveMediaResult> {
+  const { t } = await getTranslations();
   const supabase = await createClient();
   const { target, framing } = input;
 
@@ -157,9 +174,9 @@ export async function setBannerFraming(input: {
       .eq('id', target.boardId)
       .maybeSingle();
 
-    if (readError) return { error: `Could not save: ${readError.message}` };
+    if (readError) return couldNotSave(readError.message, t);
     if (!data?.banner_url || isBannerPreset(data.banner_url)) {
-      return { error: 'There is no uploaded banner to adjust.' };
+      return { error: t('errors.noUploadedBanner') };
     }
 
     const { error } = await supabase
@@ -167,7 +184,7 @@ export async function setBannerFraming(input: {
       .update({ banner_url: withBannerFraming(data.banner_url, framing) })
       .eq('id', target.boardId);
 
-    if (error) return { error: `Could not save: ${error.message}` };
+    if (error) return couldNotSave(error.message, t);
 
     revalidatePath(`/dashboard/boards/${target.slug}`, 'layout');
     revalidatePath('/dashboard', 'page');
@@ -180,9 +197,9 @@ export async function setBannerFraming(input: {
     .eq('id', target.checklistId)
     .maybeSingle();
 
-  if (readError) return { error: `Could not save: ${readError.message}` };
+  if (readError) return couldNotSave(readError.message, t);
   if (!data?.banner_url || isBannerPreset(data.banner_url)) {
-    return { error: 'There is no uploaded banner to adjust.' };
+    return { error: t('errors.noUploadedBanner') };
   }
 
   const { error } = await supabase
@@ -190,7 +207,7 @@ export async function setBannerFraming(input: {
     .update({ banner_url: withBannerFraming(data.banner_url, framing) })
     .eq('id', target.checklistId);
 
-  if (error) return { error: `Could not save: ${error.message}` };
+  if (error) return couldNotSave(error.message, t);
 
   revalidatePath('/dashboard/boards/[slug]/checklists/[id]', 'layout');
   return {};
@@ -202,7 +219,9 @@ export async function saveChecklistMedia(input: {
   checklistId: string;
   path: string;
 }): Promise<SaveMediaResult> {
-  const result = await saveMedia(input.bucket, input.boardId, input.path);
+  const { t } = await getTranslations();
+
+  const result = await saveMedia(input.bucket, input.boardId, input.path, t);
   if ('error' in result) return result;
 
   const supabase = await createClient();
@@ -213,7 +232,7 @@ export async function saveChecklistMedia(input: {
       : { banner_url: result.url };
 
   const { error } = await supabase.from('checklists').update(patch).eq('id', input.checklistId);
-  if (error) return { error: `Could not save: ${error.message}` };
+  if (error) return couldNotSave(error.message, t);
 
   revalidatePath('/dashboard/boards/[slug]/checklists/[id]', 'layout');
   revalidatePath('/dashboard/boards/[slug]', 'page');

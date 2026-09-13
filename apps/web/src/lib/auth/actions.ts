@@ -5,6 +5,8 @@ import { headers } from 'next/headers';
 import { signInSchema, signUpSchema, resetRequestSchema } from '@app/core';
 
 import { createClient } from '@/lib/supabase/server';
+import { getTranslations } from '@/lib/i18n/server';
+import { translateAuthError, translateFieldErrors } from '@/lib/errors';
 
 /**
  * Result shape shared by every auth form.
@@ -50,14 +52,23 @@ function safeRedirectPath(raw: FormDataEntryValue | null): string {
   return value;
 }
 
+/*
+ * The sign-in pages are the first thing anybody sees, and the language switcher
+ * sits on them — so these were the most visible of the English-only messages.
+ * Somebody who had just chosen Uzbek was told in English that their password
+ * was wrong.
+ */
+
 export async function signIn(_prev: AuthState, formData: FormData): Promise<AuthState> {
+  const { t } = await getTranslations();
+
   const parsed = signInSchema.safeParse({
     email: formData.get('email'),
     password: formData.get('password'),
   });
 
   if (!parsed.success) {
-    return { fieldErrors: parsed.error.flatten().fieldErrors };
+    return { fieldErrors: translateFieldErrors(parsed.error.flatten().fieldErrors, t) };
   }
 
   const supabase = await createClient();
@@ -74,18 +85,12 @@ export async function signIn(_prev: AuthState, formData: FormData): Promise<Auth
      * message below does harm rather than good.
      */
     if (/captcha/i.test(error.message)) {
-      return {
-        formError: 'The verification check did not pass. Try again in a moment.',
-        at: Date.now(),
-      };
+      return { formError: t('errors.captchaFailed'), at: Date.now() };
     }
 
     // Deliberately vague. Distinguishing "no such account" from "wrong
     // password" would let anyone test whether a given email is registered.
-    return {
-      formError: 'That email and password combination is not correct.',
-      at: Date.now(),
-    };
+    return { formError: t('errors.wrongCredentials'), at: Date.now() };
   }
 
   // redirect() works by throwing, so it must sit outside any try/catch that
@@ -94,6 +99,8 @@ export async function signIn(_prev: AuthState, formData: FormData): Promise<Auth
 }
 
 export async function signUp(_prev: AuthState, formData: FormData): Promise<AuthState> {
+  const { t } = await getTranslations();
+
   const parsed = signUpSchema.safeParse({
     fullName: formData.get('fullName'),
     email: formData.get('email'),
@@ -101,7 +108,7 @@ export async function signUp(_prev: AuthState, formData: FormData): Promise<Auth
   });
 
   if (!parsed.success) {
-    return { fieldErrors: parsed.error.flatten().fieldErrors };
+    return { fieldErrors: translateFieldErrors(parsed.error.flatten().fieldErrors, t) };
   }
 
   const { fullName, email, password } = parsed.data;
@@ -125,16 +132,14 @@ export async function signUp(_prev: AuthState, formData: FormData): Promise<Auth
   });
 
   if (error) {
-    return { formError: error.message, at: Date.now() };
+    return { formError: translateAuthError(error.message, t), at: Date.now() };
   }
 
   // With email confirmation on (the default, and what you want), Supabase
   // returns a user but no session. Sending them to the dashboard here would
   // just bounce them back to /login.
   if (!data.session) {
-    return {
-      notice: `Check ${email} for a confirmation link to finish creating your account.`,
-    };
+    return { notice: t('notices.checkEmailToConfirm', { email }) };
   }
 
   redirect('/dashboard');
@@ -144,10 +149,12 @@ export async function requestPasswordReset(
   _prev: AuthState,
   formData: FormData,
 ): Promise<AuthState> {
+  const { t } = await getTranslations();
+
   const parsed = resetRequestSchema.safeParse({ email: formData.get('email') });
 
   if (!parsed.success) {
-    return { fieldErrors: parsed.error.flatten().fieldErrors };
+    return { fieldErrors: translateFieldErrors(parsed.error.flatten().fieldErrors, t) };
   }
 
   const supabase = await createClient();
@@ -161,9 +168,7 @@ export async function requestPasswordReset(
 
   // Always the same reply, sent whether or not the address exists — otherwise
   // this endpoint becomes a way to enumerate who has an account.
-  return {
-    notice: 'If an account exists for that address, a reset link is on its way.',
-  };
+  return { notice: t('notices.resetLinkSent') };
 }
 
 export async function signOut() {

@@ -5,6 +5,8 @@ import { LOCALE_CODE_PATTERN } from '@app/core';
 
 import { createClient, getUser } from '@/lib/supabase/server';
 import { I18N_CACHE_TAG } from '@/lib/i18n/cache-tags';
+import { getTranslations } from '@/lib/i18n/server';
+import { describeDatabaseError } from '@/lib/errors';
 import { en } from '@/messages/en';
 
 export type AdminResult = { error?: string; notice?: string };
@@ -43,9 +45,11 @@ export async function saveTranslation(input: {
   key: string;
   value: string;
 }): Promise<AdminResult> {
+  const { t } = await getTranslations();
+
   // Only keys the app actually uses. Without this the table would slowly fill
   // with typo'd keys that render nowhere and can never be found again.
-  if (!KNOWN_KEYS.has(input.key)) return { error: 'Unknown string.' };
+  if (!KNOWN_KEYS.has(input.key)) return { error: t('errors.unknownString') };
 
   const value = input.value.trim();
   const supabase = await createClient();
@@ -60,7 +64,7 @@ export async function saveTranslation(input: {
       .eq('locale', input.locale)
       .eq('key', input.key);
 
-    if (error) return { error: error.message };
+    if (error) return { error: describeDatabaseError(error.message, t) };
     invalidateTranslations();
     return {};
   }
@@ -75,40 +79,44 @@ export async function saveTranslation(input: {
     { onConflict: 'locale,key' },
   );
 
-  if (error) return { error: error.message };
+  if (error) return { error: describeDatabaseError(error.message, t) };
 
   invalidateTranslations();
   return {};
 }
 
 export async function addLocale(input: { code: string; name: string }): Promise<AdminResult> {
+  const { t } = await getTranslations();
   const code = input.code.trim().toLowerCase();
   const name = input.name.trim();
 
   if (!LOCALE_CODE_PATTERN.test(code)) {
-    return { error: 'Use a two-letter code such as kk or tr.' };
+    return { error: t('errors.localeCodeFormat') };
   }
   if (name.length < 1 || name.length > 60) {
-    return { error: 'Give the language a name.' };
+    return { error: t('errors.localeNameRequired') };
   }
 
   const supabase = await createClient();
   const { error } = await supabase.from('app_locales').insert({ code, name });
 
   if (error) {
-    if (error.code === '23505') return { error: 'That language already exists.' };
-    return { error: error.message };
+    if (error.code === '23505') return { error: t('errors.localeExists') };
+    return { error: describeDatabaseError(error.message, t) };
   }
 
   invalidateTranslations();
-  return { notice: 'Language added. Untranslated strings fall back to English.' };
+  return { notice: t('notices.localeAdded') };
 }
 
 export async function setLocaleEnabled(code: string, enabled: boolean): Promise<AdminResult> {
   const supabase = await createClient();
   const { error } = await supabase.from('app_locales').update({ enabled }).eq('code', code);
 
-  if (error) return { error: error.message };
+  if (error) {
+    const { t } = await getTranslations();
+    return { error: describeDatabaseError(error.message, t) };
+  }
 
   invalidateTranslations();
   return {};

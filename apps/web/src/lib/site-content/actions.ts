@@ -3,6 +3,8 @@
 import { siteContentKeys } from '@app/core';
 
 import { createClient, getUser } from '@/lib/supabase/server';
+import { getTranslations } from '@/lib/i18n/server';
+import { describeDatabaseError } from '@/lib/errors';
 
 export type SiteContentResult = { error?: string };
 
@@ -44,8 +46,10 @@ export async function saveSiteContent(input: {
   key: string;
   value: string;
 }): Promise<SiteContentResult> {
-  if (!SITE_LOCALES.has(input.locale)) return { error: 'Unknown language.' };
-  if (!KNOWN_KEYS.has(input.key)) return { error: 'Unknown string.' };
+  const { t } = await getTranslations();
+
+  if (!SITE_LOCALES.has(input.locale)) return { error: t('errors.unknownLanguage') };
+  if (!KNOWN_KEYS.has(input.key)) return { error: t('errors.unknownString') };
 
   const value = input.value.trim();
   const supabase = await createClient();
@@ -62,7 +66,7 @@ export async function saveSiteContent(input: {
       .eq('locale', input.locale)
       .eq('key', input.key);
 
-    return error ? { error: error.message } : {};
+    return error ? { error: describeDatabaseError(error.message, t) } : {};
   }
 
   const { error } = await supabase.from('site_content').upsert(
@@ -75,5 +79,5 @@ export async function saveSiteContent(input: {
     { onConflict: 'locale,key' },
   );
 
-  return error ? { error: error.message } : {};
+  return error ? { error: describeDatabaseError(error.message, t) } : {};
 }

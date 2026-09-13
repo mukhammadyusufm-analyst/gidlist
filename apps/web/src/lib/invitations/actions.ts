@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache';
 
 import { createClient } from '@/lib/supabase/server';
+import { getTranslations } from '@/lib/i18n/server';
+import { describeDatabaseError } from '@/lib/errors';
 
 export type InvitationResult = { error?: string };
 
@@ -16,7 +18,10 @@ export async function acceptInvitation(membershipId: string): Promise<Invitation
   const supabase = await createClient();
   const { error } = await supabase.rpc('accept_invitation', { p_membership_id: membershipId });
 
-  if (error) return { error: friendly(error.message) };
+  if (error) {
+    const { t } = await getTranslations();
+    return { error: describeDatabaseError(error.message, t) };
+  }
 
   revalidatePath('/dashboard', 'layout');
   return {};
@@ -26,15 +31,11 @@ export async function declineInvitation(membershipId: string): Promise<Invitatio
   const supabase = await createClient();
   const { error } = await supabase.rpc('decline_invitation', { p_membership_id: membershipId });
 
-  if (error) return { error: friendly(error.message) };
+  if (error) {
+    const { t } = await getTranslations();
+    return { error: describeDatabaseError(error.message, t) };
+  }
 
   revalidatePath('/dashboard', 'layout');
   return {};
-}
-
-function friendly(message: string): string {
-  if (message.includes('not yours')) {
-    return 'That invitation is no longer available.';
-  }
-  return message;
 }

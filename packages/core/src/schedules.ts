@@ -15,13 +15,16 @@ import { ASSIGNMENT_MODES } from './schedule-display';
  * `./schedule-display` so that browser code can reach them without loading Zod.
  * They are re-exported here, so the barrel and every server import are
  * unaffected by the split.
+ *
+ * Messages are translation keys, translated by the action that runs the schema
+ * — see the note in `./auth.ts`.
  */
 
 export * from './schedule-display';
 
 export const scheduleKindSchema = z.enum(SCHEDULE_KINDS);
 
-const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { error: 'Use the date picker.' });
+const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { error: 'errors.useDatePicker' });
 
 export const scheduleConfigSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('daily'), config: z.object({}) }),
@@ -31,7 +34,7 @@ export const scheduleConfigSchema = z.discriminatedUnion('kind', [
     config: z.object({
       weekdays: z
         .array(z.int().min(1).max(7))
-        .min(1, { error: 'Choose at least one day of the week.' }),
+        .min(1, { error: 'errors.chooseWeekday' }),
     }),
   }),
 
@@ -40,7 +43,7 @@ export const scheduleConfigSchema = z.discriminatedUnion('kind', [
     config: z.object({
       days: z
         .array(z.int().min(1).max(31))
-        .min(1, { error: 'Choose at least one day of the month.' }),
+        .min(1, { error: 'errors.chooseMonthDay' }),
     }),
   }),
 
@@ -49,14 +52,14 @@ export const scheduleConfigSchema = z.discriminatedUnion('kind', [
     config: z.object({
       dates: z
         .array(z.object({ month: z.int().min(1).max(12), day: z.int().min(1).max(31) }))
-        .min(1, { error: 'Add at least one date.' }),
+        .min(1, { error: 'errors.addDate' }),
     }),
   }),
 
   z.object({
     kind: z.literal('specific_dates'),
     config: z.object({
-      dates: z.array(isoDate).min(1, { error: 'Add at least one date.' }),
+      dates: z.array(isoDate).min(1, { error: 'errors.addDate' }),
     }),
   }),
 ]);
@@ -72,7 +75,7 @@ export const createScheduleSchema = z
      * to remove: an ownership decision nobody made.
      */
     assignmentMode: z.enum(ASSIGNMENT_MODES, {
-      error: 'Choose who this checklist is for.',
+      error: 'errors.chooseAssignment',
     }),
 
     /**
@@ -80,21 +83,21 @@ export const createScheduleSchema = z
      * refinement below rather than by the field, so the message lands on the
      * list instead of on a mode the person chose correctly.
      */
-    assignees: z.array(z.email({ error: 'Enter a valid email address.' })).default([]),
+    assignees: z.array(z.email({ error: 'errors.emailInvalid' })).default([]),
   })
   .and(scheduleConfigSchema)
   .refine((v) => !v.endDate || v.endDate >= v.startDate, {
-    error: 'The end date cannot be before the start date.',
+    error: 'errors.endBeforeStart',
     path: ['endDate'],
   })
   .refine((v) => v.assignmentMode !== 'specific' || v.assignees.length > 0, {
-    error: 'Choose at least one person, or assign this to everyone.',
+    error: 'errors.choosePerson',
     path: ['assignees'],
   });
 
 export const addAssigneeSchema = z.object({
   scheduleId: z.uuid(),
-  email: z.email({ error: 'Enter a valid email address.' }),
+  email: z.email({ error: 'errors.emailInvalid' }),
 });
 
 export type CreateScheduleInput = z.infer<typeof createScheduleSchema>;

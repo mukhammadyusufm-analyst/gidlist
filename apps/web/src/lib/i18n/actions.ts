@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { isLocaleCode } from '@app/core';
 
 import { createClient, getUser } from '@/lib/supabase/server';
-import { LOCALE_COOKIE, getAvailableLocales } from './server';
+import { LOCALE_COOKIE, getAvailableLocales, getTranslations } from './server';
 
 /**
  * Change the interface language.
@@ -18,10 +18,20 @@ export async function setLocale(value: string): Promise<{ error?: string }> {
   // Checked against the languages actually on offer, not just against a shape:
   // the list is data now, so a value that merely looks like a locale code could
   // otherwise be stored and leave the user seeing raw message keys.
-  if (!isLocaleCode(value)) return { error: 'Unknown language.' };
+  //
+  // The refusal is in the language the person was ALREADY using — the one they
+  // failed to switch away from — which is the only language certain to be
+  // readable to them at this moment.
+  if (!isLocaleCode(value)) {
+    const { t } = await getTranslations();
+    return { error: t('errors.unknownLanguage') };
+  }
 
   const available = await getAvailableLocales();
-  if (!available.some((l) => l.code === value)) return { error: 'Unknown language.' };
+  if (!available.some((l) => l.code === value)) {
+    const { t } = await getTranslations();
+    return { error: t('errors.unknownLanguage') };
+  }
 
   const store = await cookies();
   store.set(LOCALE_COOKIE, value, {

@@ -11,6 +11,8 @@ import {
 } from '@app/core';
 
 import { createClient, getUser } from '@/lib/supabase/server';
+import { getTranslations } from '@/lib/i18n/server';
+import { explainFailure, translateFieldErrors } from '@/lib/errors';
 
 export type ActionState = {
   formError?: string;
@@ -60,16 +62,27 @@ async function nextItemPosition(versionId: string, parentItemId: string | null):
   return (data?.position ?? 0) + POSITION_STEP;
 }
 
+/*
+ * The builder's refusals — nesting past five levels, editing a published
+ * version — used to go through a local `friendlyError` that returned English.
+ * They are recognised centrally in `lib/errors.ts` now, alongside every other
+ * refusal, and leave in the reader's language.
+ */
+
 export async function createChecklist(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  const { t } = await getTranslations();
+
   const parsed = createChecklistSchema.safeParse({
     boardId: formData.get('boardId'),
     title: formData.get('title'),
     description: formData.get('description') || undefined,
   });
-  if (!parsed.success) return { fieldErrors: parsed.error.flatten().fieldErrors };
+  if (!parsed.success) {
+    return { fieldErrors: translateFieldErrors(parsed.error.flatten().fieldErrors, t) };
+  }
 
   const slug = String(formData.get('slug') ?? '');
   const supabase = await createClient();
@@ -88,7 +101,7 @@ export async function createChecklist(
     .single();
 
   if (error || !data) {
-    return { formError: `Could not create the checklist: ${error?.message ?? 'unknown error'}` };
+    return { formError: explainFailure(error?.message, 'errors.couldNotCreateChecklist', t) };
   }
 
   revalidatePath(`/dashboard/boards/${slug}/checklists`);
@@ -99,12 +112,16 @@ export async function updateChecklistDetails(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  const { t } = await getTranslations();
+
   const parsed = updateChecklistSchema.safeParse({
     checklistId: formData.get('checklistId'),
     title: formData.get('title'),
     description: formData.get('description') || undefined,
   });
-  if (!parsed.success) return { fieldErrors: parsed.error.flatten().fieldErrors };
+  if (!parsed.success) {
+    return { fieldErrors: translateFieldErrors(parsed.error.flatten().fieldErrors, t) };
+  }
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -115,12 +132,12 @@ export async function updateChecklistDetails(
     })
     .eq('id', parsed.data.checklistId);
 
-  if (error) return { formError: `Could not save: ${error.message}` };
+  if (error) return { formError: explainFailure(error.message, 'errors.couldNotSave', t) };
 
   // 'layout' rather than 'page': the title also appears in the checklist
   // header, which lives in the layout above this page.
   revalidatePath('/dashboard/boards/[slug]/checklists/[id]', 'layout');
-  return { notice: 'Saved.' };
+  return { notice: t('common.saved') };
 }
 
 // Checklist imagery lives in `lib/media/actions.ts`, uploaded directly from the
@@ -128,11 +145,15 @@ export async function updateChecklistDetails(
 // storage policy authorises by board, and a checklist-scoped path would fail it.
 
 export async function addGroup(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const { t } = await getTranslations();
+
   const parsed = addGroupSchema.safeParse({
     versionId: formData.get('versionId'),
     title: formData.get('title'),
   });
-  if (!parsed.success) return { fieldErrors: parsed.error.flatten().fieldErrors };
+  if (!parsed.success) {
+    return { fieldErrors: translateFieldErrors(parsed.error.flatten().fieldErrors, t) };
+  }
 
   const supabase = await createClient();
   const position = await nextGroupPosition(parsed.data.versionId);
@@ -143,20 +164,24 @@ export async function addGroup(_prev: ActionState, formData: FormData): Promise<
     position,
   });
 
-  if (error) return { formError: friendlyError(error.message) };
+  if (error) return { formError: explainFailure(error.message, 'errors.couldNotSave', t) };
 
   revalidatePath('/dashboard/boards/[slug]/checklists/[id]', 'page');
   return {};
 }
 
 export async function addItem(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const { t } = await getTranslations();
+
   const parsed = addItemSchema.safeParse({
     versionId: formData.get('versionId'),
     groupId: formData.get('groupId'),
     parentItemId: formData.get('parentItemId') || null,
     title: formData.get('title'),
   });
-  if (!parsed.success) return { fieldErrors: parsed.error.flatten().fieldErrors };
+  if (!parsed.success) {
+    return { fieldErrors: translateFieldErrors(parsed.error.flatten().fieldErrors, t) };
+  }
 
   const supabase = await createClient();
   const position = await nextItemPosition(parsed.data.versionId, parsed.data.parentItemId ?? null);
@@ -171,7 +196,7 @@ export async function addItem(_prev: ActionState, formData: FormData): Promise<A
     position,
   });
 
-  if (error) return { formError: friendlyError(error.message) };
+  if (error) return { formError: explainFailure(error.message, 'errors.couldNotSave', t) };
 
   revalidatePath('/dashboard/boards/[slug]/checklists/[id]', 'page');
   return {};
@@ -191,6 +216,8 @@ function numberOrNull(value: FormDataEntryValue | null): number | null {
 }
 
 export async function updateItem(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const { t } = await getTranslations();
+
   const parsed = updateItemSchema.safeParse({
     itemId: formData.get('itemId'),
     title: formData.get('title'),
@@ -213,7 +240,9 @@ export async function updateItem(_prev: ActionState, formData: FormData): Promis
     windowStart: String(formData.get('windowStart') ?? '') || null,
     windowEnd: String(formData.get('windowEnd') ?? '') || null,
   });
-  if (!parsed.success) return { fieldErrors: parsed.error.flatten().fieldErrors };
+  if (!parsed.success) {
+    return { fieldErrors: translateFieldErrors(parsed.error.flatten().fieldErrors, t) };
+  }
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -237,10 +266,10 @@ export async function updateItem(_prev: ActionState, formData: FormData): Promis
     })
     .eq('id', parsed.data.itemId);
 
-  if (error) return { formError: friendlyError(error.message) };
+  if (error) return { formError: explainFailure(error.message, 'errors.couldNotSave', t) };
 
   revalidatePath('/dashboard/boards/[slug]/checklists/[id]', 'page');
-  return { notice: 'Saved.' };
+  return { notice: t('common.saved') };
 }
 
 export async function deleteItem(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -250,17 +279,24 @@ export async function deleteItem(_prev: ActionState, formData: FormData): Promis
   // Sub-items go with it, by cascade. That is the intent: an item's children
   // are part of it, not independent tasks.
   const { error } = await supabase.from('checklist_items').delete().eq('id', itemId);
-  if (error) return { formError: friendlyError(error.message) };
+  if (error) {
+    const { t } = await getTranslations();
+    return { formError: explainFailure(error.message, 'errors.couldNotDelete', t) };
+  }
 
   revalidatePath('/dashboard/boards/[slug]/checklists/[id]', 'page');
   return {};
 }
 
 export async function renameGroup(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const { t } = await getTranslations();
+
   const parsed = addGroupSchema
     .pick({ title: true })
     .safeParse({ title: formData.get('title') });
-  if (!parsed.success) return { fieldErrors: parsed.error.flatten().fieldErrors };
+  if (!parsed.success) {
+    return { fieldErrors: translateFieldErrors(parsed.error.flatten().fieldErrors, t) };
+  }
 
   const groupId = String(formData.get('groupId') ?? '');
   const supabase = await createClient();
@@ -270,7 +306,7 @@ export async function renameGroup(_prev: ActionState, formData: FormData): Promi
     .update({ title: parsed.data.title })
     .eq('id', groupId);
 
-  if (error) return { formError: friendlyError(error.message) };
+  if (error) return { formError: explainFailure(error.message, 'errors.couldNotSave', t) };
 
   revalidatePath('/dashboard/boards/[slug]/checklists/[id]', 'page');
   return {};
@@ -407,7 +443,10 @@ export async function deleteGroup(_prev: ActionState, formData: FormData): Promi
   const supabase = await createClient();
 
   const { error } = await supabase.from('checklist_groups').delete().eq('id', groupId);
-  if (error) return { formError: friendlyError(error.message) };
+  if (error) {
+    const { t } = await getTranslations();
+    return { formError: explainFailure(error.message, 'errors.couldNotDelete', t) };
+  }
 
   revalidatePath('/dashboard/boards/[slug]/checklists/[id]', 'page');
   return {};
@@ -437,6 +476,8 @@ export async function reorderItems(versionId: string, orderedIds: string[]): Pro
 }
 
 export async function startEditing(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const { t } = await getTranslations();
+
   const checklistId = String(formData.get('checklistId') ?? '');
   const supabase = await createClient();
 
@@ -444,28 +485,25 @@ export async function startEditing(_prev: ActionState, formData: FormData): Prom
   // or returns the existing draft if one is already open.
   const { error } = await supabase.rpc('create_checklist_draft', { p_checklist_id: checklistId });
 
-  if (error) return { formError: `Could not start editing: ${error.message}` };
+  if (error) return { formError: explainFailure(error.message, 'errors.couldNotStartEditing', t) };
 
   revalidatePath('/dashboard/boards/[slug]/checklists/[id]', 'page');
-  return { notice: 'New draft created. The published version is unchanged.' };
+  return { notice: t('notices.draftCreated') };
 }
 
 export async function publishVersion(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const { t } = await getTranslations();
+
   const versionId = String(formData.get('versionId') ?? '');
   const supabase = await createClient();
 
   const { error } = await supabase.rpc('publish_checklist_version', { p_version_id: versionId });
 
-  if (error) {
-    return {
-      formError: error.message.includes('at least one item')
-        ? 'Add at least one item before publishing.'
-        : `Could not publish: ${error.message}`,
-    };
-  }
+  // "Add at least one item before publishing" is recognised in lib/errors.ts.
+  if (error) return { formError: explainFailure(error.message, 'errors.couldNotPublish', t) };
 
   revalidatePath('/dashboard/boards/[slug]/checklists/[id]', 'page');
-  return { notice: 'Published. This version is now frozen and can no longer be edited.' };
+  return { notice: t('notices.published') };
 }
 
 /**
@@ -480,6 +518,8 @@ export async function setChecklistArchived(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  const { t } = await getTranslations();
+
   const checklistId = String(formData.get('checklistId') ?? '');
   const archived = String(formData.get('archived') ?? '') === 'true';
 
@@ -490,11 +530,17 @@ export async function setChecklistArchived(
   });
 
   if (error) {
-    return { formError: `Could not ${archived ? 'archive' : 'restore'}: ${error.message}` };
+    return {
+      formError: explainFailure(
+        error.message,
+        archived ? 'errors.couldNotArchive' : 'errors.couldNotRestore',
+        t,
+      ),
+    };
   }
 
   revalidatePath('/dashboard/boards/[slug]', 'layout');
-  return { notice: archived ? 'Checklist archived.' : 'Checklist restored.' };
+  return { notice: archived ? t('notices.checklistArchived') : t('notices.checklistRestored') };
 }
 
 /**
@@ -518,11 +564,10 @@ export async function deleteChecklist(
   });
 
   if (error) {
-    return {
-      formError: error.message.includes('cannot be deleted')
-        ? 'This checklist has been filled in, so it can only be archived — the record has to stay.'
-        : `Could not delete: ${error.message}`,
-    };
+    const { t } = await getTranslations();
+    // "This checklist has been filled in" is recognised in lib/errors.ts and
+    // explains that archiving is the way out.
+    return { formError: explainFailure(error.message, 'errors.couldNotDelete', t) };
   }
 
   revalidatePath('/dashboard/boards/[slug]', 'layout');
@@ -541,15 +586,4 @@ export async function deleteChecklist(
    * write — see the note on signIn().
    */
   redirect(slug ? `/dashboard/boards/${slug}/checklists` : '/dashboard');
-}
-
-/** Turn database exception text into something worth showing a user. */
-function friendlyError(message: string): string {
-  if (message.includes('5 levels deep')) {
-    return 'Items can only be nested 5 levels deep.';
-  }
-  if (message.includes('published and can no longer be changed')) {
-    return 'This version is published. Choose "Edit as new draft" to make changes.';
-  }
-  return message;
 }

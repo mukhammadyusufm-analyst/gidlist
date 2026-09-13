@@ -561,4 +561,224 @@ export const ru = {
   'compliance.itemsTickedOf': 'Отмечено {done} из {total} пунктов в отправленных чек-листах',
   'compliance.nothingSubmitted': 'За этот период ещё ничего не отправлено.',
   'compliance.itemsTicked': 'Отмечено {done} из {total}',
+
+  // --- сообщения и ошибки -------------------------------------------------
+
+  // Проверка полей
+  'errors.emailInvalid': 'Введите корректный адрес электронной почты.',
+  'errors.passwordTooShort': 'Пароль должен содержать не менее 8 символов.',
+  'errors.passwordTooLong': 'Пароль должен содержать не более 72 символов.',
+  'errors.passwordRequired': 'Введите пароль.',
+  'errors.passwordsDontMatch': 'Пароли не совпадают.',
+  'errors.nameRequired': 'Введите имя.',
+  'errors.nameTooLong120': 'Имя должно содержать не более 120 символов.',
+  'errors.nameTooLong200': 'Название должно содержать не более 200 символов.',
+  'errors.spaceNameRequired': 'Дайте пространству название.',
+  'errors.descriptionTooLong500': 'Описание должно содержать не более 500 символов.',
+  'errors.descriptionTooLong2000': 'Описание должно содержать не более 2000 символов.',
+  'errors.checklistTitleRequired': 'Дайте чек-листу название.',
+  'errors.titleTooLong200': 'Название должно содержать не более 200 символов.',
+  'errors.titleTooLong500': 'Название должно содержать не более 500 символов.',
+  'errors.sectionNameRequired': 'Дайте разделу название.',
+  'errors.itemTitleRequired': 'Дайте пункту название.',
+  'errors.useTimePicker': 'Выберите время в поле выбора времени.',
+  'errors.useDatePicker': 'Выберите дату в календаре.',
+  'errors.windowNeedsBoth': 'Для временного окна нужны и начало, и конец.',
+  'errors.windowSameTime': 'Начало и конец не могут совпадать.',
+  'errors.windowOnBeforeRequired': 'Сначала включите временное окно, затем сделайте его обязательным.',
+  'errors.locationAllOrNone': 'Для места нужны координаты и радиус — либо ничего из трёх.',
+  'errors.photoOnBeforeRequired': 'Сначала включите фото, затем сделайте его обязательным.',
+  'errors.fileOnBeforeRequired': 'Сначала включите файл, затем сделайте его обязательным.',
+  'errors.locationOnBeforeRequired': 'Сначала включите место, затем сделайте его обязательным.',
+  'errors.locationSetCoordinates': 'Укажите координаты и радиус для места.',
+  'errors.radiusRange': 'Радиус должен быть от 25 до 100 000 метров.',
+  'errors.chooseWeekday': 'Выберите хотя бы один день недели.',
+  'errors.chooseMonthDay': 'Выберите хотя бы один день месяца.',
+  'errors.addDate': 'Добавьте хотя бы одну дату.',
+  'errors.chooseAssignment': 'Выберите, для кого этот чек-лист.',
+  'errors.endBeforeStart': 'Дата окончания не может быть раньше даты начала.',
+  'errors.choosePerson': 'Выберите хотя бы одного человека или назначьте всем.',
+
+  // Общие
+  'errors.unknown': 'Что-то пошло не так. Попробуйте ещё раз.',
+  'errors.sessionExpired': 'Сеанс истёк. Войдите снова.',
+  'errors.noPermission': 'У вас нет прав на это действие.',
+  'errors.ownerOnly': 'Это может сделать только владелец пространства.',
+  'errors.couldNotSave': 'Не удалось сохранить: {reason}',
+  'errors.couldNotCreateSpace': 'Не удалось создать пространство: {reason}',
+  'errors.couldNotArchive': 'Не удалось архивировать: {reason}',
+  'errors.couldNotRestore': 'Не удалось восстановить: {reason}',
+  'errors.couldNotDelete': 'Не удалось удалить: {reason}',
+  'errors.couldNotInvite': 'Не удалось пригласить: {reason}',
+  'errors.couldNotChangeRole': 'Не удалось изменить роль: {reason}',
+  'errors.couldNotChangeManager': 'Не удалось изменить руководителя: {reason}',
+  'errors.couldNotRemove': 'Не удалось удалить: {reason}',
+  'errors.couldNotCreateChecklist': 'Не удалось создать чек-лист: {reason}',
+  'errors.couldNotStartEditing': 'Не удалось начать редактирование: {reason}',
+  'errors.couldNotPublish': 'Не удалось опубликовать: {reason}',
+  'errors.couldNotUpdate': 'Не удалось обновить: {reason}',
+
+  // Тарифы и лимиты
+  'errors.spaceLimit':
+    'Вы достигли лимита пространств по тарифу. Архивируйте неиспользуемое пространство или перейдите на тариф выше.',
+  'errors.memberLimit':
+    'Вы достигли лимита людей по тарифу. Архивируйте неиспользуемое пространство или перейдите на тариф выше.',
+  'errors.rateLimit':
+    'Слишком много приглашений сразу. Подождите несколько минут и продолжите — уже отправленные в порядке.',
+
+  // Пространства и участники
+  'errors.alreadyInvited': 'Этот человек уже приглашён в пространство.',
+  'errors.roleInvalid': 'Недопустимая роль.',
+  'errors.memberInvalid': 'Недопустимый участник.',
+  'errors.reportingLoop': 'Это создаст замкнутый круг в подчинении.',
+  'errors.reportingTooDeep': 'Цепочка подчинения слишком глубокая.',
+  'errors.managerSameSpace': 'Руководитель должен быть участником того же пространства.',
+  'errors.reportToSelf': 'Человек не может подчиняться сам себе.',
+  'errors.ownerCannotBeRemoved': 'Владельца нельзя удалить. Сначала передайте права владения.',
+  'errors.ownershipTransfer':
+    'Передать права владения может только текущий владелец и только активному участнику пространства.',
+  'errors.spaceHasHistory':
+    'У этого пространства есть история чек-листов, поэтому его можно только архивировать. Архив сохраняет записи и скрывает пространство.',
+
+  // Создание чек-листов
+  'errors.checklistHasHistory':
+    'Этот чек-лист уже заполнялся, поэтому его можно только архивировать — записи должны сохраниться.',
+  'errors.nestingLimit': 'Пункты можно вкладывать не глубже 5 уровней.',
+  'errors.versionPublished':
+    'Эта версия опубликована и зафиксирована. Чтобы внести изменения, создайте новый черновик.',
+  'errors.publishNeedsItem': 'Перед публикацией добавьте хотя бы один пункт.',
+  'errors.versionNotDraft': 'Эта версия больше не черновик. Обновите страницу.',
+  'errors.itemParentInvalid': 'Этот пункт нельзя поместить туда. Обновите страницу и попробуйте снова.',
+
+  // Заполнение
+  'errors.parentAutoCompletes': 'Эта задача выполнится сама, когда отмечены все её подпункты.',
+  'errors.assignedToSomeoneElse': 'Этот чек-лист назначен другому человеку.',
+  'errors.noPublishedVersion': 'Этот чек-лист ещё не опубликован, заполнять пока нечего.',
+  'errors.alreadySubmitted': 'Этот чек-лист уже отправлен.',
+  'errors.cannotSubmitState': 'Этот чек-лист нельзя отправить в текущем состоянии.',
+  'errors.submissionMissing': 'Этот чек-лист больше недоступен.',
+  'errors.photoRequiredToTick': 'Сначала сделайте фото для этого пункта, затем отметьте его.',
+  'errors.fileRequiredToTick': 'Сначала прикрепите файл к этому пункту, затем отметьте его.',
+  'errors.evidenceRequiredToTick': 'Сначала прикрепите фото или файл к этому пункту, затем отметьте его.',
+  'errors.locationRequiredToTick':
+    'Этот пункт нужно отметить на месте. Разрешите доступ к геолокации и попробуйте снова.',
+  'errors.tooFarAway':
+    'Похоже, вы примерно в {distance} м от места, а этот пункт нужно отметить в пределах {radius} м.',
+  'errors.outsideWindow': 'Этот пункт можно отметить только с {from} до {to}. Сейчас {now}.',
+  'errors.invitationUnavailable': 'Это приглашение больше недоступно.',
+
+  // Вложения
+  'errors.unknownAttachmentType': 'Этот тип вложения не поддерживается.',
+  'errors.itemUnavailable': 'Этот пункт больше недоступен.',
+  'errors.chooseFileFirst': 'Сначала выберите файл.',
+  'errors.fileTooLarge': 'Файл больше {mb} МБ.',
+  'errors.attachPhotoOrPdf': 'Прикрепите фото или PDF.',
+  'errors.signInToAttach': 'Войдите снова, чтобы прикрепить файл.',
+
+  // Расписания
+  'errors.alreadyAssigned': 'Этот человек уже назначен в это расписание.',
+  'errors.notInSpaceYet': 'Этого человека ещё нет в пространстве. Сначала пригласите его.',
+  'errors.scheduleNeedsPerson':
+    'В расписании для конкретных людей должен быть хотя бы один человек. Выберите «всех» или создателя.',
+  'errors.assignByName': 'Чтобы назначить конкретных людей, добавьте их по имени.',
+  'errors.scheduleMissing': 'Этого расписания больше нет.',
+
+  // Аннулирование
+  'errors.voidReasonShort': 'Укажите причину не короче трёх символов.',
+  'errors.voidNotAllowed':
+    'Аннулировать запись может администратор пространства или руководитель исполнителя.',
+  'errors.recordMissing': 'Этой записи больше нет.',
+
+  // Учётная запись и вход
+  'errors.alreadyYourEmail': 'Это уже ваш адрес электронной почты.',
+  'errors.imageNotYours': 'Это изображение не принадлежит вашей учётной записи.',
+  'errors.captchaFailed': 'Проверка не пройдена. Попробуйте ещё раз через минуту.',
+  'errors.wrongCredentials': 'Неверный адрес электронной почты или пароль.',
+  'errors.authAlreadyRegistered': 'Учётная запись с этим адресом уже существует. Войдите в неё.',
+  'errors.authRateLimit': 'Слишком много попыток. Подождите несколько минут и попробуйте снова.',
+  'errors.authSamePassword': 'Выберите пароль, отличный от текущего.',
+
+  // Изображения
+  'errors.unknownImageType': 'Этот тип изображения не поддерживается.',
+  'errors.imageNotThisSpace': 'Это изображение не относится к этому пространству.',
+  'errors.unknownBanner': 'Этот баннер недоступен.',
+  'errors.noUploadedBanner': 'Нет загруженного баннера для настройки.',
+
+  // Администрирование
+  'errors.accountInvalid': 'Недопустимая учётная запись.',
+  'errors.needsBillingCapability': 'Для изменения лимитов нужна роль «биллинг».',
+  'errors.rootCapabilitySqlOnly':
+    'Это право выдаётся только через SQL, чтобы никто не мог повысить себя изнутри приложения.',
+  'errors.cannotDeleteSelf': 'Нельзя удалить учётную запись, под которой вы вошли.',
+  'errors.accountOwnsSpace':
+    'Этой учётной записи принадлежит пространство с историей. Сначала удалите или передайте пространство.',
+  'errors.accountHasAccess':
+    'У этой учётной записи есть права платформы. Сначала снимите их, если действительно хотите удалить.',
+  'errors.accessPeriodEnded': 'Этот срок доступа уже истёк.',
+  'errors.builtinLanguage': 'Встроенные языки нельзя удалить.',
+  'errors.planEditRefused': 'Это изменение тарифа нужно вносить через SQL.',
+  'errors.noCapabilities': 'Нет прав для выдачи.',
+  'errors.stoppedAt': 'Остановлено на «{code}»: {reason}',
+  'errors.planNameLength': 'Название тарифа — не более 60 символов.',
+  'errors.planPriceInvalid': 'Цена должна быть целым числом центов и не может быть отрицательной.',
+  'errors.planPriceTooHigh':
+    'Это больше {max} в месяц. Если так и задумано, укажите через SQL — эта проверка ловит пропущенную запятую.',
+  'errors.planMemberLimitMin': 'Лимит участников — не меньше 1, или оставьте пустым для безлимита.',
+  'errors.planSpaceLimitMin': 'Лимит пространств — не меньше 1, или оставьте пустым для безлимита.',
+  'errors.planMemberLimitHigh': 'Лимит участников слишком велик. Для безлимита оставьте пустым.',
+  'errors.planSpaceLimitHigh': 'Лимит пространств слишком велик. Для безлимита оставьте пустым.',
+  'errors.priceNotNumber': 'Цена должна быть числом.',
+  'errors.unknownString': 'Неизвестная строка.',
+  'errors.localeCodeFormat': 'Используйте двухбуквенный код, например kk или tr.',
+  'errors.localeNameRequired': 'Дайте языку название.',
+  'errors.localeExists': 'Такой язык уже есть.',
+  'errors.unknownLanguage': 'Неизвестный язык.',
+  'errors.unknownTheme': 'Неизвестная тема.',
+
+  // Экран ошибки в панели
+  'errors.boundaryOfflineTitle': 'Нет связи',
+  'errors.boundaryOfflineBody':
+    'Для этого нужна связь. Всё отмеченное сохранено на устройстве и отправится, когда появится сигнал.',
+  'errors.boundaryTitle': 'Не удалось загрузить',
+  'errors.boundaryBody': 'При загрузке страницы что-то пошло не так. Ничего из отмеченного не потеряно.',
+  'errors.tryAgain': 'Попробовать снова',
+
+  // Подтверждения
+  'notices.spaceArchived': 'Пространство архивировано.',
+  'notices.spaceRestored': 'Пространство восстановлено.',
+  'notices.invitedAndEmailed': '{email} приглашён, письмо отправлено.',
+  'notices.invitedNoEmail':
+    '{email} приглашён. Письмо не отправлено — попросите войти и проверить страницу «Пространства».',
+  'notices.roleUpdated': 'Роль обновлена.',
+  'notices.reportingLineUpdated': 'Подчинение обновлено.',
+  'notices.memberRemoved': 'Участник удалён.',
+  'notices.draftCreated': 'Создан новый черновик. Опубликованная версия не изменилась.',
+  'notices.published': 'Опубликовано. Эта версия зафиксирована и больше не редактируется.',
+  'notices.checklistArchived': 'Чек-лист архивирован.',
+  'notices.checklistRestored': 'Чек-лист восстановлен.',
+  'notices.scheduleSavedDatesLater': 'Расписание сохранено, но даты ещё не готовы. Они появятся ночью.',
+  'notices.scheduleCreated': 'Расписание создано.',
+  'notices.scheduleDeleted': 'Расписание удалено.',
+  'notices.invitedEmailedAssigned': '{email} приглашён, письмо отправлено, назначение выполнено.',
+  'notices.invitedAssignedNoEmail':
+    '{email} приглашён и назначен. Письмо не отправлено — попросите войти и принять приглашение.',
+  'notices.assigned': '{email} назначен.',
+  'notices.assignedToYou': 'Назначено вам.',
+  'notices.assignedToEveryone': 'Назначено всем в пространстве.',
+  'notices.confirmEmailChange':
+    'Проверьте {email} и перейдите по ссылке для подтверждения. До этого адрес не изменится.',
+  'notices.passwordUpdated': 'Пароль обновлён.',
+  'notices.checkEmailToConfirm': 'Проверьте {email}: там ссылка для завершения регистрации.',
+  'notices.resetLinkSent': 'Если учётная запись с этим адресом существует, ссылка для сброса уже отправлена.',
+  'notices.localeAdded': 'Язык добавлен. Непереведённые строки показываются на английском.',
+  'notices.voidLifted': 'Аннулирование снято.',
+  'notices.recordVoided': 'Запись аннулирована.',
+  'notices.accessGranted': 'Доступ выдан.',
+  'notices.accessRemoved': 'Доступ отозван.',
+  'notices.limitsLifted': 'Лимиты для этой учётной записи сняты.',
+  'notices.planLimitsRestored': 'Лимиты тарифа восстановлены.',
+  'notices.limitsSaved': 'Лимиты сохранены.',
+  'notices.allAccessGranted': 'Выданы все права, кроме корневого — оно выдаётся через SQL.',
+  'notices.allAccessRemoved': 'Все права отозваны.',
+  'notices.accountDeleted': 'Учётная запись удалена.',
 } satisfies Messages;

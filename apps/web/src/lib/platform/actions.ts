@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache';
 
 import { createClient } from '@/lib/supabase/server';
+import { getTranslations } from '@/lib/i18n/server';
+import { describeDatabaseError } from '@/lib/errors';
 
 export type GrantResult = { error?: string; notice?: string };
 
@@ -19,6 +21,8 @@ export async function setPlatformGrant(
   _prev: GrantResult,
   formData: FormData,
 ): Promise<GrantResult> {
+  const { t } = await getTranslations();
+
   const userId = String(formData.get('userId') ?? '');
   const capability = String(formData.get('capability') ?? '');
   const granted = String(formData.get('granted') ?? '') === 'true';
@@ -30,16 +34,10 @@ export async function setPlatformGrant(
     p_granted: granted,
   });
 
-  if (error) {
-    return {
-      error: error.message.includes('only be granted directly in the database')
-        ? 'That capability can only be granted with SQL, so nobody can promote themselves from inside the app.'
-        : error.message,
-    };
-  }
+  if (error) return { error: describeDatabaseError(error.message, t) };
 
   revalidatePath('/dashboard/admin/access');
-  return { notice: granted ? 'Access granted.' : 'Access removed.' };
+  return { notice: granted ? t('notices.accessGranted') : t('notices.accessRemoved') };
 }
 
 /**
@@ -56,11 +54,13 @@ export async function setAccountUnlimited(
   _prev: GrantResult,
   formData: FormData,
 ): Promise<GrantResult> {
+  const { t } = await getTranslations();
+
   const ownerId = String(formData.get('ownerId') ?? '');
   const unlimited = String(formData.get('unlimited') ?? '') === 'true';
   const note = String(formData.get('note') ?? '') || null;
 
-  if (!ownerId) return { error: 'That account is not valid.' };
+  if (!ownerId) return { error: t('errors.accountInvalid') };
 
   const supabase = await createClient();
   const { error } = await supabase.rpc('set_account_unlimited', {
@@ -69,17 +69,11 @@ export async function setAccountUnlimited(
     p_note: note,
   });
 
-  if (error) {
-    return {
-      error: error.message.includes('do not have permission')
-        ? 'Changing account limits needs the billing capability.'
-        : error.message,
-    };
-  }
+  if (error) return { error: describeDatabaseError(error.message, t) };
 
   revalidatePath('/dashboard/admin/accounts');
   return {
-    notice: unlimited ? 'Limits lifted for this account.' : 'Plan limits restored.',
+    notice: unlimited ? t('notices.limitsLifted') : t('notices.planLimitsRestored'),
   };
 }
 
@@ -100,8 +94,10 @@ export async function setAccountLimits(
   _prev: GrantResult,
   formData: FormData,
 ): Promise<GrantResult> {
+  const { t } = await getTranslations();
+
   const ownerId = String(formData.get('ownerId') ?? '');
-  if (!ownerId) return { error: 'That account is not valid.' };
+  if (!ownerId) return { error: t('errors.accountInvalid') };
 
   const optionalNumber = (key: string): number | null => {
     const raw = String(formData.get(key) ?? '').trim();
@@ -122,16 +118,10 @@ export async function setAccountLimits(
     p_note: String(formData.get('note') ?? '') || null,
   });
 
-  if (error) {
-    return {
-      error: error.message.includes('do not have permission')
-        ? 'Changing account limits needs the billing capability.'
-        : error.message,
-    };
-  }
+  if (error) return { error: describeDatabaseError(error.message, t) };
 
   revalidatePath('/dashboard/admin/accounts');
-  return { notice: 'Limits saved.' };
+  return { notice: t('notices.limitsSaved') };
 }
 
 /** Withdraw an agreement, so the account's plan decides again. */
@@ -139,22 +129,18 @@ export async function clearAccountLimits(
   _prev: GrantResult,
   formData: FormData,
 ): Promise<GrantResult> {
+  const { t } = await getTranslations();
+
   const ownerId = String(formData.get('ownerId') ?? '');
-  if (!ownerId) return { error: 'That account is not valid.' };
+  if (!ownerId) return { error: t('errors.accountInvalid') };
 
   const supabase = await createClient();
   const { error } = await supabase.rpc('clear_account_limits', { p_user_id: ownerId });
 
-  if (error) {
-    return {
-      error: error.message.includes('do not have permission')
-        ? 'Changing account limits needs the billing capability.'
-        : error.message,
-    };
-  }
+  if (error) return { error: describeDatabaseError(error.message, t) };
 
   revalidatePath('/dashboard/admin/accounts');
-  return { notice: 'Plan limits restored.' };
+  return { notice: t('notices.planLimitsRestored') };
 }
 
 /**
@@ -179,6 +165,8 @@ export async function setAllPlatformGrants(
   _prev: GrantResult,
   formData: FormData,
 ): Promise<GrantResult> {
+  const { t } = await getTranslations();
+
   const userId = String(formData.get('userId') ?? '');
   const granted = String(formData.get('granted') ?? '') === 'true';
 
@@ -190,8 +178,8 @@ export async function setAllPlatformGrants(
     .eq('is_root', false)
     .order('sort_order');
 
-  if (listError) return { error: listError.message };
-  if (!capabilities?.length) return { error: 'No capabilities to grant.' };
+  if (listError) return { error: describeDatabaseError(listError.message, t) };
+  if (!capabilities?.length) return { error: t('errors.noCapabilities') };
 
   // Sequentially, so a failure halfway leaves a state that can be read off the
   // screen rather than an unknown mixture from parallel writes.
@@ -203,15 +191,13 @@ export async function setAllPlatformGrants(
     });
     // Naming the capability that failed, because "it didn't work" on a
     // five-step loop leaves nothing to act on.
-    if (error) return { error: `Stopped at "${code}": ${error.message}` };
+    if (error) {
+      return { error: t('errors.stoppedAt', { code, reason: describeDatabaseError(error.message, t) }) };
+    }
   }
 
   revalidatePath('/dashboard/admin/access');
-  return {
-    notice: granted
-      ? 'All access granted, except the root capability, which needs SQL.'
-      : 'All access removed.',
-  };
+  return { notice: granted ? t('notices.allAccessGranted') : t('notices.allAccessRemoved') };
 }
 
 /**
@@ -222,14 +208,16 @@ export async function setAllPlatformGrants(
  * to hold for any caller, not only for this button. Here they become sentences.
  */
 export async function deleteAccount(_prev: GrantResult, formData: FormData): Promise<GrantResult> {
+  const { t } = await getTranslations();
+
   const userId = String(formData.get('userId') ?? '');
-  if (!userId) return { error: 'That account is not valid.' };
+  if (!userId) return { error: t('errors.accountInvalid') };
 
   const supabase = await createClient();
   const { error } = await supabase.rpc('delete_account', { p_user_id: userId });
 
-  if (error) return { error: error.message };
+  if (error) return { error: describeDatabaseError(error.message, t) };
 
   revalidatePath('/dashboard/admin/accounts');
-  return { notice: 'Account deleted.' };
+  return { notice: t('notices.accountDeleted') };
 }

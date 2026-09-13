@@ -568,4 +568,225 @@ export const uz = {
   'compliance.itemsTickedOf': 'Topshirilgan roʻyxatlardagi {total} ta banddan {done} tasi belgilandi',
   'compliance.nothingSubmitted': 'Bu davrda hali hech narsa topshirilmagan.',
   'compliance.itemsTicked': '{total} tadan {done} tasi belgilandi',
+
+  // --- xabarlar va xatolar ------------------------------------------------
+
+  // Tekshiruv
+  'errors.emailInvalid': 'Toʻgʻri elektron pochta manzilini kiriting.',
+  'errors.passwordTooShort': 'Parol kamida 8 ta belgidan iborat boʻlishi kerak.',
+  'errors.passwordTooLong': 'Parol 72 ta belgidan oshmasligi kerak.',
+  'errors.passwordRequired': 'Parolingizni kiriting.',
+  'errors.passwordsDontMatch': 'Ikkala parol bir xil emas.',
+  'errors.nameRequired': 'Ismingizni kiriting.',
+  'errors.nameTooLong120': 'Ism 120 ta belgidan oshmasligi kerak.',
+  'errors.nameTooLong200': 'Nom 200 ta belgidan oshmasligi kerak.',
+  'errors.spaceNameRequired': 'Maydonga nom bering.',
+  'errors.descriptionTooLong500': 'Tavsif 500 ta belgidan oshmasligi kerak.',
+  'errors.descriptionTooLong2000': 'Tavsif 2000 ta belgidan oshmasligi kerak.',
+  'errors.checklistTitleRequired': 'Nazorat roʻyxatiga nom bering.',
+  'errors.titleTooLong200': 'Nom 200 ta belgidan oshmasligi kerak.',
+  'errors.titleTooLong500': 'Nom 500 ta belgidan oshmasligi kerak.',
+  'errors.sectionNameRequired': 'Boʻlimga nom bering.',
+  'errors.itemTitleRequired': 'Bandga nom bering.',
+  'errors.useTimePicker': 'Vaqtni tanlash maydonidan foydalaning.',
+  'errors.useDatePicker': 'Sanani tanlash maydonidan foydalaning.',
+  'errors.windowNeedsBoth': 'Vaqt oraligʻi uchun boshlanish va tugash vaqti kerak.',
+  'errors.windowSameTime': 'Boshlanish va tugash vaqti bir xil boʻlishi mumkin emas.',
+  'errors.windowOnBeforeRequired': 'Majburiy qilishdan oldin vaqt oraligʻini yoqing.',
+  'errors.locationAllOrNone': 'Joylashuv uchun koordinatalar va radius kerak — yoki uchalasi ham boʻlmasin.',
+  'errors.photoOnBeforeRequired': 'Majburiy qilishdan oldin rasmni yoqing.',
+  'errors.fileOnBeforeRequired': 'Majburiy qilishdan oldin faylni yoqing.',
+  'errors.locationOnBeforeRequired': 'Majburiy qilishdan oldin joylashuvni yoqing.',
+  'errors.locationSetCoordinates': 'Joylashuv uchun koordinatalar va radiusni belgilang.',
+  'errors.radiusRange': 'Radius 25 dan 100 000 metrgacha boʻlishi kerak.',
+  'errors.chooseWeekday': 'Haftaning kamida bitta kunini tanlang.',
+  'errors.chooseMonthDay': 'Oyning kamida bitta kunini tanlang.',
+  'errors.addDate': 'Kamida bitta sana qoʻshing.',
+  'errors.chooseAssignment': 'Bu nazorat roʻyxati kim uchun ekanini tanlang.',
+  'errors.endBeforeStart': 'Tugash sanasi boshlanish sanasidan oldin boʻlishi mumkin emas.',
+  'errors.choosePerson': 'Kamida bitta odamni tanlang yoki buni hammaga biriktiring.',
+
+  // Umumiy
+  'errors.unknown': 'Nimadir notoʻgʻri ketdi. Qayta urinib koʻring.',
+  'errors.sessionExpired': 'Sessiya muddati tugadi. Qaytadan kiring.',
+  'errors.noPermission': 'Buni qilishga ruxsatingiz yoʻq.',
+  'errors.ownerOnly': 'Buni faqat maydon egasi qila oladi.',
+  'errors.couldNotSave': 'Saqlab boʻlmadi: {reason}',
+  'errors.couldNotCreateSpace': 'Maydon yaratib boʻlmadi: {reason}',
+  'errors.couldNotArchive': 'Arxivlab boʻlmadi: {reason}',
+  'errors.couldNotRestore': 'Tiklab boʻlmadi: {reason}',
+  'errors.couldNotDelete': 'Oʻchirib boʻlmadi: {reason}',
+  'errors.couldNotInvite': 'Taklif qilib boʻlmadi: {reason}',
+  'errors.couldNotChangeRole': 'Rolni oʻzgartirib boʻlmadi: {reason}',
+  'errors.couldNotChangeManager': 'Aʼzoning rahbarini oʻzgartirib boʻlmadi: {reason}',
+  'errors.couldNotRemove': 'Olib tashlab boʻlmadi: {reason}',
+  'errors.couldNotCreateChecklist': 'Nazorat roʻyxatini yaratib boʻlmadi: {reason}',
+  'errors.couldNotStartEditing': 'Tahrirlashni boshlab boʻlmadi: {reason}',
+  'errors.couldNotPublish': 'Eʼlon qilib boʻlmadi: {reason}',
+  'errors.couldNotUpdate': 'Yangilab boʻlmadi: {reason}',
+
+  // Tariflar va cheklovlar
+  'errors.spaceLimit':
+    'Tarifingizdagi maydonlar soniga yetdingiz. Foydalanmayotgan maydonni arxivlang yoki yuqoriroq tarifga oʻting.',
+  'errors.memberLimit':
+    'Tarifingizdagi odamlar soniga yetdingiz. Foydalanmayotgan maydonni arxivlang yoki yuqoriroq tarifga oʻting.',
+  'errors.rateLimit':
+    'Bir vaqtda juda koʻp taklif yuborildi. Bir necha daqiqa kutib, davom eting — yuborilganlari joyida.',
+
+  // Maydonlar va aʼzolar
+  'errors.alreadyInvited': 'Bu odam allaqachon ushbu maydonga taklif qilingan.',
+  'errors.roleInvalid': 'Bu rol notoʻgʻri.',
+  'errors.memberInvalid': 'Bu aʼzo notoʻgʻri.',
+  'errors.reportingLoop': 'Bu boʻysunish zanjirida halqa hosil qiladi.',
+  'errors.reportingTooDeep': 'Boʻysunish zanjiri haddan tashqari chuqur.',
+  'errors.managerSameSpace': 'Rahbar shu maydonning aʼzosi boʻlishi kerak.',
+  'errors.reportToSelf': 'Hech kim oʻziga boʻysuna olmaydi.',
+  'errors.ownerCannotBeRemoved': 'Egani olib tashlab boʻlmaydi. Avval egalikni boshqaga oʻtkazing.',
+  'errors.ownershipTransfer':
+    'Egalikni faqat joriy ega va faqat maydonning faol aʼzosiga oʻtkazish mumkin.',
+  'errors.spaceHasHistory':
+    'Bu maydonda nazorat roʻyxatlari tarixi bor, shuning uchun uni faqat arxivlash mumkin. Arxivlash yozuvni saqlab, maydonni yashiradi.',
+
+  // Nazorat roʻyxatlarini tuzish
+  'errors.checklistHasHistory':
+    'Bu nazorat roʻyxati toʻldirilgan, shuning uchun uni faqat arxivlash mumkin — yozuv saqlanishi kerak.',
+  'errors.nestingLimit': 'Bandlarni faqat 5 darajagacha ichma-ich joylashtirish mumkin.',
+  'errors.versionPublished':
+    'Bu versiya eʼlon qilingan va oʻzgartirib boʻlmaydi. Oʻzgartirish uchun yangi qoralama yarating.',
+  'errors.publishNeedsItem': 'Eʼlon qilishdan oldin kamida bitta band qoʻshing.',
+  'errors.versionNotDraft': 'Bu versiya endi qoralama emas. Sahifani yangilang.',
+  'errors.itemParentInvalid': 'Bu bandni u yerga joylab boʻlmaydi. Sahifani yangilab, qayta urinib koʻring.',
+
+  // Toʻldirish
+  'errors.parentAutoCompletes': 'Bu vazifa barcha ichki bandlari belgilanganda oʻzi bajariladi.',
+  'errors.assignedToSomeoneElse': 'Bu nazorat roʻyxati boshqa odamga biriktirilgan.',
+  'errors.noPublishedVersion': 'Bu nazorat roʻyxati hali eʼlon qilinmagan, toʻldiradigan narsa yoʻq.',
+  'errors.alreadySubmitted': 'Bu nazorat roʻyxati allaqachon topshirilgan.',
+  'errors.cannotSubmitState': 'Bu nazorat roʻyxatini hozirgi holatida topshirib boʻlmaydi.',
+  'errors.submissionMissing': 'Bu nazorat roʻyxati endi mavjud emas.',
+  'errors.photoRequiredToTick': 'Bu bandni belgilashdan oldin rasmga oling.',
+  'errors.fileRequiredToTick': 'Bu bandni belgilashdan oldin faylni biriktiring.',
+  'errors.evidenceRequiredToTick': 'Bu bandni belgilashdan oldin rasm yoki faylni biriktiring.',
+  'errors.locationRequiredToTick':
+    'Bu band oʻz joyida belgilanishi kerak. Joylashuvga ruxsat bering va qayta urinib koʻring.',
+  'errors.tooFarAway':
+    'Siz taxminan {distance} metr uzoqdasiz, bu band esa {radius} metr ichida belgilanishi kerak.',
+  'errors.outsideWindow': 'Bu bandni faqat {from} va {to} oraligʻida belgilash mumkin. Hozir {now}.',
+  'errors.invitationUnavailable': 'Bu taklif endi mavjud emas.',
+
+  // Biriktirmalar
+  'errors.unknownAttachmentType': 'Bu turdagi biriktirma qoʻllab-quvvatlanmaydi.',
+  'errors.itemUnavailable': 'Bu band endi mavjud emas.',
+  'errors.chooseFileFirst': 'Avval fayl tanlang.',
+  'errors.fileTooLarge': 'Fayl hajmi {mb} MB dan katta.',
+  'errors.attachPhotoOrPdf': 'Rasm yoki PDF biriktiring.',
+  'errors.signInToAttach': 'Buni biriktirish uchun qaytadan kiring.',
+
+  // Jadvallar
+  'errors.alreadyAssigned': 'Bu odam allaqachon ushbu jadvalga biriktirilgan.',
+  'errors.notInSpaceYet': 'Bu odam hali ushbu maydonda emas. Avval uni taklif qiling.',
+  'errors.scheduleNeedsPerson':
+    'Aniq odamlarga biriktirilgan jadvalda kamida bitta odam boʻlishi kerak. Oʻrniga hammani yoki yaratuvchini tanlang.',
+  'errors.assignByName': 'Aniq odamlarni ularning ismini qoʻshish orqali biriktiring.',
+  'errors.scheduleMissing': 'Bu jadval endi mavjud emas.',
+
+  // Bekor qilish
+  'errors.voidReasonShort': 'Kamida uch belgidan iborat sabab yozing.',
+  'errors.voidNotAllowed':
+    'Yozuvni bekor qilish uchun maydon administratori yoki biriktirilgan xodimning rahbari boʻlish kerak.',
+  'errors.recordMissing': 'Bu yozuv endi mavjud emas.',
+
+  // Hisob va kirish
+  'errors.alreadyYourEmail': 'Bu allaqachon sizning elektron pochtangiz.',
+  'errors.imageNotYours': 'Bu rasm sizning hisobingizga tegishli emas.',
+  'errors.captchaFailed': 'Tekshiruvdan oʻtilmadi. Birozdan soʻng qayta urinib koʻring.',
+  'errors.wrongCredentials': 'Elektron pochta yoki parol notoʻgʻri.',
+  'errors.authAlreadyRegistered': 'Bu elektron pochta bilan hisob allaqachon mavjud. Oʻrniga tizimga kiring.',
+  'errors.authRateLimit': 'Urinishlar juda koʻp. Bir necha daqiqa kutib, qayta urinib koʻring.',
+  'errors.authSamePassword': 'Joriy parolingizdan farqli parol tanlang.',
+
+  // Rasmlar
+  'errors.unknownImageType': 'Bu turdagi rasm qoʻllab-quvvatlanmaydi.',
+  'errors.imageNotThisSpace': 'Bu rasm ushbu maydonga tegishli emas.',
+  'errors.unknownBanner': 'Bu banner mavjud emas.',
+  'errors.noUploadedBanner': 'Sozlash uchun yuklangan banner yoʻq.',
+
+  // Boshqaruv
+  'errors.accountInvalid': 'Bu hisob notoʻgʻri.',
+  'errors.needsBillingCapability': 'Hisob cheklovlarini oʻzgartirish uchun billing huquqi kerak.',
+  'errors.rootCapabilitySqlOnly':
+    'Bu huquqni faqat SQL orqali berish mumkin — shunda hech kim ilova ichidan oʻzini koʻtara olmaydi.',
+  'errors.cannotDeleteSelf': 'Hozir kirgan hisobingizni oʻchira olmaysiz.',
+  'errors.accountOwnsSpace':
+    'Bu hisob nazorat tarixiga ega maydonning egasi. Avval maydonni olib tashlang yoki boshqaga oʻtkazing.',
+  'errors.accountHasAccess':
+    'Bu hisobda platforma huquqlari bor. Rostdan oʻchirmoqchi boʻlsangiz, avval ularni olib tashlang.',
+  'errors.accessPeriodEnded': 'Bu kirish muddati allaqachon tugagan.',
+  'errors.builtinLanguage': 'Oʻrnatilgan tillarni olib tashlab boʻlmaydi.',
+  'errors.planEditRefused': 'Tarifdagi bu oʻzgarish SQL orqali kiritilishi kerak.',
+  'errors.noCapabilities': 'Beriladigan huquqlar yoʻq.',
+  'errors.stoppedAt': '«{code}» da toʻxtadi: {reason}',
+  'errors.planNameLength': 'Tarif nomi 60 ta belgidan oshmasligi kerak.',
+  'errors.planPriceInvalid': 'Narx butun sonli sentlarda boʻlishi va manfiy boʻlmasligi kerak.',
+  'errors.planPriceTooHigh':
+    'Bu oyiga {max} dan ortiq. Ataylab boʻlsa, SQL orqali belgilang — bu tekshiruv tushib qolgan nuqtani ushlash uchun.',
+  'errors.planMemberLimitMin': 'Aʼzolar chegarasi kamida 1 boʻlishi kerak, cheklovsiz uchun boʻsh qoldiring.',
+  'errors.planSpaceLimitMin': 'Maydonlar chegarasi kamida 1 boʻlishi kerak, cheklovsiz uchun boʻsh qoldiring.',
+  'errors.planMemberLimitHigh': 'Aʼzolar chegarasi haddan tashqari katta. Cheklovsiz uchun boʻsh qoldiring.',
+  'errors.planSpaceLimitHigh': 'Maydonlar chegarasi haddan tashqari katta. Cheklovsiz uchun boʻsh qoldiring.',
+  'errors.priceNotNumber': 'Narx son boʻlishi kerak.',
+  'errors.unknownString': 'Nomaʼlum matn.',
+  'errors.localeCodeFormat': 'kk yoki tr kabi ikki harfli koddan foydalaning.',
+  'errors.localeNameRequired': 'Tilga nom bering.',
+  'errors.localeExists': 'Bu til allaqachon mavjud.',
+  'errors.unknownLanguage': 'Nomaʼlum til.',
+  'errors.unknownTheme': 'Nomaʼlum mavzu.',
+
+  // Boshqaruv panelidagi xato ekrani
+  'errors.boundaryOfflineTitle': 'Aloqa yoʻq',
+  'errors.boundaryOfflineBody':
+    'Buning uchun aloqa kerak. Belgilaganlaringiz shu qurilmada saqlangan va aloqa paydo boʻlganda yuboriladi.',
+  'errors.boundaryTitle': 'Yuklanmadi',
+  'errors.boundaryBody': 'Sahifani yuklashda xatolik yuz berdi. Belgilaganlaringiz yoʻqolmagan.',
+  'errors.tryAgain': 'Qayta urinish',
+
+  // Tasdiqlashlar
+  'notices.spaceArchived': 'Maydon arxivlandi.',
+  'notices.spaceRestored': 'Maydon tiklandi.',
+  'notices.invitedAndEmailed': '{email} taklif qilindi va unga xat yuborildi.',
+  'notices.invitedNoEmail':
+    '{email} taklif qilindi. Xat yuborilmadi — unga tizimga kirib, Maydonlar sahifasini tekshirishni ayting.',
+  'notices.roleUpdated': 'Rol yangilandi.',
+  'notices.reportingLineUpdated': 'Boʻysunish yangilandi.',
+  'notices.memberRemoved': 'Aʼzo olib tashlandi.',
+  'notices.draftCreated': 'Yangi qoralama yaratildi. Eʼlon qilingan versiya oʻzgarmadi.',
+  'notices.published': 'Eʼlon qilindi. Bu versiya endi qotirilgan va tahrirlanmaydi.',
+  'notices.checklistArchived': 'Nazorat roʻyxati arxivlandi.',
+  'notices.checklistRestored': 'Nazorat roʻyxati tiklandi.',
+  'notices.scheduleSavedDatesLater':
+    'Jadval saqlandi, lekin sanalari hali tayyor emas. Ular kechasi paydo boʻladi.',
+  'notices.scheduleCreated': 'Jadval yaratildi.',
+  'notices.scheduleDeleted': 'Jadval oʻchirildi.',
+  'notices.invitedEmailedAssigned': '{email} taklif qilindi, xat yuborildi va biriktirildi.',
+  'notices.invitedAssignedNoEmail':
+    '{email} taklif qilindi va biriktirildi. Xat yuborilmadi — unga tizimga kirib, taklifni qabul qilishni ayting.',
+  'notices.assigned': '{email} biriktirildi.',
+  'notices.assignedToYou': 'Sizga biriktirildi.',
+  'notices.assignedToEveryone': 'Maydondagi hammaga biriktirildi.',
+  'notices.confirmEmailChange':
+    '{email} pochtasini tekshirib, tasdiqlash havolasini bosing. Shunga qadar manzilingiz oʻzgarmaydi.',
+  'notices.passwordUpdated': 'Parol yangilandi.',
+  'notices.checkEmailToConfirm': 'Hisob yaratishni yakunlash uchun {email} pochtasidagi tasdiqlash havolasini bosing.',
+  'notices.resetLinkSent': 'Agar bu manzil bilan hisob mavjud boʻlsa, tiklash havolasi yuborildi.',
+  'notices.localeAdded': 'Til qoʻshildi. Tarjima qilinmagan matnlar inglizcha koʻrinadi.',
+  'notices.voidLifted': 'Bekor qilish olib tashlandi.',
+  'notices.recordVoided': 'Yozuv bekor qilindi.',
+  'notices.accessGranted': 'Ruxsat berildi.',
+  'notices.accessRemoved': 'Ruxsat olib tashlandi.',
+  'notices.limitsLifted': 'Bu hisob uchun cheklovlar olib tashlandi.',
+  'notices.planLimitsRestored': 'Tarif cheklovlari tiklandi.',
+  'notices.limitsSaved': 'Cheklovlar saqlandi.',
+  'notices.allAccessGranted': 'SQL talab qiladigan asosiy huquqdan tashqari barcha ruxsatlar berildi.',
+  'notices.allAccessRemoved': 'Barcha ruxsatlar olib tashlandi.',
+  'notices.accountDeleted': 'Hisob oʻchirildi.',
 } satisfies Messages;

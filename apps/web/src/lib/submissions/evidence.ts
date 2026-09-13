@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache';
 
 import { createClient, getUser } from '@/lib/supabase/server';
+import { getTranslations } from '@/lib/i18n/server';
+import { describeDatabaseError } from '@/lib/errors';
 
 export type EvidenceResult = { error?: string };
 
@@ -44,6 +46,13 @@ function safeExtension(fileName: string, type: string): string {
   return type === 'application/pdf' ? 'pdf' : 'jpg';
 }
 
+/*
+ * These are read standing in front of the thing being photographed, often in a
+ * cold store with gloves on. "That file is over 10 MB" in a language the person
+ * did not choose is a message they have to stop and decode at the worst moment
+ * — so these were among the first to be translated.
+ */
+
 /**
  * Attach a photograph or file to one answer.
  *
@@ -57,20 +66,22 @@ function safeExtension(fileName: string, type: string): string {
  * orphaned in a bucket nobody lists.
  */
 export async function uploadEvidence(formData: FormData): Promise<EvidenceResult> {
+  const { t } = await getTranslations();
+
   const answerId = String(formData.get('answerId') ?? '');
   const kind = String(formData.get('kind') ?? '') as AttachmentKind;
   const file = formData.get('file');
 
-  if (kind !== 'photo' && kind !== 'file') return { error: 'Unknown attachment type.' };
+  if (kind !== 'photo' && kind !== 'file') return { error: t('errors.unknownAttachmentType') };
 
-  if (!answerId) return { error: 'Missing answer.' };
-  if (!(file instanceof File) || file.size === 0) return { error: 'Choose a file first.' };
-  if (file.size > MAX_BYTES) return { error: 'That file is over 10 MB.' };
-  if (!ALLOWED.has(file.type)) return { error: 'Attach a photo or a PDF.' };
+  if (!answerId) return { error: t('errors.itemUnavailable') };
+  if (!(file instanceof File) || file.size === 0) return { error: t('errors.chooseFileFirst') };
+  if (file.size > MAX_BYTES) return { error: t('errors.fileTooLarge', { mb: 10 }) };
+  if (!ALLOWED.has(file.type)) return { error: t('errors.attachPhotoOrPdf') };
 
   const supabase = await createClient();
   const user = await getUser();
-  if (!user) return { error: 'Sign in again to attach this.' };
+  if (!user) return { error: t('errors.signInToAttach') };
 
   // Read through RLS: a caller who cannot see this answer gets nothing back,
   // and the upload never happens.
@@ -80,13 +91,13 @@ export async function uploadEvidence(formData: FormData): Promise<EvidenceResult
     .eq('id', answerId)
     .single();
 
-  if (!answer) return { error: 'That item is no longer available.' };
+  if (!answer) return { error: t('errors.itemUnavailable') };
 
   const { data: boardId } = await supabase.rpc('submission_board_id', {
     p_submission_id: answer.submission_id,
   });
 
-  if (!boardId) return { error: 'That item is no longer available.' };
+  if (!boardId) return { error: t('errors.itemUnavailable') };
 
   const path = `${boardId}/${answer.submission_id}/${answerId}-${crypto.randomUUID()}.${safeExtension(file.name, file.type)}`;
 
@@ -95,7 +106,7 @@ export async function uploadEvidence(formData: FormData): Promise<EvidenceResult
     upsert: false,
   });
 
-  if (uploadError) return { error: uploadError.message };
+  if (uploadError) return { error: describeDatabaseError(uploadError.message, t) };
 
   const now = new Date().toISOString();
   const { error } = await supabase
@@ -111,7 +122,7 @@ export async function uploadEvidence(formData: FormData): Promise<EvidenceResult
     // The row did not take it, so the object should not survive either — a file
     // nothing references is invisible and still billed for.
     await supabase.storage.from(BUCKET).remove([path]);
-    return { error: error.message };
+    return { error: describeDatabaseError(error.message, t) };
   }
 
   // The previous file in this slot, now that the new one is safely recorded.
@@ -126,11 +137,13 @@ export async function uploadEvidence(formData: FormData): Promise<EvidenceResult
 
 /** Remove an attachment, object and reference together. */
 export async function removeEvidence(formData: FormData): Promise<EvidenceResult> {
+  const { t } = await getTranslations();
+
   const answerId = String(formData.get('answerId') ?? '');
   const kind = String(formData.get('kind') ?? '') as AttachmentKind;
 
-  if (!answerId) return { error: 'Missing answer.' };
-  if (kind !== 'photo' && kind !== 'file') return { error: 'Unknown attachment type.' };
+  if (!answerId) return { error: t('errors.itemUnavailable') };
+  if (kind !== 'photo' && kind !== 'file') return { error: t('errors.unknownAttachmentType') };
 
   const supabase = await createClient();
 
@@ -155,7 +168,7 @@ export async function removeEvidence(formData: FormData): Promise<EvidenceResult
     )
     .eq('id', answerId);
 
-  if (error) return { error: error.message };
+  if (error) return { error: describeDatabaseError(error.message, t) };
 
   await supabase.storage.from(BUCKET).remove([path]);
 

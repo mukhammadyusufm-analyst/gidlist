@@ -8,6 +8,7 @@ import type { PlanCode } from '@/lib/supabase/database.types';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { FormNotice } from '@/components/ui/field-error';
+import { useT } from '@/components/i18n/provider';
 
 export type PlanRow = {
   code: PlanCode;
@@ -31,6 +32,7 @@ export type PlanRow = {
  */
 export function PlanForm({ plan }: { plan: PlanRow }) {
   const router = useRouter();
+  const { t } = useT();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -48,7 +50,7 @@ export function PlanForm({ plan }: { plan: PlanRow }) {
 
     const major = Number(price);
     if (!Number.isFinite(major) || major < 0) {
-      setError('The price must be a number.');
+      setError(t('errors.priceNotNumber'));
       return;
     }
 
