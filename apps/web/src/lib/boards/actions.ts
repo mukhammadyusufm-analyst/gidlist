@@ -40,13 +40,30 @@ export async function createBoard(_prev: ActionState, formData: FormData): Promi
   const user = await getUser();
   if (!user) redirect('/login');
 
-  const { data, error } = await supabase
-    .from('boards')
-    // `slug` is intentionally absent: a trigger derives it and resolves
-    // collisions against the unique index, which the app cannot do safely.
-    .insert({ name: parsed.data.name, owner_id: user.id })
-    .select('slug')
-    .single();
+  const insertBoard = () =>
+    supabase
+      .from('boards')
+      // `slug` is intentionally absent: a trigger derives it and resolves
+      // collisions against the unique index, which the app cannot do safely.
+      .insert({ name: parsed.data.name, owner_id: user.id })
+      .select('slug')
+      .single();
+
+  let { data, error } = await insertBoard();
+
+  /*
+   * One retry on a unique violation, and only one.
+   *
+   * The trigger now sees every existing slug, so an ordinary collision is
+   * resolved inside the insert. What it cannot see is a slug being taken in the
+   * same instant by somebody else's insert that has not committed yet — two
+   * people creating "Operations" at once. The second insert then fails on the
+   * unique index. Trying again runs the trigger again, which now sees the first
+   * slug and picks another. A second failure is not a race, so it is reported.
+   */
+  if (error?.code === '23505') {
+    ({ data, error } = await insertBoard());
+  }
 
   if (error || !data) {
     return { formError: friendlyDatabaseError(error?.message) ?? `Could not create the space: ${error?.message ?? 'unknown error'}` };

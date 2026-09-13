@@ -133,9 +133,13 @@ several times per page, on every page.
 3. Expand **Europe** and tick **Frankfurt, Germany (eu-central-1) — fra1**.
 4. Expand **North America** and **untick Washington, D.C. (iad1)**.
 
-   The Hobby plan allows exactly one region, so the old one has to come off
-   before the new one can be saved. Each group header carries a badge naming the
-   region selected inside it — when only `fra1` remains, the selection is right.
+   Only one region should remain. This was first written on the Hobby plan,
+   which allows exactly one, so the old one had to come off before the new one
+   could be saved. `gidlist-web` is on **Pro** now (confirmed 13 Sep 2026),
+   which would accept several — but a second region would put functions away
+   from the database again, which is the whole problem this part solves. Each
+   group header carries a badge naming the region selected inside it — when
+   only `fra1` remains, the selection is right.
 
 5. **Save**.
 6. Go to **Deployments**, open the most recent one, click the **⋯** menu and
