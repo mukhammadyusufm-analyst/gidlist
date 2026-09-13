@@ -115,6 +115,19 @@ export type SiteMessages = {
   pricingCtaFree: string;
   pricingPopular: string;
   pricingNote: string;
+  /*
+   * Enterprise: sold by agreement rather than chosen on a card. No price, no
+   * capacity figures — both are whatever the contract says, and the admin sets
+   * them per account in Admin → Accounts. See `SALES_URL` in apps/site.
+   */
+  pricingEnterpriseName: string;
+  pricingEnterprisePrice: string;
+  pricingEnterpriseLead: string;
+  pricingEnterpriseCapacity: string;
+  pricingEnterpriseTerm: string;
+  pricingEnterpriseInvoice: string;
+  pricingEnterpriseOnboarding: string;
+  pricingEnterpriseCta: string;
 
 
   // Scene 3 — the mental model
@@ -229,6 +242,15 @@ export const MESSAGES: Record<BuiltinLocale, SiteMessages> = {
     pricingPopular: 'Most chosen',
     pricingNote:
       'Prices in US dollars. Local payment in Uzbek som through Payme and Click is coming.',
+    pricingEnterpriseName: 'Enterprise',
+    pricingEnterprisePrice: 'By agreement',
+    pricingEnterpriseLead:
+      'For organisations with many sites. The spaces and people you need, for the term you agree — set up for you.',
+    pricingEnterpriseCapacity: 'Spaces and people sized to your organisation',
+    pricingEnterpriseTerm: 'A fixed term, agreed in a contract',
+    pricingEnterpriseInvoice: 'Invoice and bank transfer',
+    pricingEnterpriseOnboarding: 'Help getting your team started',
+    pricingEnterpriseCta: 'Contact sales',
 
     footerNote: 'Built in Uzbekistan.',
     footerRights: 'All rights reserved.',
@@ -405,6 +427,15 @@ export const MESSAGES: Record<BuiltinLocale, SiteMessages> = {
     pricingPopular: 'Koʻp tanlanadi',
     pricingNote:
       'Narxlar AQSh dollarida. Payme va Click orqali soʻmda toʻlov tez orada.',
+    pricingEnterpriseName: 'Enterprise',
+    pricingEnterprisePrice: 'Kelishuv boʻyicha',
+    pricingEnterpriseLead:
+      'Koʻp filialli tashkilotlar uchun. Kerakli makonlar va odamlar soni, kelishilgan muddatga — siz uchun sozlab beriladi.',
+    pricingEnterpriseCapacity: 'Tashkilotingizga mos makonlar va odamlar soni',
+    pricingEnterpriseTerm: 'Shartnomada kelishilgan muddat',
+    pricingEnterpriseInvoice: 'Hisob-faktura va bank oʻtkazmasi',
+    pricingEnterpriseOnboarding: 'Jamoangizni ishga tushirishda yordam',
+    pricingEnterpriseCta: 'Savdo boʻlimiga yozish',
 
     footerNote: 'Oʻzbekistonda yaratilgan.',
     footerRights: 'Barcha huquqlar himoyalangan.',
@@ -584,6 +615,15 @@ export const MESSAGES: Record<BuiltinLocale, SiteMessages> = {
     pricingPopular: 'Выбирают чаще',
     pricingNote:
       'Цены в долларах США. Оплата в сумах через Payme и Click появится позже.',
+    pricingEnterpriseName: 'Enterprise',
+    pricingEnterprisePrice: 'По договорённости',
+    pricingEnterpriseLead:
+      'Для организаций с несколькими филиалами. Нужное число пространств и людей на согласованный срок — мы всё настроим.',
+    pricingEnterpriseCapacity: 'Пространства и люди — под размер вашей организации',
+    pricingEnterpriseTerm: 'Срок, закреплённый в договоре',
+    pricingEnterpriseInvoice: 'Счёт и оплата банковским переводом',
+    pricingEnterpriseOnboarding: 'Помощь с запуском для вашей команды',
+    pricingEnterpriseCta: 'Связаться с отделом продаж',
 
     footerNote: 'Сделано в Узбекистане.',
     footerRights: 'Все права защищены.',
@@ -881,6 +921,9 @@ const SECTION_DEFINITIONS: { id: string; title: string; prefixes: string[] }[] =
       'pricingCtaFree',
       'pricingCta',
       'pricingNote',
+      // One prefix claims all eight Enterprise strings, in the order the card
+      // shows them, and any added later.
+      'pricingEnterprise',
     ],
   },
   {

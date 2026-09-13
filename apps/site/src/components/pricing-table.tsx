@@ -3,11 +3,11 @@ import { Check } from 'lucide-react';
 import { formatPrice, type Plan } from '@/lib/pricing';
 import type { SiteMessages } from '@/lib/i18n/messages';
 import type { BuiltinLocale } from '@/lib/i18n/locale';
-import { SIGNUP_URL } from '@/lib/site';
+import { SALES_URL, SIGNUP_URL } from '@/lib/site';
 import { cn } from '@/lib/cn';
 
 /**
- * Four plans, priced by capacity.
+ * Four plans, priced by capacity — and Enterprise, priced by agreement.
  *
  * Prices arrive as a prop rather than being imported. The page reads them from
  * `plan_prices`, so the table cannot advertise a figure the product does not
@@ -100,6 +100,60 @@ export function PricingTable({
           </div>
         );
       })}
+
+      {/*
+        ENTERPRISE, ACROSS THE FULL WIDTH RATHER THAN AS A FIFTH CARD.
+
+        A fifth card in a four-column grid wraps onto a row of its own, which
+        reads as leftover rather than as an option. Spanning the width says what
+        it is: a different way of buying, not a bigger tier of the same thing.
+
+        It carries no price and no capacity figures because it has neither until
+        a contract exists. The contract decides both, and Admin → Accounts sets
+        them on the customer's account — spaces, people and an end date — so the
+        two halves of an Enterprise sale already meet in the product. What was
+        missing was this: a way for a company to ask.
+
+        The action goes to `SALES_URL`, not to sign-up. Somebody who wants 12
+        spaces and 400 people should talk to a person, not be dropped into a free
+        account that stops them at one space.
+      */}
+      <div
+        data-reveal
+        className="flex flex-col gap-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] p-6 sm:col-span-2 lg:col-span-4 lg:flex-row lg:items-center lg:gap-10"
+      >
+        <div className="lg:w-1/3">
+          <h3 className="text-base font-semibold">{m.pricingEnterpriseName}</h3>
+          <p className="mt-4 text-3xl font-semibold tracking-tight">{m.pricingEnterprisePrice}</p>
+          <p className="mt-3 text-sm leading-relaxed text-[var(--color-muted-foreground)]">
+            {m.pricingEnterpriseLead}
+          </p>
+        </div>
+
+        <ul className="grid flex-1 gap-2.5 text-sm sm:grid-cols-2">
+          {[
+            m.pricingEnterpriseCapacity,
+            m.pricingEnterpriseTerm,
+            m.pricingEnterpriseInvoice,
+            m.pricingEnterpriseOnboarding,
+          ].map((line) => (
+            <li key={line} className="flex items-start gap-2">
+              <Check
+                className="mt-0.5 size-4 shrink-0 text-[var(--color-success)]"
+                aria-hidden="true"
+              />
+              <span>{line}</span>
+            </li>
+          ))}
+        </ul>
+
+        <a
+          href={SALES_URL}
+          className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[var(--color-input)] px-5 text-sm font-medium transition-colors hover:bg-[var(--color-accent)] lg:shrink-0"
+        >
+          {m.pricingEnterpriseCta}
+        </a>
+      </div>
     </div>
   );
 }

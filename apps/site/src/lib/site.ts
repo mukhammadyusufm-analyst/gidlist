@@ -21,3 +21,22 @@ export const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.gidlist.c
 
 export const SIGNUP_URL = `${APP_URL}/signup`;
 export const SIGNIN_URL = `${APP_URL}/login`;
+
+/**
+ * Where an Enterprise enquiry goes — the one call to action that does NOT point
+ * at signup.
+ *
+ * An organisation that needs twelve spaces and four hundred people should reach
+ * a person, not a free account that stops them at one space. The contract then
+ * sets their limits in Admin → Accounts.
+ *
+ * An environment variable first, so the channel can change without a release:
+ * set `NEXT_PUBLIC_SALES_URL` on the `gidlist-site` Vercel project to a Telegram
+ * link such as `https://t.me/<handle>` and redeploy. The fallback is the address
+ * already published as the legal contact (`LEGAL_CONTACT_EMAIL` in `./legal`),
+ * with the subject filled in so an enquiry is recognisable in the inbox. It is
+ * written out rather than imported to keep this module free of dependencies.
+ */
+export const SALES_URL =
+  process.env.NEXT_PUBLIC_SALES_URL ??
+  'mailto:gidlist.operations@gmail.com?subject=Gidlist%20Enterprise';
