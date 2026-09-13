@@ -1,8 +1,8 @@
 import { isVisible, type SiteMessages } from '@app/core';
 
-import type { Plan } from '@/lib/pricing';
+import { minorUnitDigits, type Plan } from '@/lib/pricing';
 import { SITE_LOCALES, type BuiltinLocale } from '@/lib/i18n/locale';
-import { SITE_URL } from '@/lib/site';
+import { MARKET_CONFIG, type Market } from '@/lib/market';
 import { COMPANY_NAME, COMPANY_URL } from '@/lib/legal';
 
 /**
@@ -23,14 +23,19 @@ import { COMPANY_NAME, COMPANY_URL } from '@/lib/legal';
  */
 
 export function StructuredData({
+  market,
   locale,
   m,
   plans,
 }: {
+  market: Market;
   locale: BuiltinLocale;
   m: SiteMessages;
   plans: Plan[];
 }) {
+  // The site this page is on: gidlist.uz and gidlist.com each describe
+  // themselves, with their own prices in their own currency.
+  const SITE_URL = MARKET_CONFIG[market].url;
   const home = `${SITE_URL}/${locale}`;
 
   const organisation = {
@@ -65,7 +70,11 @@ export function StructuredData({
     offers: plans.map((plan) => ({
       '@type': 'Offer',
       name: plan.name,
-      price: (plan.priceMinor / 100).toFixed(2),
+      // By the currency's own minor unit. Dividing by 100 regardless published
+      // 59,250 so'm as 592.50 — so'm has no minor unit in use.
+      price: (plan.priceMinor / 10 ** minorUnitDigits(plan.currency)).toFixed(
+        minorUnitDigits(plan.currency),
+      ),
       priceCurrency: plan.currency,
       url: `${home}#pricing`,
     })),

@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 import { SITE_LOCALES, negotiateLocale } from '@/lib/i18n/locale';
+import { marketForHost } from '@/lib/market';
 
 /**
  * The Content Security Policy.
@@ -101,7 +102,22 @@ export function proxy(request: NextRequest) {
   );
 
   if (hasLocale) {
-    const response = NextResponse.next();
+    /*
+     * Which site is this — gidlist.uz or gidlist.com? The host says, and the
+     * answer goes into the path: `/ru/terms` on gidlist.uz is served from
+     * `/uz/ru/terms`. A rewrite, not a redirect, so the visitor's address never
+     * shows the market, and each market's pages are still built ahead of time.
+     * See `lib/market.ts`.
+     *
+     * A path that already starts with a market (`/uz/ru`) has no locale first,
+     * so it takes the redirect branch below and ends at a 404 — the internal
+     * addresses cannot be reached from outside as a second copy of the site.
+     */
+    const market = marketForHost(request.headers.get('x-forwarded-host') ?? request.headers.get('host'));
+    const url = request.nextUrl.clone();
+    url.pathname = `/${market}${pathname}`;
+
+    const response = NextResponse.rewrite(url);
     response.headers.set('Content-Security-Policy', csp);
     return response;
   }

@@ -2,13 +2,7 @@ import 'server-only';
 
 import { MESSAGES, applySiteOverrides, type SiteMessages, type SiteOverrides } from '@app/core';
 import type { BuiltinLocale } from '@/lib/i18n/locale';
-import {
-  CURRENCY_BY_LOCALE,
-  fallbackPlans,
-  plansFromPrices,
-  type Plan,
-  type PlanCode,
-} from '@/lib/pricing';
+import { fallbackPlans, plansFromPrices, type Plan, type PlanCode } from '@/lib/pricing';
 
 /**
  * How long a copy edit takes to appear on the live site.
@@ -91,7 +85,8 @@ export async function getSiteMessages(locale: BuiltinLocale): Promise<SiteMessag
 }
 
 /**
- * The plans, priced in the currency this locale is shown.
+ * The plans, priced in one currency — the market's, from `lib/market.ts`, not
+ * the language's. gidlist.uz passes UZS and gidlist.com passes USD.
  *
  * NEVER THROWS, for the same reason `getSiteMessages` does not: every failure
  * path returns the fallback price list bundled in `lib/pricing.ts`. A pricing
@@ -108,9 +103,7 @@ export async function getSiteMessages(locale: BuiltinLocale): Promise<SiteMessag
  * them from the dollar figures at some exchange rate would reprice every Uzbek
  * customer every time the rate moved.
  */
-export async function getPlans(locale: BuiltinLocale): Promise<Plan[]> {
-  const currency = CURRENCY_BY_LOCALE[locale];
-
+export async function getPlans(currency: string): Promise<Plan[]> {
   if (!SUPABASE_URL || !SUPABASE_KEY) return fallbackPlans(currency);
 
   try {

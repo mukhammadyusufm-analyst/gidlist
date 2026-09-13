@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
 
 import { isBuiltinLocale } from '@/lib/i18n/locale';
+import { MARKET_CONFIG, isMarket } from '@/lib/market';
 import { getPlans, getSiteMessages } from '@/lib/content';
 import { SIGNUP_URL } from '@/lib/site';
 import { SiteHeader } from '@/components/site-header';
@@ -54,14 +55,22 @@ export const revalidate = 300;
  * They remain in the catalogue rather than being deleted, so nothing breaks for
  * an administrator mid-edit; removing them is a separate, deliberate change.
  */
-export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
-  const { locale } = await params;
-  if (!isBuiltinLocale(locale)) notFound();
+export default async function HomePage({
+  params,
+}: {
+  params: Promise<{ market: string; locale: string }>;
+}) {
+  const { market, locale } = await params;
+  if (!isMarket(market) || !isBuiltinLocale(locale)) notFound();
+
+  // The currency is the domain's, not the language's: so'm on gidlist.uz,
+  // dollars on gidlist.com, whichever of the three languages is being read.
+  const currency = MARKET_CONFIG[market].currency;
 
   // Both reads in parallel. They are independent, and a pricing page that
   // waits for its copy before asking for its prices is two round trips deep for
   // no reason.
-  const [m, plans] = await Promise.all([getSiteMessages(locale), getPlans(locale)]);
+  const [m, plans] = await Promise.all([getSiteMessages(locale), getPlans(currency)]);
 
   const n = NARRATIVE[locale];
   const c = CLOSING[locale];
@@ -77,7 +86,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         {m.skipToContent}
       </a>
 
-      <StructuredData locale={locale} m={m} plans={plans} />
+      <StructuredData market={market} locale={locale} m={m} plans={plans} />
 
       <SiteHeader locale={locale} m={m} />
 
@@ -213,7 +222,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             <PricingTable locale={locale} m={m} plans={plans} />
 
             <p data-reveal className="mt-8 text-sm text-[var(--color-muted-foreground)]">
-              {m.pricingIncluded} {m.pricingNote}
+              {m.pricingIncluded} {currency === 'UZS' ? m.pricingNoteUzs : m.pricingNote}
             </p>
           </Reveal>
         </section>

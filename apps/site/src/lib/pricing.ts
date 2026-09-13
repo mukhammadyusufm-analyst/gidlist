@@ -1,5 +1,3 @@
-import type { BuiltinLocale } from '@/lib/i18n/locale';
-
 /**
  * The plans.
  *
@@ -39,26 +37,6 @@ export type Plan = {
   maxSpaces: number;
   /** Drawn larger, with the primary button. */
   featured?: boolean;
-};
-
-/**
- * Which currency each language sees.
- *
- * A heuristic, and worth naming as one. Russian maps to so'm because it is
- * widely used inside Uzbekistan, not because Russian speakers are Uzbek — a
- * Russian speaker in Riga will see so'm, which is wrong for them. The
- * alternative is guessing from an IP address, which is wrong differently and
- * more often, and a visible currency switch would be a better answer than
- * either once there is anyone to switch for.
- *
- * The product does not rely on this: currency is frozen on the subscription
- * when somebody actually pays, so the worst this can do is show the wrong
- * figure on a marketing page.
- */
-export const CURRENCY_BY_LOCALE: Record<BuiltinLocale, string> = {
-  uz: 'UZS',
-  ru: 'UZS',
-  en: 'USD',
 };
 
 /** Capacity, which does not vary by currency. */
@@ -113,7 +91,7 @@ export function plansFromPrices(
  * browser bundle to read one lookup table is a poor trade. If a currency is
  * added, both places change — which is why the list is short and named.
  */
-function minorUnitDigits(currency: string): number {
+export function minorUnitDigits(currency: string): number {
   return currency.toUpperCase() === 'UZS' ? 0 : 2;
 }
 

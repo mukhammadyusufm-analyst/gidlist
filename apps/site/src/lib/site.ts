@@ -1,20 +1,15 @@
 /**
- * Where the site and the product live.
+ * Where the product lives.
  *
- * Both are read at build time. `SITE_URL` has to be absolute for canonical
- * links, hreflang and Open Graph — a relative canonical is ignored, and an
- * absolute one pointing at a preview deployment tells search engines the
- * preview is the real site.
+ * The site's own address is no longer here. There are two — gidlist.com and
+ * gidlist.uz — and which one a page belongs to is decided per request by the
+ * host, so they live in `lib/market.ts`. They are written out rather than read
+ * from the environment: canonical links pointing at a preview deployment tell
+ * search engines the preview is the real site, and there is nothing to vary.
  *
- * The fallbacks are the production addresses rather than localhost. A missing
- * environment variable should degrade to something correct in the place it
- * matters most, and a preview deployment with the wrong canonical is a
- * recoverable annoyance; a live site canonicalising to `localhost:3001` is not.
- */
-export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://gidlist.com';
-
-/**
- * The product. Every call to action points here — the decision was that the
+ * The product. Read at build time; the fallback is the production address
+ * rather than localhost, because a missing variable should degrade to something
+ * correct in the place it matters most. Every call to action points here — the decision was that the
  * primary action goes straight to signup rather than to an enquiry form.
  */
 export const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.gidlist.com';

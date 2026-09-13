@@ -200,6 +200,29 @@ anyone who types it. Until there is a marketing site:
 
 Undo this the day a marketing site exists. It is a placeholder, not a decision.
 
+### gidlist.uz — the Uzbek site, in so'm
+
+`gidlist.com` and `gidlist.uz` are **one** Vercel project, `gidlist-site`. The
+site reads which address a visitor used and shows so'm on gidlist.uz and
+dollars on gidlist.com, in all three languages (see `apps/site/src/lib/market.ts`).
+There is no second project to create and no environment variable to set.
+
+1. Register `gidlist.uz` with an Uzbek registrar.
+2. Open the **gidlist-site** project (not gidlist-web) → **Domains** → **Add
+   Existing** → `gidlist.uz` → **Connect to an environment → Production** →
+   **Add Domain**.
+3. Add `www.gidlist.uz` the same way, and choose **Redirect to** `gidlist.uz`.
+4. At the registrar, add exactly the records Vercel shows: an **A** record for
+   `gidlist.uz`, and a **CNAME** for `www`.
+5. Refresh the Vercel page until both are **Valid Configuration**.
+
+**You should see** `https://gidlist.uz/ru` with prices in сум, and the note under
+the table saying «Цены в сумах». `https://gidlist.com/ru` shows the same page in
+dollars.
+
+6. In **Google Search Console**, add `gidlist.uz` as a second property and submit
+   `https://gidlist.uz/sitemap.xml`. Each domain has its own sitemap.
+
 ---
 
 ## Part 6 — Tell Supabase the app moved

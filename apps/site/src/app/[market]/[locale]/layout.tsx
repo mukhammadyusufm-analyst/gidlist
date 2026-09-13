@@ -5,9 +5,9 @@ import { Inter, JetBrains_Mono } from 'next/font/google';
 import { SITE_LOCALES, isBuiltinLocale } from '@/lib/i18n/locale';
 import { MESSAGES } from '@/lib/i18n/messages';
 import { getSiteMessages } from '@/lib/content';
-import { SITE_URL } from '@/lib/site';
+import { MARKETS, MARKET_CONFIG, hreflangFor, isMarket } from '@/lib/market';
 
-import '../globals.css';
+import '../../globals.css';
 
 /**
  * This is the root layout, and there is no `app/layout.tsx` above it.
@@ -40,20 +40,25 @@ const mono = JetBrains_Mono({
 });
 
 /**
- * Build all three locales at compile time. There are exactly three and they are
- * known, so there is no reason for a visitor to wait on a render.
+ * Build every market in every locale at compile time — gidlist.com and
+ * gidlist.uz, three languages each. All six are known, so there is no reason
+ * for a visitor to wait on a render. `[market]` never appears in a visitor's
+ * address; `proxy.ts` fills it in from the host. See `lib/market.ts`.
  */
 export function generateStaticParams() {
-  return SITE_LOCALES.map((locale) => ({ locale }));
+  return MARKETS.flatMap((market) => SITE_LOCALES.map((locale) => ({ market, locale })));
 }
+
+/** Anything else — a hand-typed market or locale — is a 404, not a render. */
+export const dynamicParams = false;
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ locale: string }>;
+  params: Promise<{ market: string; locale: string }>;
 }): Promise<Metadata> {
-  const { locale } = await params;
-  if (!isBuiltinLocale(locale)) return {};
+  const { market, locale } = await params;
+  if (!isMarket(market) || !isBuiltinLocale(locale)) return {};
 
   // The overridden copy, not the bundle: the page title and the description
   // shown in search results are exactly the strings somebody is most likely to
@@ -61,22 +66,37 @@ export async function generateMetadata({
   const m = await getSiteMessages(locale);
 
   return {
-    metadataBase: new URL(SITE_URL),
+    metadataBase: new URL(MARKET_CONFIG[market].url),
     title: m.metaTitle,
     description: m.metaDescription,
     alternates: {
+      // Each domain is canonical for itself. Pointing gidlist.uz at gidlist.com
+      // would tell search engines the so'm prices are a copy to be ignored.
       canonical: `/${locale}`,
       /**
-       * hreflang. Without these, three translations of one page compete with
-       * each other in search results instead of being understood as the same
-       * page in different languages.
+       * hreflang, across BOTH domains. Without these, three translations of one
+       * page compete with each other in search results instead of being
+       * understood as the same page in different languages — and two domains
+       * with the same text compete as duplicates. gidlist.uz declares its
+       * languages with the UZ region (`ru-UZ`) and gidlist.com without one
+       * (`ru`), so a searcher in Uzbekistan is shown gidlist.uz and everyone
+       * else gidlist.com.
        *
-       * `x-default` points at Uzbek, matching where a visitor with no readable
-       * preference is sent.
+       * Absolute URLs, because half of them are on the other domain.
+       *
+       * `x-default` is gidlist.com in Uzbek, matching where a visitor with no
+       * readable preference is sent.
        */
       languages: {
-        ...Object.fromEntries(SITE_LOCALES.map((l) => [MESSAGES[l].htmlLang, `/${l}`])),
-        'x-default': '/uz',
+        ...Object.fromEntries(
+          MARKETS.flatMap((mk) =>
+            SITE_LOCALES.map((l) => [
+              hreflangFor(MESSAGES[l].htmlLang, mk),
+              `${MARKET_CONFIG[mk].url}/${l}`,
+            ]),
+          ),
+        ),
+        'x-default': `${MARKET_CONFIG.com.url}/uz`,
       },
     },
     openGraph: {
@@ -113,13 +133,13 @@ export default async function LocaleLayout({
   params,
 }: {
   children: React.ReactNode;
-  params: Promise<{ locale: string }>;
+  params: Promise<{ market: string; locale: string }>;
 }) {
-  const { locale } = await params;
+  const { market, locale } = await params;
 
   // A hand-typed `/de` would otherwise render an English page under a German
   // URL, which is worse than a 404: it would get indexed.
-  if (!isBuiltinLocale(locale)) notFound();
+  if (!isMarket(market) || !isBuiltinLocale(locale)) notFound();
 
   return (
     // The font variables go on `<html>`, not `<body>`. `--font-sans` is defined

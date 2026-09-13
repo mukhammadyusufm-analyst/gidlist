@@ -114,7 +114,14 @@ export type SiteMessages = {
   pricingCta: string;
   pricingCtaFree: string;
   pricingPopular: string;
+  /**
+   * Under the price table. Two, because the currency is chosen by the domain:
+   * `pricingNote` on gidlist.com, where prices are in dollars, and
+   * `pricingNoteUzs` on gidlist.uz, where they are in so'm. The note must name
+   * the currency the table actually shows.
+   */
   pricingNote: string;
+  pricingNoteUzs: string;
   /*
    * Enterprise: sold by agreement rather than chosen on a card. No price, no
    * capacity figures — both are whatever the contract says, and the admin sets
@@ -241,7 +248,9 @@ export const MESSAGES: Record<BuiltinLocale, SiteMessages> = {
     pricingCtaFree: 'Start free',
     pricingPopular: 'Most chosen',
     pricingNote:
-      'Prices in US dollars. Local payment in Uzbek som through Payme and Click is coming.',
+      'Prices in US dollars. For prices in Uzbek soʻm, visit gidlist.uz.',
+    pricingNoteUzs:
+      'Prices in Uzbek soʻm. Payment through Payme and Click is coming.',
     pricingEnterpriseName: 'Enterprise',
     pricingEnterprisePrice: 'By agreement',
     pricingEnterpriseLead:
@@ -426,7 +435,9 @@ export const MESSAGES: Record<BuiltinLocale, SiteMessages> = {
     pricingCtaFree: 'Bepul boshlash',
     pricingPopular: 'Koʻp tanlanadi',
     pricingNote:
-      'Narxlar AQSh dollarida. Payme va Click orqali soʻmda toʻlov tez orada.',
+      'Narxlar AQSh dollarida. Soʻmdagi narxlar uchun gidlist.uz saytiga kiring.',
+    pricingNoteUzs:
+      'Narxlar soʻmda. Payme va Click orqali toʻlov tez orada.',
     pricingEnterpriseName: 'Enterprise',
     pricingEnterprisePrice: 'Kelishuv boʻyicha',
     pricingEnterpriseLead:
@@ -614,7 +625,9 @@ export const MESSAGES: Record<BuiltinLocale, SiteMessages> = {
     pricingCtaFree: 'Начать бесплатно',
     pricingPopular: 'Выбирают чаще',
     pricingNote:
-      'Цены в долларах США. Оплата в сумах через Payme и Click появится позже.',
+      'Цены в долларах США. Цены в сумах — на сайте gidlist.uz.',
+    pricingNoteUzs:
+      'Цены в сумах. Оплата через Payme и Click появится позже.',
     pricingEnterpriseName: 'Enterprise',
     pricingEnterprisePrice: 'По договорённости',
     pricingEnterpriseLead:
@@ -920,6 +933,7 @@ const SECTION_DEFINITIONS: { id: string; title: string; prefixes: string[] }[] =
       'pricingIncluded',
       'pricingCtaFree',
       'pricingCta',
+      // Also claims `pricingNoteUzs`, the gidlist.uz version.
       'pricingNote',
       // One prefix claims all eight Enterprise strings, in the order the card
       // shows them, and any added later.
