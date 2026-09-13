@@ -1224,9 +1224,11 @@ export type Database = {
       /**
        * Creates a brand-new person's "Getting started" space, once. Returns the
        * space's id, or null when there is nothing to do: already done, or they
-       * arrived by invitation. Safe to call on every visit.
+       * arrived by invitation. Safe to call on every visit. `p_locale` is the
+       * language on screen; the tutorial is written in it and it is saved to the
+       * profile.
        */
-      ensure_getting_started: { Args: Record<string, never>; Returns: string | null };
+      ensure_getting_started: { Args: { p_locale?: string | null }; Returns: string | null };
       create_schedule_with_assignees: {
         Args: {
           p_checklist_id: string;

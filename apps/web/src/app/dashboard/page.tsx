@@ -4,7 +4,7 @@ import { LayoutGrid, Plus } from 'lucide-react';
 
 import { listArchivedBoards, listMyBoards } from '@/lib/boards/queries';
 import { createClient, getUser } from '@/lib/supabase/server';
-import { getTranslations } from '@/lib/i18n/server';
+import { getLocale, getTranslations } from '@/lib/i18n/server';
 import { listPendingInvitations } from '@/lib/invitations/queries';
 import { InvitationList } from '@/components/invitations/invitation-list';
 import { buttonVariants } from '@/components/ui/button';
@@ -34,9 +34,13 @@ export default async function DashboardPage() {
    * person is looking at rather than appearing on their next visit. A failure
    * is ignored on purpose — a tutorial that could not be created must never
    * stand between somebody and the product.
+   *
+   * The language passed is the one on screen, not the profile's: a new profile
+   * always says English, while somebody who chose Uzbek on the sign-up page is
+   * already reading the app in Uzbek from the cookie.
    */
   const supabase = await createClient();
-  await supabase.rpc('ensure_getting_started');
+  await supabase.rpc('ensure_getting_started', { p_locale: await getLocale() });
 
   const [boards, archived, invitations, { t }, user] = await Promise.all([
     listMyBoards(),
