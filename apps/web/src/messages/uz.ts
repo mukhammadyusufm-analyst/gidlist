@@ -90,6 +90,9 @@ export const uz = {
   'auth.invalidCredentials': 'Elektron pochta yoki parol notoʻgʻri.',
   'auth.continueWithGoogle': 'Google orqali davom etish',
   'auth.orWithEmail': 'yoki pochta orqali',
+  'auth.chooseLanguage': 'Tilni tanlang',
+  'auth.chooseLanguageHint':
+    'Gidlist va birinchi mashq roʻyxatingiz shu tilda boʻladi. Uni istalgan vaqtda oʻzgartirishingiz mumkin.',
   'auth.pitchTitle': 'Bajarilganini isbotlaydigan roʻyxatlar.',
   'auth.pitchBody':
     'Tartibni bir marta tuzing, jadvalga qoʻying va kim nimani bajarganini yozib boring — jamoangiz ishlaydigan barcha obyekt, smena va tillarda.',

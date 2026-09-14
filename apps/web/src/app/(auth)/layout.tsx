@@ -4,7 +4,7 @@ import { headers } from 'next/headers';
 import { CalendarClock, CircleCheckBig, Smartphone } from 'lucide-react';
 
 import { getAvailableLocales, getTranslations } from '@/lib/i18n/server';
-import { LanguageSwitcher } from '@/components/i18n/language-switcher';
+import { LanguageChoice } from '@/components/i18n/language-choice';
 
 /**
  * The page a prospect sees before anything else.
@@ -107,15 +107,14 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
 
           <div className="order-1 lg:order-2">
             <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] p-6 shadow-sm">
+              {/* First, above every field, on all three auth pages. Someone
+                  signing in for the first time on a factory floor has no profile
+                  yet, so this is their chance to get out of English before they
+                  read anything — and for a new account it also decides the
+                  language of the practice space they start with. It used to be
+                  a small dropdown under the card, and was missed. */}
+              <LanguageChoice locales={locales} />
               {children}
-            </div>
-
-            {/* Here rather than only behind the login. Someone signing in for
-                the first time on a factory floor has no profile yet, so this is
-                their only chance to get out of English before they have to read
-                anything. */}
-            <div className="mt-4 flex justify-center">
-              <LanguageSwitcher locales={locales} />
             </div>
           </div>
         </div>

@@ -7,6 +7,7 @@ import { signInSchema, signUpSchema, resetRequestSchema } from '@app/core';
 import { createClient } from '@/lib/supabase/server';
 import { getTranslations } from '@/lib/i18n/server';
 import { translateAuthError, translateFieldErrors } from '@/lib/errors';
+import { adoptAccountLocale } from '@/lib/i18n/actions';
 
 /**
  * Result shape shared by every auth form.
@@ -72,10 +73,15 @@ export async function signIn(_prev: AuthState, formData: FormData): Promise<Auth
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data: signedIn, error } = await supabase.auth.signInWithPassword({
     ...parsed.data,
     options: { captchaToken: captchaToken(formData) },
   });
+
+  // A language guessed from this browser gives way to the one on the account.
+  if (!error && signedIn.user) {
+    await adoptAccountLocale(supabase, signedIn.user.id);
+  }
 
   if (error) {
     /*

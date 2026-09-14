@@ -175,6 +175,8 @@ export type Database = {
           avatar_url: string | null;
           locale: string;
           is_platform_admin: boolean;
+          /** When the guided start was created or decided against; null for a brand-new account. */
+          getting_started_at: string | null;
           created_at: string;
           updated_at: string;
         };

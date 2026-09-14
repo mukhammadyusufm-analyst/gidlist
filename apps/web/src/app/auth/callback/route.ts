@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 import { createClient } from '@/lib/supabase/server';
+import { adoptAccountLocale } from '@/lib/i18n/actions';
 
 /**
  * Where email confirmation and password-reset links land.
@@ -32,11 +33,18 @@ export async function GET(request: NextRequest) {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  const { data: exchanged, error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {
     // Usually an expired or already-used link rather than anything sinister.
     return NextResponse.redirect(`${origin}/login?error=invalid_link`);
+  }
+
+  // Google sign-in and email confirmation arrive here rather than through the
+  // sign-in form, so the same rule applies: a guessed language gives way to
+  // the account's.
+  if (exchanged.user) {
+    await adoptAccountLocale(supabase, exchanged.user.id);
   }
 
   return NextResponse.redirect(`${origin}${next}`);

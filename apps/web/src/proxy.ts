@@ -2,6 +2,13 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
 import { env } from '@/lib/env';
+import { LOCALE_AUTO_COOKIE, negotiateLocale } from '@/lib/i18n/negotiate';
+
+/**
+ * Written out rather than imported from `lib/i18n/server`, which is server-only
+ * and pulls in the database client. It must equal `LOCALE_COOKIE` there.
+ */
+const LOCALE_COOKIE_NAME = 'locale';
 
 /**
  * Runs before every matched request.
@@ -180,6 +187,37 @@ export async function proxy(request: NextRequest) {
   requestHeaders.set('x-nonce', nonce);
   requestHeaders.set('Content-Security-Policy', csp);
 
+  /*
+   * A first-time visitor sees their own language, not English.
+   *
+   * Only when no language has been set in this browser and nobody is signed in
+   * here: a signed-in person's language comes from their account, and a
+   * browser's setting must not override that. "Signed in" is judged by the
+   * presence of a Supabase auth cookie, because the verified answer comes later
+   * in this function and the page render needs the language now.
+   *
+   * The guess is written into THIS request's cookies, so the page being rendered
+   * already uses it, and onto the response, so the browser keeps it. The marker
+   * cookie records that it was a guess — see `LOCALE_AUTO_COOKIE`.
+   */
+  let guessedLocale: string | null = null;
+  const hasAuthCookie = request.cookies.getAll().some((c) => c.name.startsWith('sb-') && c.name.includes('auth-token'));
+  if (!request.cookies.get(LOCALE_COOKIE_NAME) && !hasAuthCookie) {
+    guessedLocale = negotiateLocale(request.headers.get('accept-language'));
+    if (guessedLocale) {
+      const existing = request.headers.get('cookie');
+      const added = `${LOCALE_COOKIE_NAME}=${guessedLocale}; ${LOCALE_AUTO_COOKIE}=1`;
+      requestHeaders.set('cookie', existing ? `${existing}; ${added}` : added);
+    }
+  }
+
+  const rememberGuess = (response: NextResponse) => {
+    if (!guessedLocale) return;
+    const options = { path: '/', maxAge: 60 * 60 * 24 * 365, sameSite: 'lax' as const, httpOnly: false };
+    response.cookies.set(LOCALE_COOKIE_NAME, guessedLocale, options);
+    response.cookies.set(LOCALE_AUTO_COOKIE, '1', options);
+  };
+
   // This response is what carries any refreshed auth cookies back to the
   // browser. It must be the object we ultimately return, or the refresh is lost.
   let supabaseResponse = NextResponse.next({ request: { headers: requestHeaders } });
@@ -271,6 +309,7 @@ export async function proxy(request: NextRequest) {
       redirectResponse.cookies.set(cookie);
     }
     redirectResponse.headers.set('Content-Security-Policy', csp);
+    rememberGuess(redirectResponse);
     return redirectResponse;
   }
 
@@ -292,6 +331,7 @@ export async function proxy(request: NextRequest) {
   // response that escapes without it is a response with no policy at all, and
   // the gap would be invisible until somebody went looking for it.
   supabaseResponse.headers.set('Content-Security-Policy', csp);
+  rememberGuess(supabaseResponse);
   return supabaseResponse;
 }
 

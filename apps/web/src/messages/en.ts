@@ -89,6 +89,9 @@ export const en = {
   'auth.invalidCredentials': 'That email and password combination is not correct.',
   'auth.continueWithGoogle': 'Continue with Google',
   'auth.orWithEmail': 'or with email',
+  'auth.chooseLanguage': 'Choose your language',
+  'auth.chooseLanguageHint':
+    'Gidlist and your first practice checklist will be in this language. You can change it at any time.',
   'auth.pitchTitle': 'Checklists that prove they were done.',
   'auth.pitchBody':
     'Build a procedure once, put it on a schedule, and keep a record of who completed what — across every site, shift and language your team works in.',
