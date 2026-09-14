@@ -19,7 +19,16 @@ export async function GET(request: NextRequest) {
   const next = nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : '/dashboard';
 
   if (!code) {
-    return NextResponse.redirect(`${origin}/login?error=missing_code`);
+    /*
+     * No code usually means Supabase already refused the link and says why in
+     * `error_code`: an expired or already-used link (`otp_expired`) — which
+     * includes a link sent to an account that has since been deleted, or one an
+     * email scanner opened first. Reporting all of that as "incomplete" sent
+     * people looking for a broken URL when the answer was "request a new one".
+     */
+    const upstream = searchParams.get('error_code') ?? searchParams.get('error');
+    const reason = upstream && /expired|access_denied|invalid/i.test(upstream) ? 'invalid_link' : 'missing_code';
+    return NextResponse.redirect(`${origin}/login?error=${reason}`);
   }
 
   const supabase = await createClient();
