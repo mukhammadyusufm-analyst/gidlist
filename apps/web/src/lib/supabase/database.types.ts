@@ -1231,6 +1231,10 @@ export type Database = {
        * profile.
        */
       ensure_getting_started: { Args: { p_locale?: string | null }; Returns: string | null };
+      /** Whether the caller may delete this practice space yet: they own it, and have their own space with a scheduled checklist. */
+      practice_space_can_be_deleted: { Args: { p_board_id: string }; Returns: boolean };
+      /** Deletes a practice space and everything in it, under the rule above. */
+      delete_practice_space: { Args: { p_board_id: string }; Returns: undefined };
       create_schedule_with_assignees: {
         Args: {
           p_checklist_id: string;

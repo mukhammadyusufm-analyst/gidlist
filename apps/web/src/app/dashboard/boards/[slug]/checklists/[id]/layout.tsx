@@ -69,7 +69,14 @@ export default async function ChecklistLayout({
               className="size-11"
             />
             <div className="min-w-0">
-              <h2 className="text-xl font-semibold tracking-tight">{checklist.title}</h2>
+              <h2 className="flex flex-wrap items-center gap-2 text-xl font-semibold tracking-tight">
+                <span>{checklist.title}</span>
+                {board.is_tutorial ? (
+                  <span className="rounded-full border border-[var(--color-border)] px-2 py-0.5 text-xs font-normal text-[var(--color-muted-foreground)]">
+                    {t('space.practice')}
+                  </span>
+                ) : null}
+              </h2>
               {checklist.description ? (
                 <p className="mt-1 text-sm text-[var(--color-muted-foreground)]">
                   {checklist.description}

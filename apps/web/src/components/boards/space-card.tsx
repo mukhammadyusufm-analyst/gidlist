@@ -17,7 +17,7 @@ import { Card } from '@/components/ui/card';
  * Spaces with no banner still get a band, derived from the same seeded colour
  * as their avatar, so the grid never looks half-finished.
  */
-export function SpaceCard({ board }: { board: Board }) {
+export function SpaceCard({ board, practiceLabel }: { board: Board; practiceLabel?: string }) {
   const presetGradient = bannerPresetGradient(board.banner_url);
   const uploaded = board.banner_url && !isBannerPreset(board.banner_url) ? board.banner_url : null;
   const fallback = generatedAvatar(board.id).gradient;
@@ -60,7 +60,15 @@ export function SpaceCard({ board }: { board: Board }) {
 
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <p className="truncate font-semibold">{board.name}</p>
+              <p className="flex min-w-0 items-center gap-2">
+                <span className="truncate font-semibold">{board.name}</span>
+                {/* So nobody mistakes the guided start's space for real work. */}
+                {board.is_tutorial && practiceLabel ? (
+                  <span className="shrink-0 rounded-full border border-[var(--color-border)] px-2 py-0.5 text-xs text-[var(--color-muted-foreground)]">
+                    {practiceLabel}
+                  </span>
+                ) : null}
+              </p>
               <p className="mt-0.5 line-clamp-2 text-sm text-[var(--color-muted-foreground)]">
                 {board.description || `/${board.slug}`}
               </p>

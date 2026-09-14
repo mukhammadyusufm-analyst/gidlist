@@ -154,6 +154,16 @@ export const en = {
     'Nothing has been filled in here yet, so it can still be deleted outright. Once anything is recorded, archiving is the only option.',
   'archive.deleteConfirm': 'Type {name} to confirm',
   'archive.delete': 'Delete permanently',
+  'space.practice': 'Practice',
+  'practice.title': 'Practice space',
+  'practice.intro':
+    'Gidlist made this space so you can learn by doing. It does not count toward your plan.',
+  'practice.notYet':
+    'You can delete it once you have your own space with a checklist on a schedule.',
+  'practice.ready':
+    'Your own space has a scheduled checklist, so this practice space can go. Everything in it is deleted, including photos and files you uploaded.',
+  'practice.confirm': 'I understand this cannot be undone',
+  'practice.delete': 'Delete practice space',
 
   'billing.title': 'Plan and billing',
   'billing.intro': 'Your plan covers every space you own. You pay for people, not for spaces.',
@@ -720,6 +730,8 @@ export const en = {
   'errors.wrongCredentials': 'That email and password combination is not correct.',
   'errors.authAlreadyRegistered': 'An account with that email address already exists. Sign in instead.',
   'errors.authRateLimit': 'Too many attempts. Wait a few minutes and try again.',
+  'errors.practiceNotYet':
+    'The practice space can be deleted once you have your own space with a checklist on a schedule.',
   'errors.authSamePassword': 'Choose a password different from your current one.',
 
   // Images

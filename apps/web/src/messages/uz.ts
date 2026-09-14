@@ -153,6 +153,16 @@ export const uz = {
     'Bu yerda hali hech narsa toʻldirilmagan, shuning uchun maydonni butunlay oʻchirish mumkin. Yozuvlar paydo boʻlgach, faqat arxivlash qoladi.',
   'archive.deleteConfirm': 'Tasdiqlash uchun {name} deb yozing',
   'archive.delete': 'Butunlay oʻchirish',
+  'space.practice': 'Mashq',
+  'practice.title': 'Mashq maydoni',
+  'practice.intro':
+    'Gidlist bu maydonni amalda oʻrganishingiz uchun yaratdi. U tarifingiz hisobiga kirmaydi.',
+  'practice.notYet':
+    'Oʻz maydoningizda jadvalga qoʻyilgan roʻyxat paydo boʻlgach, uni oʻchirishingiz mumkin.',
+  'practice.ready':
+    'Oʻz maydoningizda jadvalga qoʻyilgan roʻyxat bor, shuning uchun bu mashq maydonini oʻchirish mumkin. Undagi hamma narsa, jumladan yuklangan rasm va fayllar ham oʻchiriladi.',
+  'practice.confirm': 'Buni qaytarib boʻlmasligini tushunaman',
+  'practice.delete': 'Mashq maydonini oʻchirish',
 
   'billing.title': 'Tarif va toʻlov',
   'billing.intro':
@@ -706,6 +716,8 @@ export const uz = {
   'errors.wrongCredentials': 'Elektron pochta yoki parol notoʻgʻri.',
   'errors.authAlreadyRegistered': 'Bu elektron pochta bilan hisob allaqachon mavjud. Oʻrniga tizimga kiring.',
   'errors.authRateLimit': 'Urinishlar juda koʻp. Bir necha daqiqa kutib, qayta urinib koʻring.',
+  'errors.practiceNotYet':
+    'Oʻz maydoningizda jadvalga qoʻyilgan roʻyxat paydo boʻlgach, mashq maydonini oʻchirish mumkin.',
   'errors.authSamePassword': 'Joriy parolingizdan farqli parol tanlang.',
 
   // Rasmlar

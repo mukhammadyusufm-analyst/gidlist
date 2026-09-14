@@ -12,6 +12,7 @@ import { createClient } from '@/lib/supabase/server';
 
 import { BoardDetailsForm } from './rename-board-form';
 import { ArchiveBoard } from './archive-board';
+import { PracticeSpace } from './practice-space';
 import { SpaceHistory } from './space-history';
 
 // Translated, so the browser tab matches the language the app is being read in.
@@ -52,6 +53,12 @@ export default async function BoardSettingsPage({
     .eq('checklists.board_id', board.id);
 
   const hasHistory = (count ?? 0) > 0;
+
+  // Only asked about a practice space; the database applies the same rule again
+  // when the delete is attempted.
+  const practiceDeletable = board.is_tutorial
+    ? Boolean((await supabase.rpc('practice_space_can_be_deleted', { p_board_id: board.id })).data)
+    : false;
 
   return (
     <div className="max-w-lg space-y-10">
@@ -123,6 +130,12 @@ export default async function BoardSettingsPage({
 
       {/* Owner only. An admin runs the space day to day; removing it from view
           entirely is the owner's decision, and the database agrees. */}
+      {role === 'owner' && board.is_tutorial ? (
+        <section>
+          <PracticeSpace boardId={board.id} canDelete={practiceDeletable} />
+        </section>
+      ) : null}
+
       {role === 'owner' ? (
         <section>
           <ArchiveBoard

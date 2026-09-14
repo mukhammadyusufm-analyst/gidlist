@@ -38,7 +38,14 @@ export default async function BoardLayout({
       <div className="flex items-center gap-3">
         <Avatar name={board.name} imageUrl={board.logo_url} seed={board.id} className="size-12" />
         <div className="min-w-0">
-          <h1 className="truncate text-2xl font-semibold tracking-tight">{board.name}</h1>
+          <h1 className="flex min-w-0 items-center gap-2 text-2xl font-semibold tracking-tight">
+            <span className="truncate">{board.name}</span>
+            {board.is_tutorial ? (
+              <span className="shrink-0 rounded-full border border-[var(--color-border)] px-2 py-0.5 text-xs font-normal text-[var(--color-muted-foreground)]">
+                {t('space.practice')}
+              </span>
+            ) : null}
+          </h1>
           <p className="text-xs text-[var(--color-muted-foreground)]">
             <Link href="/dashboard" className="underline underline-offset-4">
               {t('space.spaces')}

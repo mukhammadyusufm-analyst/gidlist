@@ -61,6 +61,7 @@ const DATABASE_RULES: Rule[] = [
   { match: /owner cannot be removed/i, key: 'errors.ownerCannotBeRemoved' },
   { match: /transfer ownership|transferred to an active member/i, key: 'errors.ownershipTransfer' },
   { match: /space has checklist history/i, key: 'errors.spaceHasHistory' },
+  { match: /practice space can be removed once/i, key: 'errors.practiceNotYet' },
 
   // Building checklists
   { match: /checklist has been filled in/i, key: 'errors.checklistHasHistory' },

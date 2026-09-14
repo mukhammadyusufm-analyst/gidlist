@@ -112,7 +112,7 @@ export default async function DashboardPage() {
               <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {owned.map((board) => (
                   <li key={board.id}>
-                    <SpaceCard board={board} />
+                    <SpaceCard board={board} practiceLabel={t('space.practice')} />
                   </li>
                 ))}
               </ul>
@@ -127,7 +127,7 @@ export default async function DashboardPage() {
               <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {shared.map((board) => (
                   <li key={board.id}>
-                    <SpaceCard board={board} />
+                    <SpaceCard board={board} practiceLabel={t('space.practice')} />
                   </li>
                 ))}
               </ul>

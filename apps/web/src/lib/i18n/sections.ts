@@ -51,7 +51,7 @@ const SECTION_DEFINITIONS: { id: string; title: string; hint: string; prefixes: 
     id: 'spaces',
     title: 'Spaces',
     hint: 'Creating a space, its members and roles, its logo and banner, and archiving it.',
-    prefixes: ['space.', 'members.', 'media.', 'archive.'],
+    prefixes: ['space.', 'members.', 'media.', 'archive.', 'practice.'],
   },
   {
     id: 'checklists',

@@ -23,6 +23,32 @@ export type ActionState = {
 };
 
 /**
+ * Delete the practice space made by the guided start.
+ *
+ * Allowed once the owner has their own space with a checklist on a schedule —
+ * the database decides (`delete_practice_space`), and refuses with a sentence
+ * `lib/errors.ts` translates. Unlike an ordinary space, it goes even though it
+ * has submissions: they were practice, not compliance history.
+ */
+export async function deletePracticeSpace(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const boardId = String(formData.get('boardId') ?? '');
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc('delete_practice_space', { p_board_id: boardId });
+
+  if (error) {
+    const { t } = await getTranslations();
+    return { formError: explainFailure(error.message, 'errors.couldNotDelete', t) };
+  }
+
+  revalidatePath('/dashboard', 'layout');
+  redirect('/dashboard');
+}
+
+/**
  * Every action here revalidates rather than trusting the client to refetch, and
  * leans on the database to reject anything it is not entitled to do. The checks
  * in this file exist to produce good error messages, not to provide security —
