@@ -730,6 +730,8 @@ export const en = {
   'errors.wrongCredentials': 'That email and password combination is not correct.',
   'errors.authAlreadyRegistered': 'An account with that email address already exists. Sign in instead.',
   'errors.authRateLimit': 'Too many attempts. Wait a few minutes and try again.',
+  'errors.practiceNoNewChecklists':
+    'A practice space cannot hold new checklists. Create your own space for your checklists.',
   'errors.practiceNotYet':
     'The practice space can be deleted once you have your own space with a checklist on a schedule.',
   'errors.authSamePassword': 'Choose a password different from your current one.',

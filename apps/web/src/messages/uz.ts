@@ -716,6 +716,8 @@ export const uz = {
   'errors.wrongCredentials': 'Elektron pochta yoki parol notoʻgʻri.',
   'errors.authAlreadyRegistered': 'Bu elektron pochta bilan hisob allaqachon mavjud. Oʻrniga tizimga kiring.',
   'errors.authRateLimit': 'Urinishlar juda koʻp. Bir necha daqiqa kutib, qayta urinib koʻring.',
+  'errors.practiceNoNewChecklists':
+    'Mashq maydoniga yangi roʻyxat qoʻshib boʻlmaydi. Roʻyxatlaringiz uchun oʻz maydoningizni yarating.',
   'errors.practiceNotYet':
     'Oʻz maydoningizda jadvalga qoʻyilgan roʻyxat paydo boʻlgach, mashq maydonini oʻchirish mumkin.',
   'errors.authSamePassword': 'Joriy parolingizdan farqli parol tanlang.',

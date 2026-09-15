@@ -48,8 +48,18 @@ export default async function BoardChecklistsPage({
           </span>
         </h2>
 
-        {canManage ? <NewChecklistPanel boardId={board.id} slug={board.slug} /> : null}
+        {/* A practice space holds only its practice checklist — the database
+            refuses new ones — so it gets the reason instead of the button. */}
+        {canManage && !board.is_tutorial ? (
+          <NewChecklistPanel boardId={board.id} slug={board.slug} />
+        ) : null}
       </div>
+
+      {board.is_tutorial ? (
+        <p className="text-sm text-[var(--color-muted-foreground)]">
+          {t('errors.practiceNoNewChecklists')}
+        </p>
+      ) : null}
 
       {checklists.length === 0 ? (
         <EmptyState icon={ListChecks} title={t('checklist.none')} />
