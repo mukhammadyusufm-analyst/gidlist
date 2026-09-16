@@ -125,7 +125,8 @@ export default async function AccountPage() {
         <EmailForm currentEmail={user.email ?? ''} />
       </section>
 
-      <section>
+      {/* `id` so a password-reset link can land here (/auth/confirm). */}
+      <section id="password" className="scroll-mt-20">
         <h2 className="text-lg font-semibold">{t('account.passwordSection')}</h2>
         <div className="mt-4">
           <PasswordForm hasPassword={hasPassword} />

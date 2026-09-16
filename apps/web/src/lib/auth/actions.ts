@@ -132,7 +132,9 @@ export async function signUp(_prev: AuthState, formData: FormData): Promise<Auth
     options: {
       // Read by the handle_new_user() trigger to populate profiles.full_name.
       data: { full_name: fullName },
-      emailRedirectTo: `${origin}/auth/callback`,
+      // /auth/confirm, not /auth/callback: the email template turns this into a
+      // token-hash link that works on any device (README item 61).
+      emailRedirectTo: `${origin}/auth/confirm`,
       captchaToken: captchaToken(formData),
     },
   });
@@ -168,7 +170,10 @@ export async function requestPasswordReset(
   const origin = headerList.get('origin') ?? `https://${headerList.get('host')}`;
 
   await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-    redirectTo: `${origin}/auth/callback?next=/account/password`,
+    // No `next` here: /auth/confirm sends a `recovery` link to the account page,
+    // where the password form is. The old `/account/password` did not exist,
+    // so a reset link landed on a 404.
+    redirectTo: `${origin}/auth/confirm`,
     captchaToken: captchaToken(formData),
   });
 

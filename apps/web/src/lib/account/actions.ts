@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { headers } from 'next/headers';
 import { z } from 'zod';
 import { emailSchema, passwordSchema } from '@app/core';
 
@@ -72,7 +73,14 @@ export async function updateEmail(
     return { formError: t('errors.alreadyYourEmail') };
   }
 
-  const { error } = await supabase.auth.updateUser({ email: parsed.data.email });
+  // The confirmation link lands on /auth/confirm, which works from any device
+  // (README item 61). Without this it would lead to the project's bare Site URL.
+  const headerList = await headers();
+  const origin = headerList.get('origin') ?? `https://${headerList.get('host')}`;
+  const { error } = await supabase.auth.updateUser(
+    { email: parsed.data.email },
+    { emailRedirectTo: `${origin}/auth/confirm` },
+  );
   if (error) return { formError: translateAuthError(error.message, t) };
 
   return { notice: t('notices.confirmEmailChange', { email: parsed.data.email }) };
