@@ -800,7 +800,8 @@ export const uz = {
     '{email} pochtasini tekshirib, tasdiqlash havolasini bosing. Shunga qadar manzilingiz oʻzgarmaydi.',
   'notices.passwordUpdated': 'Parol yangilandi.',
   'notices.checkEmailToConfirm': 'Hisob yaratishni yakunlash uchun {email} pochtasidagi tasdiqlash havolasini bosing.',
-  'notices.resetLinkSent': 'Agar bu manzil bilan hisob mavjud boʻlsa, tiklash havolasi yuborildi.',
+  'notices.resetLinkSent':
+    'Agar bu manzil bilan hisob mavjud boʻlsa, tiklash havolasi yuborildi. U bir necha daqiqada kelishi mumkin — spam jildini tekshiring va yangisini soʻrashdan oldin kamida bir daqiqa kuting: juda tez yuborilgan soʻrov bajarilmaydi.',
   'notices.localeAdded': 'Til qoʻshildi. Tarjima qilinmagan matnlar inglizcha koʻrinadi.',
   'notices.voidLifted': 'Bekor qilish olib tashlandi.',
   'notices.recordVoided': 'Yozuv bekor qilindi.',

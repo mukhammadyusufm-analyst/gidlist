@@ -169,13 +169,26 @@ export async function requestPasswordReset(
   const headerList = await headers();
   const origin = headerList.get('origin') ?? `https://${headerList.get('host')}`;
 
-  await supabase.auth.resetPasswordForEmail(parsed.data.email, {
+  const { error } = await supabase.auth.resetPasswordForEmail(parsed.data.email, {
     // No `next` here: /auth/confirm sends a `recovery` link to the account page,
     // where the password form is. The old `/account/password` did not exist,
     // so a reset link landed on a 404.
     redirectTo: `${origin}/auth/confirm`,
     captchaToken: captchaToken(formData),
   });
+
+  /*
+   * A refusal is logged, never shown. Supabase refuses a second reset for the
+   * same account within a minute, and a project-wide hourly email cap applies
+   * too — both silently, from the person's side, which is how "the link never
+   * came" happened in testing. Showing the refusal would reveal that the address
+   * has an account (only real accounts hit the per-account cooldown), so the
+   * reply below explains the wait instead, for everyone. The log carries the
+   * reason and code only — no address.
+   */
+  if (error) {
+    console.error('Password reset not sent:', error.code ?? 'no-code', error.message);
+  }
 
   // Always the same reply, sent whether or not the address exists — otherwise
   // this endpoint becomes a way to enumerate who has an account.

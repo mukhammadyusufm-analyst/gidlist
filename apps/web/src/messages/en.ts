@@ -814,7 +814,8 @@ export const en = {
     'Check {email} and click the link to confirm. Your address stays the same until you do.',
   'notices.passwordUpdated': 'Password updated.',
   'notices.checkEmailToConfirm': 'Check {email} for a confirmation link to finish creating your account.',
-  'notices.resetLinkSent': 'If an account exists for that address, a reset link is on its way.',
+  'notices.resetLinkSent':
+    'If an account exists for that address, a reset link is on its way. It can take a few minutes — check your spam folder, and wait at least a minute before asking for another: a new request made too soon is not sent.',
   'notices.localeAdded': 'Language added. Untranslated strings fall back to English.',
   'notices.voidLifted': 'Void lifted.',
   'notices.recordVoided': 'Record voided.',
