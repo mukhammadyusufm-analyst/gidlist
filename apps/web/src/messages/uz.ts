@@ -718,6 +718,12 @@ export const uz = {
   'errors.authRateLimit': 'Urinishlar juda koʻp. Bir necha daqiqa kutib, qayta urinib koʻring.',
   'errors.practiceNoNewChecklists':
     'Mashq maydoniga yangi roʻyxat qoʻshib boʻlmaydi. Roʻyxatlaringiz uchun oʻz maydoningizni yarating.',
+  'errors.practiceReadOnly':
+    'Mashq roʻyxatini oʻzgartirib boʻlmaydi. Oʻz roʻyxatingizni oʻz maydoningizda tuzing.',
+  'errors.practiceNoSchedules':
+    'Mashq roʻyxatini qayta jadvalga qoʻyib boʻlmaydi. Roʻyxatlarni oʻz maydoningizda jadvalga qoʻying.',
+  'errors.practiceNoMembers':
+    'Mashq maydoniga yangi aʼzo qoʻshib boʻlmaydi. Odamlarni oʻz maydoningizga taklif qiling.',
   'errors.practiceNotYet':
     'Oʻz maydoningizda jadvalga qoʻyilgan roʻyxat paydo boʻlgach, mashq maydonini oʻchirish mumkin.',
   'errors.authSamePassword': 'Joriy parolingizdan farqli parol tanlang.',

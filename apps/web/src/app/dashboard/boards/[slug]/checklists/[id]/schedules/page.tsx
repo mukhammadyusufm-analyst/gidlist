@@ -37,7 +37,9 @@ export default async function SchedulesPage({
     // from the browser's clock — see the note on ScheduleForm's `today` prop.
     getToday(),
   ]);
-  const canManage = canEditContent(role);
+  // A practice checklist keeps the one schedule it was created with; the
+  // database refuses new or rewritten ones, so nothing here offers them.
+  const canManage = canEditContent(role) && !board.is_tutorial;
 
   // Only people who are actually in the space can be assigned — the database
   // enforces it, so offering anyone else would just produce an error.
@@ -62,6 +64,10 @@ export default async function SchedulesPage({
         <p className="rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] px-3 py-2 text-sm text-[var(--color-muted-foreground)]">
           {t('schedule.notPublished')}
         </p>
+      ) : null}
+
+      {board.is_tutorial ? (
+        <p className="text-sm text-[var(--color-muted-foreground)]">{t('errors.practiceNoSchedules')}</p>
       ) : null}
 
       {canManage ? (

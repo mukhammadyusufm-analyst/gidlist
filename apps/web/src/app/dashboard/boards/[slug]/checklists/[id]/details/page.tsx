@@ -65,6 +65,13 @@ export default async function ChecklistDetailsPage({
     // does not: it is a picture of the fill page, and cramming it into form
     // width would misrepresent the thing it exists to show.
     <div className="space-y-10">
+      {/* A practice checklist's title, description and pictures cannot change —
+          the database refuses — so the reason replaces the three editors. */}
+      {board.is_tutorial ? (
+        <p className="max-w-lg text-sm text-[var(--color-muted-foreground)]">
+          {t('errors.practiceReadOnly')}
+        </p>
+      ) : (
       <div className="max-w-lg space-y-10">
         <section>
           <h3 className="text-lg font-semibold tracking-tight">{t('checklist.details')}</h3>
@@ -114,6 +121,7 @@ export default async function ChecklistDetailsPage({
           />
         </section>
       </div>
+      )}
 
       {/* Last on the page: it is something to look at, not something to change,
           and the editing controls are why somebody opened this tab. */}

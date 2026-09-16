@@ -63,6 +63,9 @@ const DATABASE_RULES: Rule[] = [
   { match: /space has checklist history/i, key: 'errors.spaceHasHistory' },
   { match: /practice space can be removed once/i, key: 'errors.practiceNotYet' },
   { match: /practice space cannot hold new checklists/i, key: 'errors.practiceNoNewChecklists' },
+  { match: /practice checklist cannot be changed/i, key: 'errors.practiceReadOnly' },
+  { match: /practice checklist cannot be scheduled/i, key: 'errors.practiceNoSchedules' },
+  { match: /practice space cannot take new members/i, key: 'errors.practiceNoMembers' },
 
   // Building checklists
   { match: /checklist has been filled in/i, key: 'errors.checklistHasHistory' },

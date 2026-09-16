@@ -88,7 +88,9 @@ export default async function ChecklistLayout({
             </div>
           </div>
 
-          {canManage ? (
+          {/* No "edit as draft" on a practice checklist: the database refuses
+              new versions of it. */}
+          {canManage && !board.is_tutorial ? (
             <VersionActions
               checklistId={checklist.id}
               versionId={version.id}

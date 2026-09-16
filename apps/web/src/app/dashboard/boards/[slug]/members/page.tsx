@@ -33,7 +33,13 @@ export default async function BoardMembersPage({ params }: { params: Promise<{ s
 
   return (
     <div className="max-w-2xl space-y-8">
-      {canManage ? (
+      {/* A practice space takes no members — the database refuses — so it
+          gets the reason instead of the invitation form. */}
+      {board.is_tutorial ? (
+        <p className="text-sm text-[var(--color-muted-foreground)]">{t('errors.practiceNoMembers')}</p>
+      ) : null}
+
+      {canManage && !board.is_tutorial ? (
         <section>
           <h2 className="text-lg font-semibold tracking-tight">{t('members.invite')}</h2>
           <p className="mt-1 mb-4 text-sm text-[var(--color-muted-foreground)]">
