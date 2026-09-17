@@ -66,6 +66,7 @@ const DATABASE_RULES: Rule[] = [
   { match: /practice checklist cannot be changed/i, key: 'errors.practiceReadOnly' },
   { match: /practice checklist cannot be scheduled/i, key: 'errors.practiceNoSchedules' },
   { match: /practice space cannot take new members/i, key: 'errors.practiceNoMembers' },
+  { match: /newer version of this checklist was published/i, key: 'errors.submissionOutdated' },
 
   // Building checklists
   { match: /checklist has been filled in/i, key: 'errors.checklistHasHistory' },

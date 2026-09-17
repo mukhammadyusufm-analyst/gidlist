@@ -46,6 +46,35 @@ export async function startSubmission(_prev: ActionState, formData: FormData): P
 }
 
 /**
+ * Discard an attempt made on an older version and open it on the newest one.
+ *
+ * Decided 17 Sep 2026: an opened checklist cannot be continued once a newer
+ * version is published. The database deletes this attempt's answers, queues its
+ * attached files for removal, records the restart in the audit log, and opens
+ * the submission again on the new version.
+ */
+export async function restartOnNewVersion(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const submissionId = String(formData.get('submissionId') ?? '');
+  const slug = String(formData.get('slug') ?? '');
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc('restart_submission_on_new_version', {
+    p_submission_id: submissionId,
+  });
+
+  if (error) {
+    const { t } = await getTranslations();
+    return { formError: describeDatabaseError(error.message, t) };
+  }
+
+  revalidatePath(`/dashboard/boards/${slug}/fill`, 'page');
+  redirect(`/dashboard/boards/${slug}/fill/${submissionId}`);
+}
+
+/**
  * Tick or untick one item.
  *
  * Called on every tap rather than behind a Save button — this is filled in on a

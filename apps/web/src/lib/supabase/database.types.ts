@@ -534,7 +534,8 @@ export type Database = {
       submissions: {
         Row: {
           id: string;
-          schedule_id: string;
+          /** Null once its schedule is deleted: the record is kept, the schedule is not. */
+          schedule_id: string | null;
           checklist_id: string;
           checklist_version_id: string | null;
           due_date: string;
@@ -1235,6 +1236,8 @@ export type Database = {
       practice_space_can_be_deleted: { Args: { p_board_id: string }; Returns: boolean };
       /** Deletes a practice space and everything in it, under the rule above. */
       delete_practice_space: { Args: { p_board_id: string }; Returns: undefined };
+      /** Discards an attempt opened on an older version and reopens it on the newest. */
+      restart_submission_on_new_version: { Args: { p_submission_id: string }; Returns: string };
       create_schedule_with_assignees: {
         Args: {
           p_checklist_id: string;

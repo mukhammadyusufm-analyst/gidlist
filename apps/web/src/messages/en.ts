@@ -381,6 +381,10 @@ export const en = {
   'fill.ticked': '{done} of {total} ticked',
   'fill.submit': 'Submit checklist',
   'fill.submitted': 'Submitted. This record is now final and cannot be edited.',
+  'fill.outdatedTitle': 'This checklist has a newer version',
+  'fill.outdatedBody':
+    'It was changed after you started. This attempt can no longer be continued or submitted. Starting again deletes what you have filled in so far, including attached photos and files.',
+  'fill.restartOnNewVersion': 'Start again on the new version',
   'fill.readOnly':
     'This submission is complete. It is shown as it was recorded and can no longer be changed.',
   'fill.notTicked':
@@ -742,6 +746,8 @@ export const en = {
     'The practice checklist cannot be scheduled again. Schedule checklists in your own space.',
   'errors.practiceNoMembers':
     'A practice space cannot take new members. Invite people to your own space.',
+  'errors.submissionOutdated':
+    'A newer version of this checklist was published. Start again on the new version.',
   'errors.practiceNotYet':
     'The practice space can be deleted once you have your own space with a checklist on a schedule.',
   'errors.authSamePassword': 'Choose a password different from your current one.',

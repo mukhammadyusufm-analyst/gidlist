@@ -141,9 +141,9 @@ export async function deleteSchedule(_prev: ActionState, formData: FormData): Pr
   const scheduleId = String(formData.get('scheduleId') ?? '');
   const supabase = await createClient();
 
-  // Submissions cascade with it. That is intended: they are obligations this
-  // schedule created, and leaving orphans would show phantom "Missed" rows for
-  // a rule nobody is bound by any more.
+  // Only its unopened days go with it — a database trigger deletes those. Every
+  // opened, submitted and missed record stays, with no schedule (README item
+  // 64). It used to cascade and take the whole history with it.
   const { error } = await supabase.from('schedules').delete().eq('id', scheduleId);
 
   const { t } = await getTranslations();

@@ -385,6 +385,10 @@ export const uz = {
   'fill.ticked': '{total} tadan {done} tasi belgilangan',
   'fill.submit': 'Roʻyxatni topshirish',
   'fill.submitted': 'Topshirildi. Bu yozuv yakuniy va oʻzgartirib boʻlmaydi.',
+  'fill.outdatedTitle': 'Bu roʻyxatning yangi versiyasi bor',
+  'fill.outdatedBody':
+    'Siz boshlaganingizdan keyin u oʻzgartirildi. Bu urinishni davom ettirib ham, topshirib ham boʻlmaydi. Qaytadan boshlasangiz, hozirgacha toʻldirganlaringiz, jumladan biriktirilgan rasm va fayllar oʻchiriladi.',
+  'fill.restartOnNewVersion': 'Yangi versiyada qaytadan boshlash',
   'fill.readOnly':
     'Bu toʻldirish yakunlangan. U qanday yozilgan boʻlsa shundayligicha koʻrsatilmoqda va oʻzgartirib boʻlmaydi.',
   'fill.notTicked':
@@ -728,6 +732,8 @@ export const uz = {
     'Mashq roʻyxatini qayta jadvalga qoʻyib boʻlmaydi. Roʻyxatlarni oʻz maydoningizda jadvalga qoʻying.',
   'errors.practiceNoMembers':
     'Mashq maydoniga yangi aʼzo qoʻshib boʻlmaydi. Odamlarni oʻz maydoningizga taklif qiling.',
+  'errors.submissionOutdated':
+    'Bu roʻyxatning yangi versiyasi eʼlon qilindi. Yangi versiyada qaytadan boshlang.',
   'errors.practiceNotYet':
     'Oʻz maydoningizda jadvalga qoʻyilgan roʻyxat paydo boʻlgach, mashq maydonini oʻchirish mumkin.',
   'errors.authSamePassword': 'Joriy parolingizdan farqli parol tanlang.',

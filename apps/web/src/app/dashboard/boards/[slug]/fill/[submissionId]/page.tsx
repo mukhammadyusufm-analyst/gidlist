@@ -5,7 +5,8 @@ import type { Metadata } from 'next';
 import { getBoardBySlug } from '@/lib/boards/queries';
 import { getSubmissionDetail } from '@/lib/submissions/queries';
 import { getTranslations } from '@/lib/i18n/server';
-import { getUser } from '@/lib/supabase/server';
+import { createClient, getUser } from '@/lib/supabase/server';
+import { RestartOnNewVersion } from '@/components/submissions/restart-on-new-version';
 import { StatusBadge } from '@/components/submissions/status-badge';
 import { FillSheet } from '@/components/submissions/fill-sheet';
 import { SnapshotRecorder } from '@/components/offline/snapshot-recorder';
@@ -40,8 +41,32 @@ export default async function FillPage({
 
   // Memoised, so this is the same round trip the layout above already made.
   const user = await getUser();
-  const readOnly = submission.status === 'done';
   const { t, locale } = await getTranslations();
+
+  /*
+   * An attempt opened on a version that has since been replaced cannot be
+   * continued (decided 17 Sep 2026). The database refuses ticks and submission
+   * on it; this makes the page say so instead of letting each tap fail.
+   * Unopened days never reach this state — publishing moves them to the new
+   * version.
+   */
+  const supabase = await createClient();
+  const { data: latest } = await supabase
+    .from('checklist_versions')
+    .select('id')
+    .eq('checklist_id', submission.checklist_id)
+    .eq('status', 'published')
+    .order('version_number', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const outdated =
+    (submission.status === 'draft' || submission.status === 'missed') &&
+    latest !== null &&
+    submission.checklist_version_id !== null &&
+    submission.checklist_version_id !== latest.id;
+
+  const readOnly = submission.status === 'done' || outdated;
 
   // Dates are formatted in the reader's own language, so a Russian speaker sees
   // "10 августа 2026" rather than an English month name in a Russian sentence.
@@ -86,7 +111,9 @@ export default async function FillPage({
         </p>
       ) : null}
 
-      {readOnly && !submitted ? (
+      {outdated ? <RestartOnNewVersion submissionId={submission.id} slug={slug} /> : null}
+
+      {submission.status === 'done' && !submitted ? (
         <p className="rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] px-3 py-2 text-sm text-[var(--color-muted-foreground)]">
           {t('fill.readOnly')}
         </p>
