@@ -7,6 +7,7 @@ import { getToday } from '@/lib/timezone/server';
 import { getTranslations } from '@/lib/i18n/server';
 import { addDays, canEditContent, canGovern, isIsoDate } from '@app/core';
 import { createClient } from '@/lib/supabase/server';
+import { SCHEDULE_DELETED } from '@/lib/compliance/filters';
 import type { SubmissionStatus } from '@/lib/supabase/database.types';
 import { StatTiles } from '@/components/compliance/stat-tiles';
 import { CompletionChart } from '@/components/compliance/completion-chart';
@@ -37,6 +38,7 @@ export default async function CompliancePage({
     status?: string;
     assignee?: string;
     filledBy?: string;
+    schedule?: string;
     page?: string;
   }>;
 }) {
@@ -58,6 +60,15 @@ export default async function CompliancePage({
   const status = STATUSES.includes(sp.status as SubmissionStatus)
     ? (sp.status as SubmissionStatus)
     : undefined;
+
+  // A schedule id or the "deleted" sentinel, never anything else: this value
+  // reaches a uuid column, where a stray string is an error page rather than an
+  // empty result.
+  const schedule =
+    sp.schedule === SCHEDULE_DELETED ||
+    (sp.schedule && /^[0-9a-f-]{36}$/i.test(sp.schedule))
+      ? sp.schedule
+      : undefined;
 
   const { t } = await getTranslations();
 
@@ -84,6 +95,7 @@ export default async function CompliancePage({
       status,
       assigneeEmail: sp.assignee,
       filledBy: sp.filledBy,
+      scheduleId: schedule,
       page: Number(sp.page) || 1,
     }),
   ]);
@@ -126,6 +138,8 @@ export default async function CompliancePage({
         assigneeEmail={sp.assignee}
         checklists={data.checklists}
         assignees={data.assignees}
+        schedules={data.schedules}
+        scheduleId={schedule}
       />
 
       <StatTiles counts={data.counts} total={data.total} work={data.work} />

@@ -4,6 +4,7 @@ import { toIsoDate } from '@app/core/dates';
 
 import { DateField } from '@/components/ui/date-field';
 import { Button } from '@/components/ui/button';
+import { SCHEDULE_DELETED } from '@/lib/compliance/filters';
 import { useComplianceFilters } from '@/components/compliance/use-filters';
 import { useT } from '@/components/i18n/provider';
 
@@ -32,6 +33,8 @@ export function FilterBar({
   assigneeEmail,
   checklists,
   assignees,
+  schedules,
+  scheduleId,
 }: {
   slug: string;
   from: string;
@@ -41,9 +44,34 @@ export function FilterBar({
   assigneeEmail?: string;
   checklists: { id: string; title: string }[];
   assignees: string[];
+  schedules: { id: string; checklist_id: string; kind: string; start_date: string }[];
+  scheduleId?: string;
 }) {
   const { update } = useComplianceFilters(slug);
-  const { t } = useT();
+  const { t, locale } = useT();
+
+  const titles = new Map(checklists.map((c) => [c.id, c.title]));
+
+  /*
+   * A schedule has no name, so it is labelled by what it does: the checklist,
+   * how often, and the day it started. Two daily schedules on one checklist are
+   * told apart by that date, which is the only thing that differs.
+   */
+  const KIND_KEYS: Record<string, string> = {
+    daily: 'schedule.daily',
+    weekly: 'schedule.weekly',
+    monthly: 'schedule.monthly',
+    yearly: 'schedule.yearly',
+    specific_dates: 'schedule.specificDates',
+  };
+
+  const scheduleLabel = (s: { checklist_id: string; kind: string; start_date: string }) =>
+    `${titles.get(s.checklist_id) ?? ''} · ${t(KIND_KEYS[s.kind] ?? 'compliance.schedule')} · ${new Date(
+      `${s.start_date}T00:00:00`,
+    ).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })}`;
+
+  // Only the schedules of the checklist being looked at, when one is chosen.
+  const shown = checklistId ? schedules.filter((s) => s.checklist_id === checklistId) : schedules;
 
   const PRESET_KEYS: Record<number, string> = {
     7: 'compliance.last7',
@@ -107,7 +135,7 @@ export function FilterBar({
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <label className="block">
           <span className="mb-1.5 block text-sm font-medium">{t('compliance.checklist')}</span>
           <select
@@ -136,6 +164,27 @@ export function FilterBar({
             <option value="draft">{t('status.draft')}</option>
             <option value="missed">{t('status.missed')}</option>
             <option value="upcoming">{t('status.upcoming')}</option>
+          </select>
+        </label>
+
+        {/* The schedule narrows the table only, not the figures above it —
+            those answer "how is this space doing", which is not a question
+            about one schedule. Records whose schedule was deleted are their
+            own option: they are kept, and otherwise unfindable as a group. */}
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium">{t('compliance.schedule')}</span>
+          <select
+            className={selectClass}
+            value={scheduleId ?? ''}
+            onChange={(e) => update({ schedule: e.target.value || undefined })}
+          >
+            <option value="">{t('compliance.allSchedules')}</option>
+            <option value={SCHEDULE_DELETED}>{t('compliance.scheduleDeleted')}</option>
+            {shown.map((s) => (
+              <option key={s.id} value={s.id}>
+                {scheduleLabel(s)}
+              </option>
+            ))}
           </select>
         </label>
 

@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { createClient } from '@/lib/supabase/server';
-import { FILLED_BY_NOBODY } from '@/lib/compliance/filters';
+import { FILLED_BY_NOBODY, SCHEDULE_DELETED } from '@/lib/compliance/filters';
 import type { SubmissionStatus } from '@/lib/supabase/database.types';
 
 export type ComplianceFilters = {
@@ -17,6 +17,13 @@ export type ComplianceFilters = {
    * since an empty parameter is indistinguishable from no filter at all.
    */
   filledBy?: string;
+  /**
+   * One schedule's records, or `SCHEDULE_DELETED` for those whose schedule is
+   * gone. Narrows the table only, like `filledBy` and for the same reason: the
+   * tiles answer "how is this space doing", which is not a question about one
+   * schedule.
+   */
+  scheduleId?: string;
   page?: number;
 };
 
@@ -102,6 +109,8 @@ export type ComplianceData = {
   assignees: string[];
   /** Distinct people who actually submitted something in the range. */
   submitters: string[];
+  /** The space's schedules, for the filter. Labelled in the browser, where the language is. */
+  schedules: { id: string; checklist_id: string; kind: string; start_date: string }[];
 };
 
 const EMPTY_COUNTS: Record<SubmissionStatus, number> = {
@@ -150,6 +159,7 @@ export async function getComplianceData(
       checklists: [],
       assignees: [],
       submitters: [],
+      schedules: [],
     };
   }
 
@@ -202,7 +212,21 @@ export async function getComplianceData(
     rowQuery = rowQuery.eq('submitted_by_email', filters.filledBy);
   }
 
-  const [rowResult, countResult, trendResult, assigneeResult, submitterResult, workResult] =
+  if (filters.scheduleId === SCHEDULE_DELETED) {
+    rowQuery = rowQuery.is('schedule_id', null);
+  } else if (filters.scheduleId) {
+    rowQuery = rowQuery.eq('schedule_id', filters.scheduleId);
+  }
+
+  const [
+    rowResult,
+    countResult,
+    trendResult,
+    assigneeResult,
+    submitterResult,
+    workResult,
+    scheduleResult,
+  ] =
     await Promise.all([
       rowQuery,
       supabase.rpc('compliance_counts', shared),
@@ -220,6 +244,11 @@ export async function getComplianceData(
       // Same filters as the counts, so both headline figures describe the same
       // records.
       supabase.rpc('compliance_work', shared),
+      supabase
+        .from('schedules')
+        .select('id, checklist_id, kind, start_date')
+        .in('checklist_id', checklistList.map((c) => c.id))
+        .order('start_date', { ascending: false }),
     ]);
 
   if (rowResult.error) {
@@ -320,5 +349,6 @@ export async function getComplianceData(
      * is a convenience for narrowing them.
      */
     submitters: (submitterResult.data ?? []).map((s) => s.email).filter(Boolean),
+    schedules: scheduleResult.data ?? [],
   };
 }

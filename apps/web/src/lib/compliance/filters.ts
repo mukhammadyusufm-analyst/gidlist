@@ -19,3 +19,12 @@
  * value in the same field.
  */
 export const FILLED_BY_NOBODY = 'NONE';
+
+/**
+ * "From a schedule that has since been deleted", as a URL parameter value.
+ *
+ * Deleting a schedule keeps every opened, submitted and missed record it
+ * produced and leaves them with no schedule (README item 64). Those records are
+ * findable as a group, which a schedule id cannot express.
+ */
+export const SCHEDULE_DELETED = 'DELETED';
