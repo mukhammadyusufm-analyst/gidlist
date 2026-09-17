@@ -5,7 +5,7 @@ import { headers } from 'next/headers';
 import { signInSchema, signUpSchema, resetRequestSchema } from '@app/core';
 
 import { createClient } from '@/lib/supabase/server';
-import { getTranslations } from '@/lib/i18n/server';
+import { getLocale, getTranslations } from '@/lib/i18n/server';
 import { translateAuthError, translateFieldErrors } from '@/lib/errors';
 import { adoptAccountLocale } from '@/lib/i18n/actions';
 
@@ -131,7 +131,9 @@ export async function signUp(_prev: AuthState, formData: FormData): Promise<Auth
     password,
     options: {
       // Read by the handle_new_user() trigger to populate profiles.full_name.
-      data: { full_name: fullName },
+      // `locale` is what the confirmation email branches on — Supabase has one
+      // template per email, and `{{ .Data.locale }}` picks the language in it.
+      data: { full_name: fullName, locale: await getLocale() },
       // /auth/confirm, not /auth/callback: the email template turns this into a
       // token-hash link that works on any device (README item 61).
       emailRedirectTo: `${origin}/auth/confirm`,
