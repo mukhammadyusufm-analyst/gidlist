@@ -425,34 +425,42 @@ function SortableItem({
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={isDragging ? 'opacity-50' : undefined}
     >
-      <div className="flex items-start gap-2 rounded-md px-2 py-2 hover:bg-[var(--color-accent)]">
-        {editable ? (
-          <button
-            type="button"
-            {...attributes}
-            {...listeners}
-            aria-label={t('checklist.reorderItem', { name: item.title })}
-            className="mt-0.5 cursor-grab touch-none px-1 text-[var(--color-muted-foreground)]"
-          >
-            ⠿
-          </button>
-        ) : null}
+      {/* On a phone the three actions do not fit beside the wording, and when
+          they were held on the same line they squeezed the title to one word
+          per line and still ran off the edge. Below ~640px they sit on their
+          own row under the item; from there up the layout is unchanged. */}
+      <div className="rounded-md px-2 py-2 hover:bg-[var(--color-accent)] sm:flex sm:items-start sm:gap-2">
+        <div className="flex min-w-0 items-start gap-2 sm:flex-1">
+          {editable ? (
+            <button
+              type="button"
+              {...attributes}
+              {...listeners}
+              aria-label={t('checklist.reorderItem', { name: item.title })}
+              className="mt-0.5 cursor-grab touch-none px-1 text-[var(--color-muted-foreground)]"
+            >
+              ⠿
+            </button>
+          ) : null}
 
-        <div className="min-w-0 flex-1">
-          {editing && editable ? (
-            <ItemTextForm item={item} onDone={() => setEditing(false)} />
-          ) : (
-            <>
-              <p className="font-medium">{item.title}</p>
-              {item.description ? (
-                <p className="text-sm text-[var(--color-muted-foreground)]">{item.description}</p>
-              ) : null}
-            </>
-          )}
+          <div className="min-w-0 flex-1">
+            {editing && editable ? (
+              <ItemTextForm item={item} onDone={() => setEditing(false)} />
+            ) : (
+              <>
+                <p className="font-medium">{item.title}</p>
+                {item.description ? (
+                  <p className="text-sm text-[var(--color-muted-foreground)]">{item.description}</p>
+                ) : null}
+              </>
+            )}
+          </div>
         </div>
 
         {editable && !editing ? (
-          <div className="flex shrink-0 items-center gap-1">
+          // Full 44px targets on a phone, where this is tapped with a thumb;
+          // back to the compact row height from `sm` up, where it is a mouse.
+          <div className="mt-1 flex flex-wrap items-center gap-1 [&_button]:min-h-11 sm:mt-0 sm:shrink-0 sm:flex-nowrap sm:[&_button]:min-h-9">
             {/* There was no way to change an item's words at all: a typo meant
                 deleting the item — and its settings — and adding it again. */}
             <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(true)}>

@@ -704,6 +704,11 @@ export const en = {
   'errors.versionPublished':
     'This version is published and frozen. Create a new draft to make changes.',
   'errors.publishNeedsItem': 'Add at least one item before publishing.',
+  'errors.publishNeedsSchedule':
+    'Set a schedule before publishing, or nobody will be given this checklist.',
+  'checklist.publishNeedsSchedule':
+    'This checklist has no schedule, so publishing it would give it to nobody.',
+  'checklist.goToSchedule': 'Set a schedule',
   'errors.versionNotDraft': 'That version is no longer a draft. Refresh the page.',
   'errors.itemParentInvalid': 'That item can no longer be placed there. Refresh the page and try again.',
 

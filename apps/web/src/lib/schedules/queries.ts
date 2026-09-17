@@ -12,6 +12,31 @@ export type ScheduleWithAssignees = Schedule & {
   upcoming: string[];
 };
 
+/**
+ * Does this checklist have a schedule that will actually produce days?
+ *
+ * The same rule `publish_checklist_version` enforces: active, and either open
+ * ended or not yet past its end date. A switched-off schedule and an expired
+ * one both mean the checklist is going nowhere, so neither counts.
+ *
+ * The end date is compared against the day in the space's timezone rather than
+ * the server's, matching how the schedule's own days are worked out.
+ */
+export async function checklistHasSchedule(checklistId: string): Promise<boolean> {
+  const supabase = await createClient();
+  const today = await getToday();
+
+  const { data } = await supabase
+    .from('schedules')
+    .select('id')
+    .eq('checklist_id', checklistId)
+    .eq('active', true)
+    .or(`end_date.is.null,end_date.gte.${today}`)
+    .limit(1);
+
+  return (data?.length ?? 0) > 0;
+}
+
 export async function listSchedules(checklistId: string): Promise<ScheduleWithAssignees[]> {
   const supabase = await createClient();
 

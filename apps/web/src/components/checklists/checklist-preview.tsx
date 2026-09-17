@@ -1,10 +1,11 @@
 import type { AnsweredItem } from '@/lib/submissions/queries';
 import type { GroupWithItems } from '@/lib/checklists/queries';
 import type { ChecklistItem } from '@/lib/supabase/database.types';
-import type { ItemNode } from '@app/core';
+import type { InstructionBlock, ItemNode } from '@app/core';
 import { Avatar } from '@/components/ui/avatar';
 import { Banner } from '@/components/ui/banner';
 import { FillSheet } from '@/components/submissions/fill-sheet';
+import { InstructionsView } from '@/components/checklists/instructions-view';
 
 /**
  * The checklist exactly as somebody filling it in will see it.
@@ -44,6 +45,9 @@ export function ChecklistPreview({
   checklist,
   slug,
   emptyLabel,
+  instructions,
+  instructionUrls,
+  instructionsLabel,
 }: {
   groups: GroupWithItems[];
   checklist: {
@@ -54,6 +58,15 @@ export function ChecklistPreview({
   };
   slug: string;
   emptyLabel: string;
+  /** The checklist's own instructions, shown above the sheet as on the fill page. */
+  instructions: InstructionBlock[];
+  /**
+   * Signed links for every instruction file in this version, item ones
+   * included. Without them the pictures and documents are silently left out,
+   * which is what a preview must not do.
+   */
+  instructionUrls: Record<string, string>;
+  instructionsLabel: string;
 }) {
   const hasAnything = groups.some((group) => group.items.length > 0);
 
@@ -87,6 +100,17 @@ export function ChecklistPreview({
         <h4 className="text-xl font-semibold tracking-tight">{checklist.title}</h4>
       </div>
 
+      {/* The checklist's own instructions, in the same place and the same
+          closed state the fill page puts them. */}
+      {instructions.length > 0 ? (
+        <details className="rounded-xl border border-[var(--color-border)] p-4">
+          <summary className="cursor-pointer text-sm font-medium">{instructionsLabel}</summary>
+          <div className="mt-3">
+            <InstructionsView blocks={instructions} urls={instructionUrls} />
+          </div>
+        </details>
+      ) : null}
+
       {/* Nothing ticked, which is what the first person to open it will see.
           Showing a half-filled sheet would misrepresent the starting state. */}
       <FillSheet
@@ -96,6 +120,7 @@ export function ChecklistPreview({
         readOnly
         totalItems={totalItems}
         checkedItems={0}
+        instructionUrls={instructionUrls}
       />
     </div>
   );

@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 
 import { getBoardBySlug, getMyRole } from '@/lib/boards/queries';
 import { getChecklist } from '@/lib/checklists/queries';
+import { checklistHasSchedule } from '@/lib/schedules/queries';
 import { getTranslations } from '@/lib/i18n/server';
 import { VersionBadge } from '@/components/checklists/version-badge';
 import { VersionActions } from '@/components/checklists/version-actions';
@@ -38,6 +39,11 @@ export default async function ChecklistLayout({
 
   const version = (canManage ? checklist.draft : null) ?? checklist.latestPublished ?? checklist.versions[0];
   if (!version) notFound();
+
+  // Publishing without a schedule is refused by the database, so the header has
+  // to know before it offers the button. Only asked for a draft: on a published
+  // version the answer changes nothing on screen.
+  const hasSchedule = version.status === 'draft' ? await checklistHasSchedule(checklist.id) : true;
 
   return (
     <div className="space-y-6">
@@ -96,6 +102,8 @@ export default async function ChecklistLayout({
               versionId={version.id}
               status={version.status}
               hasDraft={Boolean(checklist.draft)}
+              scheduleHref={`/dashboard/boards/${slug}/checklists/${checklist.id}/schedules`}
+              hasSchedule={hasSchedule}
             />
           ) : null}
         </div>

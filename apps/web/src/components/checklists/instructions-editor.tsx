@@ -150,8 +150,10 @@ export function InstructionsEditor({
       {full ? (
         <FormNotice kind="info">{t('instructions.full', { n: INSTRUCTION_BLOCKS_MAX })}</FormNotice>
       ) : (
+        // Each control and its button stack on a phone: side by side they left
+        // the field about half a word wide.
         <div className="space-y-2">
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
@@ -160,12 +162,18 @@ export function InstructionsEditor({
               aria-label={t('instructions.textPlaceholder')}
               className="w-full rounded-md border border-[var(--color-input)] bg-[var(--color-background)] px-3 py-2 text-base sm:text-sm"
             />
-            <Button type="button" size="sm" disabled={pending} onClick={addText}>
+            <Button
+              type="button"
+              size="sm"
+              className="sm:shrink-0"
+              disabled={pending}
+              onClick={addText}
+            >
               {t('instructions.addText')}
             </Button>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <Input
               value={videoUrl}
               onChange={(e) => setVideoUrl(e.target.value)}
@@ -173,12 +181,19 @@ export function InstructionsEditor({
               aria-label={t('instructions.videoPlaceholder')}
               inputMode="url"
             />
-            <Button type="button" size="sm" variant="outline" disabled={pending} onClick={addVideo}>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="sm:shrink-0"
+              disabled={pending}
+              onClick={addVideo}
+            >
               {t('instructions.addVideo')}
             </Button>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <input
               ref={fileRef}
               type="file"
@@ -186,7 +201,14 @@ export function InstructionsEditor({
               aria-label={t('instructions.addFile')}
               className="block w-full text-sm file:mr-3 file:min-h-9 file:rounded-md file:border-0 file:bg-[var(--color-secondary)] file:px-3 file:py-1.5 file:text-sm"
             />
-            <Button type="button" size="sm" variant="outline" disabled={pending} onClick={addFile}>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="sm:shrink-0"
+              disabled={pending}
+              onClick={addFile}
+            >
               {t('instructions.addFile')}
             </Button>
           </div>

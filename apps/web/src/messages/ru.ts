@@ -252,6 +252,11 @@ export const ru = {
   'checklist.deleteSection': 'Удалить раздел',
   'checklist.addItem': 'Добавить пункт',
   'checklist.itemTitle': 'Текст пункта',
+  'errors.publishNeedsSchedule':
+    'Задайте расписание до публикации, иначе чек-лист никому не достанется.',
+  'checklist.publishNeedsSchedule':
+    'У этого чек-листа нет расписания, поэтому публикация не отдаст его никому.',
+  'checklist.goToSchedule': 'Задать расписание',
   'instructions.checklistTitle': 'Инструкции',
   'instructions.checklistIntro':
     'Как выполняется этот чек-лист: текст, изображения, документы или ссылка на видео. Их видит каждый, кто его заполняет.',

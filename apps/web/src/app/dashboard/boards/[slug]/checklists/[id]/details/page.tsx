@@ -6,7 +6,8 @@ import { getChecklist, getVersionContent } from '@/lib/checklists/queries';
 import { ChecklistPreview } from '@/components/checklists/checklist-preview';
 import { Avatar } from '@/components/ui/avatar';
 import { getTranslations } from '@/lib/i18n/server';
-import { canEditContent } from '@app/core';
+import { canEditContent, parseInstructions, type InstructionBlock } from '@app/core';
+import { signInstructionUrls } from '@/lib/checklists/instructions';
 
 import { createClient } from '@/lib/supabase/server';
 import { ArchiveChecklist } from './archive-checklist';
@@ -59,6 +60,19 @@ export default async function ChecklistDetailsPage({
 
   const previewVersion = checklist.draft ?? checklist.latestPublished;
   const preview = previewVersion ? await getVersionContent(previewVersion.id) : null;
+
+  // The preview shows instructions, whose files are private. Without signed
+  // links the pictures and documents are dropped from the render, so a preview
+  // built to answer "does this read correctly" would answer it wrongly.
+  const previewInstructions = parseInstructions(previewVersion?.instructions);
+  const previewItemBlocks = (preview?.groups ?? []).flatMap((g) =>
+    g.items.flatMap(function collect(item): InstructionBlock[] {
+      return [...parseInstructions(item.instructions), ...item.children.flatMap(collect)];
+    }),
+  );
+  const previewUrls = await signInstructionUrls(
+    [...previewInstructions, ...previewItemBlocks].flatMap((b) => ('path' in b ? [b.path] : [])),
+  );
 
   return (
     // The editing controls stay in a narrow, readable column. The preview below
@@ -138,6 +152,9 @@ export default async function ChecklistDetailsPage({
             checklist={checklist}
             slug={slug}
             emptyLabel={t('checklist.previewEmpty')}
+            instructions={previewInstructions}
+            instructionUrls={previewUrls}
+            instructionsLabel={t('instructions.checklistTitle')}
           />
         </section>
       ) : null}

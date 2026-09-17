@@ -1,10 +1,11 @@
 'use client';
 
 import { useActionState } from 'react';
-import { PencilLine, Send } from 'lucide-react';
+import Link from 'next/link';
+import { CalendarClock, PencilLine, Send } from 'lucide-react';
 
 import { publishVersion, startEditing, type ActionState } from '@/lib/checklists/actions';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { FormNotice } from '@/components/ui/field-error';
 import { useT } from '@/components/i18n/provider';
 
@@ -15,11 +16,20 @@ export function VersionActions({
   versionId,
   status,
   hasDraft,
+  scheduleHref,
+  hasSchedule,
 }: {
   checklistId: string;
   versionId: string;
   status: 'draft' | 'published';
   hasDraft: boolean;
+  scheduleHref: string;
+  /**
+   * Whether an active, unexpired schedule exists. The database refuses to
+   * publish without one; this says so before the button is pressed, because a
+   * refusal after the fact reads as a fault rather than as a step missed.
+   */
+  hasSchedule: boolean;
 }) {
   const [publishState, publishAction] = useActionState(publishVersion, initialState);
   const [editState, editAction] = useActionState(startEditing, initialState);
@@ -32,13 +42,26 @@ export function VersionActions({
     <div className="space-y-2">
       <div className="flex flex-wrap gap-2">
         {status === 'draft' ? (
-          <form action={publishAction}>
-            <input type="hidden" name="versionId" value={versionId} />
-            <Button type="submit" size="sm">
-              <Send aria-hidden="true" />
-              {t('checklist.publish')}
-            </Button>
-          </form>
+          hasSchedule ? (
+            <form action={publishAction}>
+              <input type="hidden" name="versionId" value={versionId} />
+              <Button type="submit" size="sm">
+                <Send aria-hidden="true" />
+                {t('checklist.publish')}
+              </Button>
+            </form>
+          ) : (
+            // The way forward replaces the action rather than sitting next to a
+            // disabled one: the missing step is a schedule, so that is the
+            // button. Publish comes back by itself once there is one.
+            <Link
+              href={scheduleHref}
+              className={buttonVariants({ size: 'sm', variant: 'outline' })}
+            >
+              <CalendarClock aria-hidden="true" />
+              {t('checklist.goToSchedule')}
+            </Link>
+          )
         ) : (
           <form action={editAction}>
             <input type="hidden" name="checklistId" value={checklistId} />
@@ -52,6 +75,12 @@ export function VersionActions({
           </form>
         )}
       </div>
+
+      {status === 'draft' && !hasSchedule ? (
+        <p className="max-w-xs text-xs text-[var(--color-muted-foreground)]">
+          {t('checklist.publishNeedsSchedule')}
+        </p>
+      ) : null}
 
       {message ? <FormNotice kind="error">{message}</FormNotice> : null}
       {notice ? <FormNotice kind="info">{notice}</FormNotice> : null}

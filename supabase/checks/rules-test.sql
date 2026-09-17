@@ -11,6 +11,7 @@
 --   * Deleting a schedule deleted the submitted records it had produced.
 --   * Two schedules produced two copies of one checklist for one person.
 --   * A practice space could take new checklists, members and schedules.
+--   * A checklist could be published with no schedule, so it went to nobody.
 --
 -- This file asserts those rules. Run it after any migration that touches
 -- checklists, schedules, submissions or the practice space — and before a
@@ -37,6 +38,9 @@ declare
   v_answer    uuid;
   v_today     date := current_date;
   v_practice  uuid;
+  v_checklist2 uuid;
+  v_draft2    uuid;
+  v_group2    uuid;
   v_count     integer;
   v_ok        boolean;
 begin
@@ -186,6 +190,42 @@ begin
   end;
   insert into rule_results values
     ('tutorial flag cannot be set by hand', v_ok, case when v_ok then 'refused' else 'the flag was accepted' end);
+
+  -- ---------------------------------------------------------------------------
+  -- Publishing needs a schedule, or the checklist is given to nobody.
+  -- A second checklist, because the first one has schedules by now.
+  -- ---------------------------------------------------------------------------
+  insert into public.checklists (board_id, title, created_by)
+  values (v_board, 'Unscheduled checklist', v_owner) returning id into v_checklist2;
+
+  select cv.id into v_draft2 from public.checklist_versions cv
+   where cv.checklist_id = v_checklist2 and cv.status = 'draft';
+  select g.id into v_group2 from public.checklist_groups g where g.version_id = v_draft2 limit 1;
+
+  insert into public.checklist_items (version_id, group_id, title, position)
+  values (v_draft2, v_group2, 'Something to do', 10);
+
+  -- 8. No schedule: refused.
+  v_ok := false;
+  begin
+    perform public.publish_checklist_version(v_draft2);
+  exception when others then v_ok := true;
+  end;
+  insert into rule_results values
+    ('publishing without a schedule is refused', v_ok,
+     case when v_ok then 'refused' else 'it was published' end);
+
+  -- 9. With an active schedule: allowed. Asserted as well as the refusal, so a
+  --    rule written too tightly cannot pass by refusing everything.
+  insert into public.schedules (checklist_id, kind, config, start_date, timezone, assignment_mode, created_by)
+  values (v_checklist2, 'daily', '{}'::jsonb, v_today, 'Asia/Tashkent', 'creator', v_owner);
+
+  perform public.publish_checklist_version(v_draft2);
+  select count(*) into v_count from public.checklist_versions
+   where id = v_draft2 and status = 'published';
+  insert into rule_results values
+    ('publishing with a schedule is allowed', v_count = 1,
+     case when v_count = 1 then 'published' else 'it was refused' end);
 end;
 $$;
 

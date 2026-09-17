@@ -255,6 +255,11 @@ export const uz = {
   'checklist.deleteSection': 'Boʻlimni oʻchirish',
   'checklist.addItem': 'Band qoʻshish',
   'checklist.itemTitle': 'Band matni',
+  'errors.publishNeedsSchedule':
+    'Chop etishdan oldin jadval belgilang, aks holda bu roʻyxat hech kimga berilmaydi.',
+  'checklist.publishNeedsSchedule':
+    'Bu roʻyxatda jadval yoʻq, shuning uchun uni chop etsangiz ham hech kimga tushmaydi.',
+  'checklist.goToSchedule': 'Jadval belgilash',
   'instructions.checklistTitle': 'Koʻrsatmalar',
   'instructions.checklistIntro':
     'Bu roʻyxat qanday bajariladi: matn, rasm, hujjat yoki video havolasi. Uni toʻldiradigan har bir kishi koʻradi.',

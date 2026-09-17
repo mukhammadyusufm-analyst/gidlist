@@ -76,6 +76,7 @@ const DATABASE_RULES: Rule[] = [
     key: 'errors.versionPublished',
   },
   { match: /at least one item before publishing/i, key: 'errors.publishNeedsItem' },
+  { match: /schedule before publishing/i, key: 'errors.publishNeedsSchedule' },
   { match: /version is not a draft/i, key: 'errors.versionNotDraft' },
   { match: /Parent item does not exist|different version/i, key: 'errors.itemParentInvalid' },
 
