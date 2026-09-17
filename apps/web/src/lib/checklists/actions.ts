@@ -7,6 +7,7 @@ import {
   addItemSchema,
   createChecklistSchema,
   updateChecklistSchema,
+  parseInstructions,
   updateItemSchema,
   updateItemTextSchema,
 } from '@app/core';
@@ -252,6 +253,54 @@ export async function updateItemText(
   if (error) return { formError: explainFailure(error.message, 'errors.couldNotSave', t) };
 
   revalidatePath('/dashboard/boards/[slug]/checklists/[id]', 'page');
+  return {};
+}
+
+/**
+ * Save the instructions on one item, or on the checklist as a whole.
+ *
+ * Called directly from the editor rather than through a form: the blocks are a
+ * list, and flattening them into form fields to rebuild them here would be two
+ * translations of the same thing.
+ *
+ * Every file path is checked against this checklist's own folder. Without that,
+ * a crafted request could point a block at another customer's file and the
+ * signed URL this app later mints for it would hand the file over — the same
+ * rule, and the same reason, as `pathBelongsToBoard` for board media.
+ */
+export async function saveInstructions(input: {
+  scope: 'item' | 'version';
+  id: string;
+  checklistId: string;
+  blocks: unknown;
+}): Promise<{ error?: string }> {
+  const { t } = await getTranslations();
+  const supabase = await createClient();
+
+  const { data: checklist } = await supabase
+    .from('checklists')
+    .select('board_id')
+    .eq('id', input.checklistId)
+    .maybeSingle();
+
+  if (!checklist) return { error: t('errors.couldNotSave', { reason: '' }) };
+
+  const prefix = `${checklist.board_id}/${input.checklistId}/`;
+  const blocks = parseInstructions(input.blocks).filter(
+    (b) => !('path' in b) || (b.path.startsWith(prefix) && !b.path.includes('..')),
+  );
+
+  const { error } =
+    input.scope === 'item'
+      ? await supabase.from('checklist_items').update({ instructions: blocks }).eq('id', input.id)
+      : await supabase
+          .from('checklist_versions')
+          .update({ instructions: blocks })
+          .eq('id', input.id);
+
+  if (error) return { error: explainFailure(error.message, 'errors.couldNotSave', t) };
+
+  revalidatePath('/dashboard/boards/[slug]/checklists/[id]', 'layout');
   return {};
 }
 

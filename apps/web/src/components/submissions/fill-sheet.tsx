@@ -1,6 +1,16 @@
 'use client';
 
-import { useActionState, useMemo, useOptimistic, useRef, useState, useTransition } from 'react';
+import {
+  createContext,
+  useActionState,
+  useContext,
+  useMemo,
+  useOptimistic,
+  useRef,
+  useState,
+  useTransition,
+} from 'react';
+import { parseInstructions } from '@app/core';
 import { Check, Lock, MessageSquarePlus, Paperclip, Send } from 'lucide-react';
 
 import {
@@ -23,9 +33,13 @@ import { FormNotice } from '@/components/ui/field-error';
 import { ProgressBar, ProgressRing } from '@/components/ui/progress';
 import { useOffline } from '@/components/offline/offline-provider';
 import { useT } from '@/components/i18n/provider';
+import { InstructionsView } from '@/components/checklists/instructions-view';
 import { cn } from '@/lib/utils';
 
 const initialState: ActionState = {};
+
+/** Signed instruction links, out of band rather than through every item row. */
+const InstructionUrlsContext = createContext<Record<string, string>>({});
 
 type GroupWithAnswers = ChecklistGroup & { items: AnsweredItem[] };
 
@@ -122,6 +136,7 @@ export function FillSheet({
   readOnly,
   totalItems,
   checkedItems,
+  instructionUrls = {},
 }: {
   submissionId: string;
   slug: string;
@@ -129,6 +144,12 @@ export function FillSheet({
   readOnly: boolean;
   totalItems: number;
   checkedItems: number;
+  /**
+   * Signed links for instruction files, minted by the page. Absent offline and
+   * in the builder preview, where text and video instructions still show but
+   * files stay hidden.
+   */
+  instructionUrls?: Record<string, string>;
 }) {
   const [submitState, submitAction] = useActionState(submitSubmission, initialState);
   const [error, setError] = useState<string | null>(null);
@@ -233,6 +254,7 @@ export function FillSheet({
   const remaining = totalItems - shownChecked;
 
   return (
+    <InstructionUrlsContext.Provider value={instructionUrls}>
     <div className="space-y-4">
       {/* Progress sits directly above the list and stays put while scrolling.
           On a long checklist the single most useful thing to know is how much
@@ -448,6 +470,7 @@ export function FillSheet({
         </div>
       ) : null}
     </div>
+    </InstructionUrlsContext.Provider>
   );
 }
 
@@ -507,6 +530,9 @@ function ItemRow({
   const [pending, startTransition] = useTransition();
   const offline = useOffline();
   const { t } = useT();
+
+  const instructionUrls = useContext(InstructionUrlsContext);
+  const itemInstructions = parseInstructions(item.instructions);
 
   const hasChildren = item.children.length > 0;
   // The optimistic view, so a tap moves the box now rather than after the
@@ -771,6 +797,19 @@ function ItemRow({
             ) : null}
           </span>
         </label>
+
+        {/* How to do it, closed by default: the instructions can be long, and
+            the person who knows the job already should still see a checklist. */}
+        {itemInstructions.length > 0 ? (
+          <details className="ml-7">
+            <summary className="cursor-pointer text-xs text-[var(--color-muted-foreground)]">
+              {t('instructions.itemTitle')}
+            </summary>
+            <div className="mt-2">
+              <InstructionsView blocks={itemInstructions} urls={instructionUrls} />
+            </div>
+          </details>
+        ) : null}
 
         {/* Attachments sit above the note, because an item that asks for a
             photograph is asking for the photograph first.

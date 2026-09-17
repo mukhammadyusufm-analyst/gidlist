@@ -7,6 +7,9 @@ import { getSubmissionDetail } from '@/lib/submissions/queries';
 import { getTranslations } from '@/lib/i18n/server';
 import { createClient, getUser } from '@/lib/supabase/server';
 import { RestartOnNewVersion } from '@/components/submissions/restart-on-new-version';
+import { InstructionsView } from '@/components/checklists/instructions-view';
+import { signInstructionUrls } from '@/lib/checklists/instructions';
+import { parseInstructions, type InstructionBlock } from '@app/core';
 import { StatusBadge } from '@/components/submissions/status-badge';
 import { FillSheet } from '@/components/submissions/fill-sheet';
 import { SnapshotRecorder } from '@/components/offline/snapshot-recorder';
@@ -68,6 +71,26 @@ export default async function FillPage({
 
   const readOnly = submission.status === 'done' || outdated;
 
+  // Instructions: the checklist's own, and every item's. Their files are in a
+  // private bucket, so the links are minted here for exactly what is rendered.
+  const { data: versionRow } = submission.checklist_version_id
+    ? await supabase
+        .from('checklist_versions')
+        .select('instructions')
+        .eq('id', submission.checklist_version_id)
+        .maybeSingle()
+    : { data: null };
+
+  const checklistBlocks = parseInstructions(versionRow?.instructions);
+  const itemBlocks = groups.flatMap((g) =>
+    g.items.flatMap(function collect(item): InstructionBlock[] {
+      return [...parseInstructions(item.instructions), ...item.children.flatMap(collect)];
+    }),
+  );
+  const instructionUrls = await signInstructionUrls(
+    [...checklistBlocks, ...itemBlocks].flatMap((b) => ('path' in b ? [b.path] : [])),
+  );
+
   // Dates are formatted in the reader's own language, so a Russian speaker sees
   // "10 августа 2026" rather than an English month name in a Russian sentence.
   const dueDate = new Date(`${submission.due_date}T00:00:00`).toLocaleDateString(locale, {
@@ -119,6 +142,17 @@ export default async function FillPage({
         </p>
       ) : null}
 
+      {checklistBlocks.length > 0 ? (
+        <details className="rounded-xl border border-[var(--color-border)] p-4">
+          <summary className="cursor-pointer text-sm font-medium">
+            {t('instructions.checklistTitle')}
+          </summary>
+          <div className="mt-3">
+            <InstructionsView blocks={checklistBlocks} urls={instructionUrls} />
+          </div>
+        </details>
+      ) : null}
+
       <FillSheet
         submissionId={submission.id}
         slug={slug}
@@ -126,6 +160,7 @@ export default async function FillPage({
         readOnly={readOnly}
         totalItems={totalItems}
         checkedItems={checkedItems}
+        instructionUrls={instructionUrls}
       />
 
       {/* Renders nothing. Keeps a copy of this checklist on the device so it

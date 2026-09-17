@@ -12,6 +12,9 @@ export const MEDIA_BUCKETS = [
   'board-banners',
   'checklist-banners',
   'checklist-avatars',
+  // Instruction images and documents, keyed <board_id>/<checklist_id>/… so the
+  // storage policy can narrow reading to the checklist's own people.
+  'checklist-instructions',
   // Keyed by user id rather than board id, and authorised against the caller's
   // own account — see the migration. It shares these limits but not the rule.
   'user-avatars',
@@ -53,6 +56,12 @@ export const MEDIA_LIMITS: Record<
     types: ['image/png', 'image/jpeg', 'image/webp'],
     accept: 'image/png,image/jpeg,image/webp',
     hintKey: 'media.hintSquare',
+  },
+  'checklist-instructions': {
+    maxBytes: 10 * 1024 * 1024,
+    types: ['image/png', 'image/jpeg', 'image/webp', 'application/pdf'],
+    accept: 'image/png,image/jpeg,image/webp,application/pdf',
+    hintKey: 'media.hintInstruction',
   },
   'user-avatars': {
     maxBytes: 2 * 1024 * 1024,

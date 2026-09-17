@@ -1,6 +1,15 @@
 'use client';
 
-import { useActionState, useEffect, useOptimistic, useRef, useState, useTransition } from 'react';
+import {
+  createContext,
+  useActionState,
+  useContext,
+  useEffect,
+  useOptimistic,
+  useRef,
+  useState,
+  useTransition,
+} from 'react';
 import { Plus } from 'lucide-react';
 import {
   DndContext,
@@ -21,7 +30,10 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { canNestUnder, MAX_ITEM_DEPTH } from '@app/core/constants';
-import type { ItemNode } from '@app/core';
+import { parseInstructions, type ItemNode } from '@app/core';
+
+import { InstructionsEditor } from '@/components/checklists/instructions-editor';
+import { InstructionsView } from '@/components/checklists/instructions-view';
 
 import {
   addGroup,
@@ -83,14 +95,32 @@ function useDragSensors() {
   );
 }
 
+/**
+ * What the instruction editors need, out of band.
+ *
+ * A context rather than three more props threaded through group → list → item →
+ * sub-item: they are the same two ids and one map for every row on the page.
+ */
+const InstructionsContext = createContext<{
+  checklistId: string;
+  boardId: string;
+  urls: Record<string, string>;
+} | null>(null);
+
 export function ChecklistBuilder({
   versionId,
   groups,
   editable,
+  checklistId,
+  boardId,
+  instructionUrls,
 }: {
   versionId: string;
   groups: GroupWithItems[];
   editable: boolean;
+  checklistId: string;
+  boardId: string;
+  instructionUrls: Record<string, string>;
 }) {
   const sensors = useDragSensors();
   const [, startTransition] = useTransition();
@@ -211,6 +241,7 @@ export function ChecklistBuilder({
   }
 
   return (
+    <InstructionsContext.Provider value={{ checklistId, boardId, urls: instructionUrls }}>
     <div className="space-y-6">
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext
@@ -232,6 +263,7 @@ export function ChecklistBuilder({
 
       {editable ? <AddGroupForm versionId={versionId} /> : null}
     </div>
+    </InstructionsContext.Provider>
   );
 }
 
@@ -384,6 +416,8 @@ function SortableItem({
   const [editing, setEditing] = useState(false);
   const { t } = useT();
   const canNest = canNestUnder(item.depth);
+  const instructions = useContext(InstructionsContext);
+  const itemBlocks = parseInstructions(item.instructions);
 
   return (
     <li
@@ -454,6 +488,33 @@ function SortableItem({
           whenever the database and the screen could disagree. Its toggles live
           in `useState`, which reads its argument only on mount — without the
           key, the switches kept their pre-save values after the row changed. */}
+      {/* Instructions sit under the item, closed: an SOP is long by nature and
+          would otherwise bury the checklist it belongs to. */}
+      {instructions && (editable || itemBlocks.length > 0) ? (
+        <details className="px-2 pb-2">
+          <summary className="cursor-pointer py-1 text-xs text-[var(--color-muted-foreground)]">
+            {t('instructions.itemTitle')}
+            {itemBlocks.length > 0 ? (
+              <span className="ml-1.5 text-[var(--color-primary)]">{itemBlocks.length}</span>
+            ) : null}
+          </summary>
+          <div className="mt-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+            {editable ? (
+              <InstructionsEditor
+                scope="item"
+                id={item.id}
+                checklistId={instructions.checklistId}
+                boardId={instructions.boardId}
+                initial={itemBlocks}
+                urls={instructions.urls}
+              />
+            ) : (
+              <InstructionsView blocks={itemBlocks} urls={instructions.urls} />
+            )}
+          </div>
+        </details>
+      ) : null}
+
       {editable && item.children.length === 0 ? (
         <ItemRequirements
           key={[

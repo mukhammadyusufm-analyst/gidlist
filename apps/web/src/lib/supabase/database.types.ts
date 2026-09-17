@@ -320,6 +320,8 @@ export type Database = {
           published_at: string | null;
           created_by: string | null;
           created_at: string;
+          /** How to do this checklist: a list of instruction blocks. See `@app/core`. */
+          instructions: Json;
         };
         Insert: {
           id?: string;
@@ -328,10 +330,12 @@ export type Database = {
           status?: ChecklistVersionStatus;
           published_at?: string | null;
           created_by?: string | null;
+          instructions?: Json;
         };
         Update: {
           status?: ChecklistVersionStatus;
           published_at?: string | null;
+          instructions?: Json;
         };
         Relationships: [];
       };
@@ -421,6 +425,8 @@ export type Database = {
            * a poor fix in a basement stopping the work.
            */
           location_required: boolean;
+          /** How to do this item: a list of instruction blocks. See `@app/core`. */
+          instructions: Json;
           created_at: string;
         };
         // `depth` is absent from Insert and Update on purpose — a database
@@ -452,6 +458,7 @@ export type Database = {
           location_lat?: number | null;
           location_lng?: number | null;
           location_radius_m?: number | null;
+          instructions?: Json;
           window_enabled?: boolean;
           window_required?: boolean;
           window_start?: string | null;

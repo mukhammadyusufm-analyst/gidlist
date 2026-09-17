@@ -115,7 +115,9 @@ function buildCsp(nonce: string): string {
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`,
     "style-src 'self' 'unsafe-inline'",
-    `img-src 'self' data: blob: ${supabase} ${tiles}`,
+    // i.ytimg.com: the still image for a video instruction link. Images only,
+    // from the one host that publishes them for YouTube.
+    `img-src 'self' data: blob: ${supabase} ${tiles} https://i.ytimg.com`,
     "font-src 'self'",
     `connect-src 'self' ${supabase} wss://*.supabase.co ${turnstile} ${geocoder}`,
     /*

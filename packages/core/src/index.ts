@@ -36,6 +36,7 @@ export * from './checklists';
 export * from './constants';
 export * from './dates';
 export * from './i18n';
+export * from './instructions';
 export * from './media';
 export * from './money';
 export * from './schedules';
