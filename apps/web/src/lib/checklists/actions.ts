@@ -8,6 +8,7 @@ import {
   createChecklistSchema,
   updateChecklistSchema,
   updateItemSchema,
+  updateItemTextSchema,
 } from '@app/core';
 
 import { createClient, getUser } from '@/lib/supabase/server';
@@ -213,6 +214,45 @@ function numberOrNull(value: FormDataEntryValue | null): number | null {
   if (text === '') return null;
   const n = Number(text);
   return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * Change an item's text and its details line, and nothing else.
+ *
+ * Its own action rather than `updateItem`, which also writes every requirement
+ * setting from the form it is given — reusing it would save whatever the
+ * settings panel last rendered alongside a text change. Refused by the freeze
+ * trigger on a published version, as any edit is; the builder only offers it
+ * on a draft.
+ */
+export async function updateItemText(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const { t } = await getTranslations();
+
+  const parsed = updateItemTextSchema.safeParse({
+    itemId: formData.get('itemId'),
+    title: formData.get('title'),
+    description: formData.get('description') || undefined,
+  });
+  if (!parsed.success) {
+    return { fieldErrors: translateFieldErrors(parsed.error.flatten().fieldErrors, t) };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('checklist_items')
+    .update({
+      title: parsed.data.title,
+      description: parsed.data.description || null,
+    })
+    .eq('id', parsed.data.itemId);
+
+  if (error) return { formError: explainFailure(error.message, 'errors.couldNotSave', t) };
+
+  revalidatePath('/dashboard/boards/[slug]/checklists/[id]', 'page');
+  return {};
 }
 
 export async function updateItem(_prev: ActionState, formData: FormData): Promise<ActionState> {

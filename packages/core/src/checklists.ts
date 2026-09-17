@@ -71,6 +71,17 @@ export const addItemSchema = z.object({
 export const REQUIREMENT_KINDS = ['photo', 'file', 'location'] as const;
 export type RequirementKind = (typeof REQUIREMENT_KINDS)[number];
 
+/**
+ * An item's own words: the line people tick, and the smaller-print details
+ * under it. Separate from `updateItemSchema`, which saves the requirement
+ * settings, so editing the text never rewrites a setting from a stale form.
+ */
+export const updateItemTextSchema = z.object({
+  itemId: z.uuid(),
+  title: itemTitleSchema,
+  description: z.string().trim().max(2000, { error: 'errors.descriptionTooLong2000' }).optional(),
+});
+
 export const updateItemSchema = z
   .object({
     itemId: z.uuid(),

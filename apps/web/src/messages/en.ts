@@ -254,6 +254,10 @@ export const en = {
   'checklist.newSectionName': 'New section name',
   'checklist.deleteSection': 'Delete section',
   'checklist.addItem': 'Add item',
+  'checklist.itemTitle': 'Item text',
+  'checklist.itemDetailsPlaceholder': 'Details (optional)',
+  'checklist.itemDetailsHint':
+    'Shown under the item in smaller text — a short explanation, or how to do it.',
   'checklist.addSubItem': 'Add sub-item',
   'checklist.itemPlaceholder': 'What needs doing?',
   'checklist.noItems': 'No items yet.',

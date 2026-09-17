@@ -251,6 +251,10 @@ export const ru = {
   'checklist.newSectionName': 'Название раздела',
   'checklist.deleteSection': 'Удалить раздел',
   'checklist.addItem': 'Добавить пункт',
+  'checklist.itemTitle': 'Текст пункта',
+  'checklist.itemDetailsPlaceholder': 'Подробности (необязательно)',
+  'checklist.itemDetailsHint':
+    'Показываются под пунктом мелким шрифтом — короткое пояснение или как выполнить.',
   'checklist.addSubItem': 'Добавить подпункт',
   'checklist.itemPlaceholder': 'Что нужно сделать?',
   'checklist.noItems': 'Пунктов пока нет.',

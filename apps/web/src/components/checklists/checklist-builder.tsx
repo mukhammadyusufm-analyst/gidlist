@@ -29,6 +29,7 @@ import {
   deleteGroup,
   deleteItem,
   updateItem,
+  updateItemText,
   moveItemToGroup,
   renameGroup,
   reorderGroups,
@@ -380,6 +381,7 @@ function SortableItem({
   });
 
   const [showAdd, setShowAdd] = useState(false);
+  const [editing, setEditing] = useState(false);
   const { t } = useT();
   const canNest = canNestUnder(item.depth);
 
@@ -403,14 +405,25 @@ function SortableItem({
         ) : null}
 
         <div className="min-w-0 flex-1">
-          <p className="font-medium">{item.title}</p>
-          {item.description ? (
-            <p className="text-sm text-[var(--color-muted-foreground)]">{item.description}</p>
-          ) : null}
+          {editing && editable ? (
+            <ItemTextForm item={item} onDone={() => setEditing(false)} />
+          ) : (
+            <>
+              <p className="font-medium">{item.title}</p>
+              {item.description ? (
+                <p className="text-sm text-[var(--color-muted-foreground)]">{item.description}</p>
+              ) : null}
+            </>
+          )}
         </div>
 
-        {editable ? (
+        {editable && !editing ? (
           <div className="flex shrink-0 items-center gap-1">
+            {/* There was no way to change an item's words at all: a typo meant
+                deleting the item — and its settings — and adding it again. */}
+            <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(true)}>
+              {t('common.edit')}
+            </Button>
             {canNest ? (
               <Button type="button" variant="ghost" size="sm" onClick={() => setShowAdd((v) => !v)}>
                 {t('checklist.addSubItem')}
@@ -527,6 +540,66 @@ function AddItemForm({
       <Button type="submit" size="sm">
         {label}
       </Button>
+    </form>
+  );
+}
+
+/**
+ * An item's text and details, edited in place.
+ *
+ * The details are the smaller line under the item on the fill sheet — a short
+ * explanation or how to do it. The fill sheet already showed them; the builder
+ * simply never offered a way to write them, so only the practice checklist
+ * (written by the database) had any.
+ */
+function ItemTextForm({ item, onDone }: { item: Item; onDone: () => void }) {
+  const { t } = useT();
+  const [state, formAction, pending] = useActionState<ActionState, FormData>(
+    async (prev, formData) => {
+      const result = await updateItemText(prev, formData);
+      if (!result.formError && !result.fieldErrors) onDone();
+      return result;
+    },
+    {},
+  );
+
+  return (
+    <form action={formAction} className="space-y-2">
+      <input type="hidden" name="itemId" value={item.id} />
+      <Input
+        name="title"
+        required
+        defaultValue={item.title}
+        aria-label={t('checklist.itemTitle')}
+        autoFocus
+      />
+      {state.fieldErrors?.title?.[0] ? (
+        <FormNotice kind="error">{state.fieldErrors.title[0]}</FormNotice>
+      ) : null}
+
+      <textarea
+        name="description"
+        defaultValue={item.description ?? ''}
+        rows={2}
+        placeholder={t('checklist.itemDetailsPlaceholder')}
+        aria-label={t('checklist.itemDetailsPlaceholder')}
+        // text-base on small screens: anything under 16px makes iOS zoom in.
+        className="w-full rounded-md border border-[var(--color-input)] bg-[var(--color-background)] px-3 py-2 text-base sm:text-sm"
+      />
+      <p className="text-xs text-[var(--color-muted-foreground)]">{t('checklist.itemDetailsHint')}</p>
+      {state.fieldErrors?.description?.[0] ? (
+        <FormNotice kind="error">{state.fieldErrors.description[0]}</FormNotice>
+      ) : null}
+      {state.formError ? <FormNotice kind="error">{state.formError}</FormNotice> : null}
+
+      <div className="flex gap-2">
+        <Button type="submit" size="sm" disabled={pending}>
+          {pending ? t('common.saving') : t('common.save')}
+        </Button>
+        <Button type="button" variant="ghost" size="sm" onClick={onDone}>
+          {t('common.cancel')}
+        </Button>
+      </div>
     </form>
   );
 }

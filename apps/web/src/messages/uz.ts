@@ -254,6 +254,10 @@ export const uz = {
   'checklist.newSectionName': 'Yangi boʻlim nomi',
   'checklist.deleteSection': 'Boʻlimni oʻchirish',
   'checklist.addItem': 'Band qoʻshish',
+  'checklist.itemTitle': 'Band matni',
+  'checklist.itemDetailsPlaceholder': 'Tafsilotlar (ixtiyoriy)',
+  'checklist.itemDetailsHint':
+    'Band ostida kichikroq harflarda koʻrinadi — qisqa izoh yoki qanday bajarish kerakligi.',
   'checklist.addSubItem': 'Ichki band qoʻshish',
   'checklist.itemPlaceholder': 'Nima bajarilishi kerak?',
   'checklist.noItems': 'Hozircha bandlar yoʻq.',
