@@ -1,4 +1,5 @@
 -- RUN THIS IN: gidlist-dev   (zffoidgzuyhojnydshkq — confirm in the ADDRESS BAR), then production (ivqprkzqnoiffqlbfkkd)
+-- ALREADY RUN IN BOTH, 19 Sep 2026.
 -- =============================================================================
 -- "Edit as draft" lost the checklist's own instructions.
 --
