@@ -231,6 +231,10 @@ export const ru = {
   'checklist.new': 'Новый чек-лист',
   'checklist.newIntro':
     'Составьте структуру один раз, затем запланируйте регулярное заполнение.',
+  'checklist.fromTemplate': 'Или начните с готового чек-листа',
+  'checklist.fromTemplateIntro':
+    'Создаётся как черновик на вашем языке. Измените что угодно, добавьте адрес филиала, затем задайте расписание и опубликуйте.',
+  'checklist.templateItems': 'Пунктов: {n}',
   'checklist.create': 'Создать чек-лист',
   'checklist.none': 'В этом пространстве пока нет чек-листов.',
   'checklist.structure': 'Структура',

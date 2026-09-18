@@ -234,6 +234,10 @@ export const uz = {
   'checklist.new': 'Yangi nazorat roʻyxati',
   'checklist.newIntro':
     'Tuzilmani bir marta tuzing, keyin uni muntazam toʻldirish uchun rejalashtiring.',
+  'checklist.fromTemplate': 'Yoki tayyor roʻyxatdan boshlang',
+  'checklist.fromTemplateIntro':
+    'Sizning tilingizda qoralama sifatida yaratiladi. Istalgan narsani oʻzgartiring, filial manzilini qoʻshing, soʻng jadval belgilab, chop eting.',
+  'checklist.templateItems': '{n} ta band',
   'checklist.create': 'Nazorat roʻyxatini yaratish',
   'checklist.none': 'Bu maydonda hozircha nazorat roʻyxatlari yoʻq.',
   'checklist.structure': 'Tuzilma',

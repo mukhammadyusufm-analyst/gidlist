@@ -234,6 +234,10 @@ export const en = {
   // --- checklists -------------------------------------------------------
   'checklist.new': 'New checklist',
   'checklist.newIntro': 'Build the structure once, then schedule it to be filled in repeatedly.',
+  'checklist.fromTemplate': 'Or start from a ready-made checklist',
+  'checklist.fromTemplateIntro':
+    'Created as a draft in your language. Change anything, add your branch location, then schedule and publish it.',
+  'checklist.templateItems': '{n} items',
   'checklist.create': 'Create checklist',
   'checklist.none': 'No checklists in this space yet.',
   'checklist.structure': 'Structure',

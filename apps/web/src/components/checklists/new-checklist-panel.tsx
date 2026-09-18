@@ -6,6 +6,7 @@ import { Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useT } from '@/components/i18n/provider';
 import { NewChecklistForm } from './new-checklist-form';
+import { TemplatePicker } from './template-picker';
 
 /**
  * Creation, kept out of the way until asked for.
@@ -52,6 +53,14 @@ export function NewChecklistPanel({ boardId, slug }: { boardId: string; slug: st
       </div>
 
       <NewChecklistForm boardId={boardId} slug={slug} />
+
+      <div className="mt-5 border-t border-[var(--color-border)] pt-4">
+        <h3 className="text-sm font-semibold">{t('checklist.fromTemplate')}</h3>
+        <p className="mt-0.5 mb-3 text-sm text-[var(--color-muted-foreground)]">
+          {t('checklist.fromTemplateIntro')}
+        </p>
+        <TemplatePicker boardId={boardId} slug={slug} />
+      </div>
     </section>
   );
 }

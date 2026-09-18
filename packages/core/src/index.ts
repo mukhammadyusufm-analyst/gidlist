@@ -42,3 +42,4 @@ export * from './money';
 export * from './schedules';
 export * from './site-messages';
 export * from './theme';
+export * from './templates';

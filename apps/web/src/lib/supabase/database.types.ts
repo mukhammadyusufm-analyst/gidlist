@@ -441,7 +441,12 @@ export type Database = {
           description?: string | null;
           position?: number;
           photo_enabled?: boolean;
+          photo_required?: boolean;
           file_enabled?: boolean;
+          window_enabled?: boolean;
+          window_required?: boolean;
+          window_start?: string | null;
+          window_end?: string | null;
         };
         Update: {
           title?: string;

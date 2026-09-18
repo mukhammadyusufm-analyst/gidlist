@@ -6,6 +6,8 @@ import {
   addGroupSchema,
   addItemSchema,
   createChecklistSchema,
+  findTemplate,
+  templateText,
   updateChecklistSchema,
   parseInstructions,
   updateItemSchema,
@@ -108,6 +110,90 @@ export async function createChecklist(
 
   revalidatePath(`/dashboard/boards/${slug}/checklists`);
   redirect(`/dashboard/boards/${slug}/checklists/${data.id}`);
+}
+
+/**
+ * A new checklist from one of the ready-made templates, in the reader's language.
+ *
+ * The same steps as building one by hand — insert the checklist (its trigger
+ * makes the draft and the first section), then its items — all under the
+ * caller's own permissions, so a template grants nothing the builder does not.
+ * If the items fail, the half-made checklist is deleted: it has no history, and
+ * an empty checklist named "Kitchen opening" is worse than none.
+ */
+export async function createChecklistFromTemplate(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const { t, locale } = await getTranslations();
+
+  const template = findTemplate(String(formData.get('template') ?? ''));
+  const boardId = String(formData.get('boardId') ?? '');
+  const slug = String(formData.get('slug') ?? '');
+  if (!template || !boardId) return { formError: t('errors.couldNotCreateChecklist') };
+
+  const supabase = await createClient();
+  const user = await getUser();
+  if (!user) redirect('/login');
+
+  const { data: checklist, error } = await supabase
+    .from('checklists')
+    .insert({
+      board_id: boardId,
+      title: templateText(template.title, locale),
+      description: templateText(template.description, locale),
+      created_by: user.id,
+    })
+    .select('id')
+    .single();
+
+  if (error || !checklist) {
+    return { formError: explainFailure(error?.message, 'errors.couldNotCreateChecklist', t) };
+  }
+
+  const { data: draft } = await supabase
+    .from('checklist_versions')
+    .select('id')
+    .eq('checklist_id', checklist.id)
+    .eq('status', 'draft')
+    .single();
+  const { data: group } = draft
+    ? await supabase
+        .from('checklist_groups')
+        .select('id')
+        .eq('version_id', draft.id)
+        .limit(1)
+        .maybeSingle()
+    : { data: null };
+  const groupId = group?.id;
+
+  const [from, to] = template.window ?? [null, null];
+  const { error: itemsError } =
+    draft && groupId
+      ? await supabase.from('checklist_items').insert(
+          template.items.map((item, index) => ({
+            version_id: draft.id,
+            group_id: groupId,
+            title: templateText(item.title, locale),
+            description: item.description ? templateText(item.description, locale) : null,
+            position: (index + 1) * POSITION_STEP,
+            photo_enabled: Boolean(item.photo),
+            photo_required: item.photo === 'required',
+            window_enabled: from !== null,
+            window_required: false,
+            window_start: from,
+            window_end: to,
+          })),
+        )
+      : { error: { message: 'no draft' } };
+
+  if (itemsError) {
+    await supabase.from('checklists').delete().eq('id', checklist.id);
+    return { formError: explainFailure(itemsError.message, 'errors.couldNotCreateChecklist', t) };
+  }
+
+  revalidatePath(`/dashboard/boards/${slug}/checklists`);
+  redirect(`/dashboard/boards/${slug}/checklists/${checklist.id}`);
 }
 
 export async function updateChecklistDetails(
