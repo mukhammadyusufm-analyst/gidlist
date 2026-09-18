@@ -1,23 +1,22 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 import { getBoardBySlug } from '@/lib/boards/queries';
-import { getComplianceData, parseComplianceSearch } from '@/lib/compliance/queries';
-import { getRecordItems } from '@/lib/compliance/items';
+import { getComplianceData, parseComplianceSearch, type ComplianceRow } from '@/lib/compliance/queries';
+import { getRecordItems, type RecordItem } from '@/lib/compliance/items';
 import { getTranslations } from '@/lib/i18n/server';
 import { getTimezone, getToday } from '@/lib/timezone/server';
 
 /**
- * The Compliance records as a spreadsheet, ONE ROW PER ITEM, with the filters
- * that are on screen.
+ * The Compliance records as a spreadsheet, ONE ROW PER FILL-IN, with the
+ * filters that are on screen, and what happened to the items inside it.
  *
- * Per item rather than per record because the question a manager takes to
- * Excel is about the work inside: which branch skipped the freezer reading,
- * which item is never ticked. Each row repeats its record's date, checklist,
- * people and status, so the sheet filters and pivots on either level. A record
- * nobody opened has no items and appears once, with the item columns blank.
+ * One row per item was tried first and read as five records for a five-item
+ * checklist. Now each fill-in is one row, and the items travel with it — as
+ * their own columns when the export is one checklist, and always as "not done"
+ * and "notes" lists.
  *
  * No value is written in a shape Excel rewrites. A tick count of "3/5" was
- * turned into the 3rd of May, so there are no fractions; done is Yes/No, and
+ * turned into the 3rd of May, so there are no fractions; an item is ✓ with its time or ✗, and
  * times are "YYYY-MM-DD HH:MM" in the viewer's own timezone — not the
  * server's, which is UTC.
  *
@@ -50,7 +49,28 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   });
   const time = (iso: string | null) => (iso ? clock.format(new Date(iso)).replace(', ', ' ') : '');
   const yes = t('compliance.exportYes');
-  const no = t('compliance.exportNo');
+
+  const records: { row: ComplianceRow; items: RecordItem[] }[] = [];
+  for (let page = 1; records.length < MAX_RECORDS; page++) {
+    const data = await getComplianceData(board.id, { ...filters, page, pageSize: BATCH });
+    const items = await getRecordItems(data.rows);
+    for (const row of data.rows) records.push({ row, items: items.get(row.id) ?? [] });
+    if (page >= data.pageCount) break;
+  }
+
+  /*
+   * ONE CHECKLIST IN THE EXPORT: one column per item. A row is then a fill-in
+   * read across, like a paper log — ✓ 07:42 or ✗ under each item. Keyed by
+   * item title rather than id, so an item that survived a new version stays
+   * one column; columns appear in the order the items first do.
+   *
+   * SEVERAL CHECKLISTS: item columns would be mostly empty, so the sheet keeps
+   * to one row per fill-in with "not done" and "notes" as lists.
+   */
+  const singleChecklist = new Set(records.map((r) => r.row.checklist_id)).size === 1;
+  const itemColumns = singleChecklist
+    ? [...new Set(records.flatMap((r) => r.items.map((i) => i.title)))]
+    : [];
 
   const lines: string[][] = [
     [
@@ -59,54 +79,42 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       t('compliance.assignee'),
       t('compliance.filledBy'),
       t('compliance.status'),
+      t('compliance.exportDone'),
+      t('compliance.exportNotDone'),
+      t('compliance.exportNotes'),
+      t('compliance.exportAttachments'),
       t('compliance.exportSubmittedAt'),
       t('compliance.exportCompletedAt'),
       t('compliance.exportVoidReason'),
-      t('compliance.exportSection'),
-      t('compliance.exportItem'),
-      t('compliance.exportDone'),
-      t('compliance.exportTickedAt'),
-      t('compliance.exportNote'),
-      t('compliance.exportPhoto'),
-      t('compliance.exportFile'),
+      ...itemColumns,
     ],
   ];
 
-  let fetched = 0;
-  for (let page = 1; fetched < MAX_RECORDS; page++) {
-    const data = await getComplianceData(board.id, { ...filters, page, pageSize: BATCH });
-    const items = await getRecordItems(data.rows);
-    fetched += data.rows.length;
+  for (const { row: r, items } of records) {
+    const byTitle = new Map(items.map((i) => [i.title, i]));
+    const ticked = items.filter((i) => i.checked).length;
+    const hhmm = (iso: string | null) => time(iso).slice(11);
 
-    for (const r of data.rows) {
-      const record = [
-        r.due_date,
-        r.checklist_title,
-        r.assignee_email ?? t('common.everyone'),
-        r.submitted_by_email ?? '',
-        t(`status.${r.status}`),
-        time(r.submitted_at),
-        time(r.completed_at),
-        r.voided_at ? (r.void_reason ?? yes) : '',
-      ];
-      const list = items.get(r.id) ?? [];
-      if (list.length === 0) lines.push([...record, '', '', '', '', '', '', '']);
-      for (const item of list) {
-        lines.push([
-          ...record,
-          item.section,
-          // Indented so sub-items read as sub-items in the sheet.
-          `${'    '.repeat(item.depth)}${item.title}`,
-          item.checked ? yes : no,
-          time(item.checkedAt),
-          item.note ?? '',
-          item.photo ? yes : '',
-          item.file ? yes : '',
-        ]);
-      }
-    }
-
-    if (page >= data.pageCount) break;
+    lines.push([
+      r.due_date,
+      r.checklist_title,
+      r.assignee_email ?? t('common.everyone'),
+      r.submitted_by_email ?? '',
+      t(`status.${r.status}`),
+      // Words, not "4/6": Excel reads a fraction as a date.
+      items.length ? t('compliance.reportTicked', { done: ticked, total: items.length }) : '',
+      items.filter((i) => !i.checked).map((i) => i.title).join('; '),
+      items.filter((i) => i.note).map((i) => `${i.title}: ${i.note}`).join('; '),
+      String(items.filter((i) => i.photo || i.file).length || ''),
+      time(r.submitted_at),
+      time(r.completed_at),
+      r.voided_at ? (r.void_reason ?? yes) : '',
+      ...itemColumns.map((title) => {
+        const item = byTitle.get(title);
+        if (!item) return '';
+        return item.checked ? `✓ ${hhmm(item.checkedAt)}`.trim() : '✗';
+      }),
+    ]);
   }
 
   const csv = '﻿' + lines.map((line) => line.map(cell).join(',')).join('\r\n');
