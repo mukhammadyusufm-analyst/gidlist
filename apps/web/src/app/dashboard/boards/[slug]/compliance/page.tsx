@@ -1,14 +1,15 @@
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
+import { Download, Printer } from 'lucide-react';
 
 import { getBoardBySlug, getMyRole } from '@/lib/boards/queries';
-import { getComplianceData } from '@/lib/compliance/queries';
+import { getComplianceData, parseComplianceSearch } from '@/lib/compliance/queries';
 import { getToday } from '@/lib/timezone/server';
 import { getTranslations } from '@/lib/i18n/server';
-import { addDays, canEditContent, canGovern, isIsoDate } from '@app/core';
+import { canEditContent, canGovern } from '@app/core';
 import { createClient } from '@/lib/supabase/server';
-import { SCHEDULE_DELETED } from '@/lib/compliance/filters';
-import type { SubmissionStatus } from '@/lib/supabase/database.types';
+import { buttonVariants } from '@/components/ui/button';
 import { StatTiles } from '@/components/compliance/stat-tiles';
 import { CompletionChart } from '@/components/compliance/completion-chart';
 import { FilterBar } from '@/components/compliance/filter-bar';
@@ -22,8 +23,6 @@ export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getTranslations();
   return { title: t('space.compliance') };
 }
-
-const STATUSES: SubmissionStatus[] = ['done', 'draft', 'missed', 'upcoming'];
 
 
 export default async function CompliancePage({
@@ -50,25 +49,8 @@ export default async function CompliancePage({
 
   const role = await getMyRole(board.id);
 
-  // Defaults to the last 30 days. Every parameter is validated rather than
-  // trusted — these reach a database query, and an arbitrary string would
-  // produce an error page instead of a report.
-  // Resolved in the viewer's timezone, not the server's UTC.
-  const today = await getToday();
-  const from = isIsoDate(sp.from) ? sp.from : addDays(today, -29);
-  const to = isIsoDate(sp.to) ? sp.to : today;
-  const status = STATUSES.includes(sp.status as SubmissionStatus)
-    ? (sp.status as SubmissionStatus)
-    : undefined;
-
-  // A schedule id or the "deleted" sentinel, never anything else: this value
-  // reaches a uuid column, where a stray string is an error page rather than an
-  // empty result.
-  const schedule =
-    sp.schedule === SCHEDULE_DELETED ||
-    (sp.schedule && /^[0-9a-f-]{36}$/i.test(sp.schedule))
-      ? sp.schedule
-      : undefined;
+  const filters = parseComplianceSearch(sp, await getToday());
+  const { from, to, status, scheduleId: schedule } = filters;
 
   const { t } = await getTranslations();
 
@@ -87,18 +69,16 @@ export default async function CompliancePage({
 
   const manageable = new Set((reportEmails ?? []).filter(Boolean));
 
-  const [data] = await Promise.all([
-    getComplianceData(board.id, {
-      from,
-      to,
-      checklistId: sp.checklist,
-      status,
-      assigneeEmail: sp.assignee,
-      filledBy: sp.filledBy,
-      scheduleId: schedule,
-      page: Number(sp.page) || 1,
-    }),
-  ]);
+  const data = await getComplianceData(board.id, filters);
+
+  // The export links carry the same filters, so what is downloaded or printed
+  // is what is on screen.
+  const query = new URLSearchParams(
+    Object.entries(sp).filter((e): e is [string, string] => typeof e[1] === 'string' && e[0] !== 'page'),
+  ).toString();
+  const base = `/dashboard/boards/${slug}/compliance`;
+  // The report covers the page of the table on screen, so it keeps the page.
+  const pageQuery = sp.page ? `page=${encodeURIComponent(sp.page)}${query ? `&${query}` : ''}` : query;
 
   /*
    * Say whose records these are.
@@ -153,12 +133,32 @@ export default async function CompliancePage({
       </section>
 
       <section>
-        <h3 className="mb-3 text-sm font-medium">
-          {t('compliance.submissions')}{' '}
-          <span className="font-normal tabular-nums text-[var(--color-muted-foreground)]">
-            {data.rows.length}
-          </span>
-        </h3>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-sm font-medium">
+            {t('compliance.submissions')}{' '}
+            <span className="font-normal tabular-nums text-[var(--color-muted-foreground)]">
+              {data.rows.length}
+            </span>
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {/* Plain links: a file download and a page to print. Neither needs
+                JavaScript, and both carry the filters above. */}
+            <a
+              href={`${base}/export${query ? `?${query}` : ''}`}
+              className={buttonVariants({ size: 'sm', variant: 'outline' })}
+            >
+              <Download aria-hidden="true" />
+              {t('compliance.exportSpreadsheet')}
+            </a>
+            <Link
+              href={`${base}/report${pageQuery ? `?${pageQuery}` : ''}`}
+              className={buttonVariants({ size: 'sm', variant: 'outline' })}
+            >
+              <Printer aria-hidden="true" />
+              {t('compliance.printReport')}
+            </Link>
+          </div>
+        </div>
         {/* Voiding is governance, not content: deciding a missed check should
             not count against the company is the kind of thing somebody may
             later be asked to justify. `set_submission_void` checks the same

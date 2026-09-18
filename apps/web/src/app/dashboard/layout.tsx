@@ -64,7 +64,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         two theme buttons rather than three, a count rather than a sentence);
         this stops any future addition doing the same thing silently.
       */}
-      <header className="sticky top-0 z-30 overflow-x-clip border-b border-[var(--color-border)] bg-[var(--color-background)]/85 backdrop-blur-md">
+      <header className="sticky top-0 z-30 overflow-x-clip border-b print:hidden border-[var(--color-border)] bg-[var(--color-background)]/85 backdrop-blur-md">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-4 py-2.5 sm:gap-3">
           <Link
             href="/dashboard"

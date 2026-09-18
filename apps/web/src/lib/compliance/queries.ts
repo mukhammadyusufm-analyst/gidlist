@@ -1,5 +1,7 @@
 import 'server-only';
 
+import { addDays, isIsoDate } from '@app/core';
+
 import { createClient } from '@/lib/supabase/server';
 import { FILLED_BY_NOBODY, SCHEDULE_DELETED } from '@/lib/compliance/filters';
 import type { SubmissionStatus } from '@/lib/supabase/database.types';
@@ -25,7 +27,54 @@ export type ComplianceFilters = {
    */
   scheduleId?: string;
   page?: number;
+  /** Rows per page; the screen uses PAGE_SIZE, the export asks for more. */
+  pageSize?: number;
 };
+
+/** The URL parameters every compliance view reads. */
+export type ComplianceSearch = {
+  from?: string;
+  to?: string;
+  checklist?: string;
+  status?: string;
+  assignee?: string;
+  filledBy?: string;
+  schedule?: string;
+  page?: string;
+};
+
+const STATUSES: SubmissionStatus[] = ['done', 'draft', 'missed', 'upcoming'];
+
+/**
+ * URL parameters to filters, validated rather than trusted — they reach a
+ * database query, where an arbitrary string is an error page rather than an
+ * empty result. Shared by the page, the spreadsheet export and the printable
+ * report, so all three always describe the same records.
+ *
+ * The range defaults to the last 30 days, ending today in the viewer's timezone.
+ */
+export function parseComplianceSearch(sp: ComplianceSearch, today: string): ComplianceFilters {
+  const status = STATUSES.includes(sp.status as SubmissionStatus)
+    ? (sp.status as SubmissionStatus)
+    : undefined;
+  // A schedule id or the "deleted" sentinel, never anything else: it reaches a
+  // uuid column.
+  const scheduleId =
+    sp.schedule === SCHEDULE_DELETED || (sp.schedule && /^[0-9a-f-]{36}$/i.test(sp.schedule))
+      ? sp.schedule
+      : undefined;
+
+  return {
+    from: isIsoDate(sp.from) ? sp.from : addDays(today, -29),
+    to: isIsoDate(sp.to) ? sp.to : today,
+    checklistId: sp.checklist,
+    status,
+    assigneeEmail: sp.assignee,
+    filledBy: sp.filledBy,
+    scheduleId,
+    page: Number(sp.page) || 1,
+  };
+}
 
 /**
  * Rows per page in the table.
@@ -165,7 +214,10 @@ export async function getComplianceData(
 
   const titles = new Map(checklistList.map((c) => [c.id, c.title]));
   const page = Math.max(1, filters.page ?? 1);
-  const offset = (page - 1) * PAGE_SIZE;
+  // Capped at 200: the rows' ids go into `.in()` filters on a GET request, and
+  // a few hundred UUIDs is where a URL gets long enough to be refused.
+  const pageSize = Math.min(200, filters.pageSize ?? PAGE_SIZE);
+  const offset = (page - 1) * pageSize;
 
   const shared = {
     p_board_id: boardId,
@@ -191,7 +243,7 @@ export async function getComplianceData(
     .lte('due_date', filters.to)
     .order('due_date', { ascending: false })
     .order('id', { ascending: false })
-    .range(offset, offset + PAGE_SIZE - 1);
+    .range(offset, offset + pageSize - 1);
 
   if (filters.status) rowQuery = rowQuery.eq('status', filters.status);
   if (filters.assigneeEmail) rowQuery = rowQuery.eq('assignee_email', filters.assigneeEmail);
@@ -326,7 +378,7 @@ export async function getComplianceData(
       items_ticked: progress.get(r.id)?.ticked ?? 0,
     })),
     page,
-    pageCount: Math.max(1, Math.ceil(matched / PAGE_SIZE)),
+    pageCount: Math.max(1, Math.ceil(matched / pageSize)),
     counts,
     // Summed from the per-status counts so the tiles and this figure are always
     // the same number, whatever filters are applied.

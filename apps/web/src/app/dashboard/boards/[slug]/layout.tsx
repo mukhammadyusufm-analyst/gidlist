@@ -30,12 +30,13 @@ export default async function BoardLayout({
   return (
     <div>
       {board.banner_url ? (
-        <div className="mb-4">
+        <div className="mb-4 print:hidden">
           <Banner value={board.banner_url} alt={t('space.bannerAlt', { name: board.name })} />
         </div>
       ) : null}
 
-      <div className="flex items-center gap-3">
+      {/* The space's chrome is not printed: a printed report carries its own heading. */}
+      <div className="flex items-center gap-3 print:hidden">
         <Avatar name={board.name} imageUrl={board.logo_url} seed={board.id} className="size-12" />
         <div className="min-w-0">
           <h1 className="flex min-w-0 items-center gap-2 text-2xl font-semibold tracking-tight">
@@ -58,14 +59,16 @@ export default async function BoardLayout({
       </div>
 
       {board.description ? (
-        <p className="mt-3 max-w-2xl text-sm text-[var(--color-muted-foreground)]">
+        <p className="mt-3 max-w-2xl text-sm text-[var(--color-muted-foreground)] print:hidden">
           {board.description}
         </p>
       ) : null}
 
-      <BoardTabs slug={board.slug} canManage={canManage} canEdit={canEditContent(role)} />
+      <div className="print:hidden">
+        <BoardTabs slug={board.slug} canManage={canManage} canEdit={canEditContent(role)} />
+      </div>
 
-      <div className="mt-6">{children}</div>
+      <div className="mt-6 print:mt-0">{children}</div>
     </div>
   );
 }
