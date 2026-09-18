@@ -4,7 +4,6 @@ import { useActionState } from 'react';
 import { UserPlus } from 'lucide-react';
 
 import { inviteMember, type ActionState } from '@/lib/boards/actions';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { FieldError, FormNotice } from '@/components/ui/field-error';
 import { SubmitButton } from '@/components/ui/submit-button';
@@ -29,14 +28,24 @@ export function InviteMemberForm({ boardId }: { boardId: string }) {
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="flex-1">
           <Label htmlFor="email">{t('common.email')}</Label>
-          <Input
+          {/* A textarea, so a column pasted from a spreadsheet arrives whole.
+              `inputMode="email"` still gives phones the @ keyboard. */}
+          <textarea
             id="email"
             name="email"
-            type="email"
             required
+            rows={2}
+            inputMode="email"
+            autoCapitalize="none"
+            spellCheck={false}
             placeholder={t('members.emailPlaceholder')}
             aria-invalid={Boolean(state.fieldErrors?.email)}
+            aria-describedby="email-hint"
+            className="w-full rounded-md border border-[var(--color-input)] bg-transparent px-3 py-2 text-sm placeholder:text-[var(--color-muted-foreground)] focus-visible:border-[var(--color-ring)] focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]/30 focus-visible:outline-none"
           />
+          <p id="email-hint" className="mt-1.5 text-xs text-[var(--color-muted-foreground)]">
+            {t('members.emailsHint')}
+          </p>
           <FieldError messages={state.fieldErrors?.email} />
         </div>
 

@@ -217,6 +217,7 @@ export const en = {
   'members.pending': 'Invited — not registered yet',
   'members.count': 'Members ({count})',
   'members.emailPlaceholder': 'colleague@company.com',
+  'members.emailsHint': 'One or many — paste a list separated by commas or new lines. Everyone gets the role on the right.',
   // --- email --------------------------------------------------------------
   'email.inviteSubject': '{inviter} invited you to {space}',
   'email.inviteBody': '{inviter} has invited you to join {space} on Gidlist, as {role}.',
@@ -703,6 +704,8 @@ export const en = {
 
   // Spaces and members
   'errors.alreadyInvited': 'That person has already been invited to this space.',
+  'errors.inviteTooMany': 'That is more than {n} addresses. Send them in smaller groups.',
+  'errors.inviteStopped': 'Stopped at {at}.',
   'errors.roleInvalid': 'That role is not valid.',
   'errors.memberInvalid': 'That member is not valid.',
   'errors.reportingLoop': 'That would make a loop in the reporting lines.',
@@ -840,6 +843,10 @@ export const en = {
   'notices.spaceArchived': 'Space archived.',
   'notices.spaceRestored': 'Space restored.',
   'notices.invitedAndEmailed': '{email} was invited and has been emailed.',
+  'notices.invitedMany': 'Invited: {n}.',
+  'notices.invitedManyNoEmail': 'No email went to {list} — tell them to sign in and check their Spaces page.',
+  'notices.invitedManyAlready': 'Already invited: {list}.',
+  'notices.invitedManyInvalid': 'Not an email address: {list}.',
   'notices.invitedNoEmail':
     '{email} was invited. No email was sent — tell them to sign in and check their Spaces page.',
   'notices.roleUpdated': 'Role updated.',

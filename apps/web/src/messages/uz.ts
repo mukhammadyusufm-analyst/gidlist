@@ -217,6 +217,7 @@ export const uz = {
   'members.pending': 'Taklif qilingan — hali roʻyxatdan oʻtmagan',
   'members.count': 'Aʼzolar ({count})',
   'members.emailPlaceholder': 'hamkasb@kompaniya.com',
+  'members.emailsHint': 'Bitta yoki bir nechta — vergul yoki yangi qator bilan ajratilgan roʻyxatni joylang. Hammaga oʻngdagi rol beriladi.',
   'email.inviteSubject': '{inviter} sizni {space} maydoniga taklif qildi',
   'email.inviteBody':
     '{inviter} sizni Gidlist ilovasidagi {space} maydoniga {role} sifatida taklif qildi.',
@@ -695,6 +696,8 @@ export const uz = {
 
   // Maydonlar va aʼzolar
   'errors.alreadyInvited': 'Bu odam allaqachon ushbu maydonga taklif qilingan.',
+  'errors.inviteTooMany': 'Bu {n} tadan koʻp manzil. Kichikroq guruhlarda yuboring.',
+  'errors.inviteStopped': '{at} da toʻxtadi.',
   'errors.roleInvalid': 'Bu rol notoʻgʻri.',
   'errors.memberInvalid': 'Bu aʼzo notoʻgʻri.',
   'errors.reportingLoop': 'Bu boʻysunish zanjirida halqa hosil qiladi.',
@@ -826,6 +829,10 @@ export const uz = {
   'notices.spaceArchived': 'Maydon arxivlandi.',
   'notices.spaceRestored': 'Maydon tiklandi.',
   'notices.invitedAndEmailed': '{email} taklif qilindi va unga xat yuborildi.',
+  'notices.invitedMany': 'Taklif qilindi: {n}.',
+  'notices.invitedManyNoEmail': '{list} ga xat bormadi — ularga tizimga kirib, Maydonlar sahifasini tekshirishni ayting.',
+  'notices.invitedManyAlready': 'Allaqachon taklif qilingan: {list}.',
+  'notices.invitedManyInvalid': 'Email manzili emas: {list}.',
   'notices.invitedNoEmail':
     '{email} taklif qilindi. Xat yuborilmadi — unga tizimga kirib, Maydonlar sahifasini tekshirishni ayting.',
   'notices.roleUpdated': 'Rol yangilandi.',

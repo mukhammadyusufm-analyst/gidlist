@@ -214,6 +214,7 @@ export const ru = {
   'members.pending': 'Приглашён — ещё не зарегистрирован',
   'members.count': 'Участники ({count})',
   'members.emailPlaceholder': 'kollega@kompaniya.com',
+  'members.emailsHint': 'Один или несколько — вставьте список через запятую или с новой строки. Всем будет назначена роль справа.',
   'email.inviteSubject': '{inviter} приглашает вас в «{space}»',
   'email.inviteBody':
     '{inviter} приглашает вас в пространство «{space}» в Gidlist — как {role}.',
@@ -688,6 +689,8 @@ export const ru = {
 
   // Пространства и участники
   'errors.alreadyInvited': 'Этот человек уже приглашён в пространство.',
+  'errors.inviteTooMany': 'Это больше {n} адресов. Отправьте их меньшими группами.',
+  'errors.inviteStopped': 'Остановлено на {at}.',
   'errors.roleInvalid': 'Недопустимая роль.',
   'errors.memberInvalid': 'Недопустимый участник.',
   'errors.reportingLoop': 'Это создаст замкнутый круг в подчинении.',
@@ -819,6 +822,10 @@ export const ru = {
   'notices.spaceArchived': 'Пространство архивировано.',
   'notices.spaceRestored': 'Пространство восстановлено.',
   'notices.invitedAndEmailed': '{email} приглашён, письмо отправлено.',
+  'notices.invitedMany': 'Приглашено: {n}.',
+  'notices.invitedManyNoEmail': 'Письмо не ушло: {list} — попросите их войти и проверить страницу «Пространства».',
+  'notices.invitedManyAlready': 'Уже приглашены: {list}.',
+  'notices.invitedManyInvalid': 'Не адрес электронной почты: {list}.',
   'notices.invitedNoEmail':
     '{email} приглашён. Письмо не отправлено — попросите войти и проверить страницу «Пространства».',
   'notices.roleUpdated': 'Роль обновлена.',

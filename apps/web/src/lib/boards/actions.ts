@@ -203,13 +203,86 @@ export async function updateBoardDetails(
 // Image uploads live in `lib/media/actions.ts`. The file goes from the browser
 // straight to Supabase Storage, so nothing here handles file data.
 
+/** Most addresses one invitation form will take at once. */
+const INVITE_BATCH_MAX = 100;
+
+/**
+ * Invite one person, or a whole team pasted in at once.
+ *
+ * Onboarding a company is forty people, and forty trips through a one-address
+ * form is where a pilot stalls before it starts. The field takes addresses
+ * separated by commas, semicolons, spaces or new lines — what comes out of a
+ * spreadsheet column or an email's To line — and invites each with the same
+ * role, one after another through the single-address path below, so every rule
+ * (duplicates, the plan's member limit) applies exactly as it does to one.
+ *
+ * Sequential on purpose: each invitation sends an email, and the email provider
+ * allows a handful of requests a second. The result counts what happened —
+ * invited, already there, not an address, not emailed — because with a batch
+ * the question is always "who still needs telling?".
+ */
 export async function inviteMember(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const { t } = await getTranslations();
 
+  const addresses = [
+    ...new Set(
+      String(formData.get('email') ?? '')
+        .split(/[\s,;]+/)
+        .map((a) => a.trim().toLowerCase())
+        .filter(Boolean),
+    ),
+  ];
+
+  // One address keeps the exact behaviour and messages it always had.
+  if (addresses.length <= 1) {
+    return inviteOne(formData.get('boardId'), addresses[0] ?? '', formData.get('role'), t);
+  }
+
+  if (addresses.length > INVITE_BATCH_MAX) {
+    return { formError: t('errors.inviteTooMany', { n: INVITE_BATCH_MAX }) };
+  }
+
+  const invited: string[] = [];
+  const notEmailed: string[] = [];
+  const already: string[] = [];
+  const invalid: string[] = [];
+  let stopped: string | null = null;
+
+  for (const address of addresses) {
+    const result = await inviteOne(formData.get('boardId'), address, formData.get('role'), t);
+    if (result.fieldErrors) invalid.push(address);
+    else if (result.code === 'already') already.push(address);
+    else if (result.formError) {
+      // Anything else — the plan's member limit, a lost connection — would
+      // refuse the rest the same way, so stop and say where.
+      stopped = `${address}: ${result.formError}`;
+      break;
+    } else {
+      invited.push(address);
+      if (result.code === 'notEmailed') notEmailed.push(address);
+    }
+  }
+
+  const lines = [t('notices.invitedMany', { n: invited.length })];
+  if (notEmailed.length) lines.push(t('notices.invitedManyNoEmail', { list: notEmailed.join(', ') }));
+  if (already.length) lines.push(t('notices.invitedManyAlready', { list: already.join(', ') }));
+  if (invalid.length) lines.push(t('notices.invitedManyInvalid', { list: invalid.join(', ') }));
+
+  return stopped
+    ? { formError: [t('errors.inviteStopped', { at: stopped }), ...lines].join(' ') }
+    : { notice: lines.join(' ') };
+}
+
+async function inviteOne(
+  boardIdValue: FormDataEntryValue | null,
+  emailValue: string,
+  roleValue: FormDataEntryValue | null,
+  t: Awaited<ReturnType<typeof getTranslations>>['t'],
+): Promise<ActionState & { code?: 'already' | 'notEmailed' }> {
   const parsed = inviteMemberSchema.safeParse({
-    boardId: formData.get('boardId'),
-    email: formData.get('email'),
-    role: formData.get('role'),
+    boardId: boardIdValue,
+    email: emailValue,
+    role: roleValue,
   });
   if (!parsed.success) {
     return { fieldErrors: translateFieldErrors(parsed.error.flatten().fieldErrors, t) };
@@ -233,7 +306,7 @@ export async function inviteMember(_prev: ActionState, formData: FormData): Prom
     // key value violates unique constraint board_members_board_email_key" is
     // not something to show a user.
     if (error.code === '23505') {
-      return { formError: t('errors.alreadyInvited') };
+      return { formError: t('errors.alreadyInvited'), code: 'already' };
     }
     return { formError: explainFailure(error.message, 'errors.couldNotInvite', t) };
   }
@@ -245,11 +318,9 @@ export async function inviteMember(_prev: ActionState, formData: FormData): Prom
   // The invitation stands either way — it lives in the database, and the email
   // is only how someone finds out about it. Saying which happened matters: if
   // no message went out, somebody has to tell them by other means.
-  return {
-    notice: delivered
-      ? t('notices.invitedAndEmailed', { email })
-      : t('notices.invitedNoEmail', { email }),
-  };
+  return delivered
+    ? { notice: t('notices.invitedAndEmailed', { email }) }
+    : { notice: t('notices.invitedNoEmail', { email }), code: 'notEmailed' };
 }
 
 /**
