@@ -21,6 +21,7 @@ import {
   type TickPosition,
 } from '@/lib/submissions/actions';
 import { removeEvidence, uploadEvidence } from '@/lib/submissions/evidence';
+import { shrinkPhoto } from '@/lib/images/shrink';
 // The flight recorder. Every branch below that decides between sending and
 // queueing writes one line, because which branch was taken is the thing three
 // rounds of debugging could not establish from a description of the screen.
@@ -1182,8 +1183,14 @@ function EvidenceControl({
     (r) => r.op.kind === 'evidence' && r.op.answerId === answerId && r.op.attachment === kind,
   );
 
-  function upload(file: File) {
+  async function upload(original: File) {
     onError(null);
+    // Before anything else, so the upload, the offline queue and storage all
+    // carry the small copy. Photos only: the file slot may hold a scanned
+    // document whose full resolution is the point.
+    const file = kind === 'photo' ? await shrinkPhoto(original) : original;
+    trace('evidence.shrunk', `${Math.round(original.size / 1024)} → ${Math.round(file.size / 1024)} kB`);
+
     const data = new FormData();
     data.set('answerId', answerId);
     data.set('kind', kind);
@@ -1448,7 +1455,7 @@ function EvidenceControl({
             disabled={pending}
             onChange={(e) => {
               const file = e.target.files?.[0];
-              if (file) upload(file);
+              if (file) void upload(file);
               // Cleared so choosing the same file twice still fires a change.
               e.target.value = '';
             }}
