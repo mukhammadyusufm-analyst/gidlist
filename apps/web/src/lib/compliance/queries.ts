@@ -101,6 +101,8 @@ export type ComplianceRow = {
    */
   submitted_by_email: string | null;
   checklist_id: string;
+  /** The version the record was filled on; null until it is first opened. */
+  checklist_version_id: string | null;
   checklist_title: string;
   /**
    * When it reached the server. The platform's own clock, and the one every
@@ -232,7 +234,7 @@ export async function getComplianceData(
   let rowQuery = supabase
     .from('submissions')
     .select(
-      'id, due_date, status, assignee_email, submitted_by_email, checklist_id, voided_at, void_reason, submitted_at, completed_at, completed_clock_skewed',
+      'id, due_date, status, assignee_email, submitted_by_email, checklist_id, checklist_version_id, voided_at, void_reason, submitted_at, completed_at, completed_clock_skewed',
       { count: 'exact' },
     )
     .in(
