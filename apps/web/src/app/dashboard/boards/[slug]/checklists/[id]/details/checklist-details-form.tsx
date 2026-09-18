@@ -51,7 +51,7 @@ export function ChecklistDetailsForm({
           maxLength={2000}
           defaultValue={currentDescription ?? ''}
           placeholder={t('checklist.descriptionPlaceholder')}
-          className="w-full rounded-md border border-[var(--color-input)] bg-transparent px-3 py-2 text-base sm:text-sm"
+          className="w-full rounded-md border border-[var(--color-input)] bg-transparent px-3 py-2 text-sm"
         />
         <FieldError messages={state.fieldErrors?.description} />
       </div>

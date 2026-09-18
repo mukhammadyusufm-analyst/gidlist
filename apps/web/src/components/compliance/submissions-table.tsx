@@ -25,8 +25,7 @@ function gapSeconds(row: ComplianceRow): number {
 
 /** Compact enough to sit inside a header cell without stretching the column. */
 const filterClass =
-  // 16px on phones: below that iOS zooms in on focus and stays zoomed.
-  'w-full min-w-0 rounded-md border border-[var(--color-input)] bg-transparent px-2 py-1 text-base font-normal sm:text-xs';
+  'w-full min-w-0 rounded-md border border-[var(--color-input)] bg-transparent px-2 py-1 text-xs font-normal';
 
 /**
  * The table view.

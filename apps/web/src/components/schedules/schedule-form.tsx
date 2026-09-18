@@ -34,7 +34,7 @@ const KIND_KEYS: Record<ScheduleKind, string> = {
 };
 
 const selectClass =
-  'min-h-11 w-full rounded-md border border-[var(--color-input)] bg-transparent px-3 py-2 text-base sm:text-sm';
+  'min-h-11 w-full rounded-md border border-[var(--color-input)] bg-transparent px-3 py-2 text-sm';
 
 /** Weekday names in the app language. 2024-01-01 was a Monday, anchoring this. */
 function weekdayName(locale: string, isoWeekday: number): string {

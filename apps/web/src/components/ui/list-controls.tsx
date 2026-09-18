@@ -54,8 +54,7 @@ export function ListFilter({
             type="search"
             name="q"
             defaultValue={search}
-            // text-base below sm: anything under 16px makes iOS zoom on focus.
-            className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] py-2 pr-3 pl-8 text-base sm:text-sm"
+            className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] py-2 pr-3 pl-8 text-sm"
           />
         </div>
       </label>
@@ -68,7 +67,7 @@ export function ListFilter({
           <select
             name="action"
             defaultValue={selectedAction ?? ''}
-            className="h-[38px] rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] px-2 text-base sm:text-sm"
+            className="h-[38px] rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] px-2 text-sm"
           >
             <option value="">{allLabel}</option>
             {actions.map((entry) => (

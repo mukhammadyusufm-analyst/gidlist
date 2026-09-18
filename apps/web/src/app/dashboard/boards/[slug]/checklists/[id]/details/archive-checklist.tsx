@@ -102,7 +102,7 @@ export function ArchiveChecklist({
                     value={confirmTitle}
                     onChange={(e) => setConfirmTitle(e.target.value)}
                     autoComplete="off"
-                    className="mt-1 w-full rounded-md border border-[var(--color-input)] bg-[var(--color-background)] px-3 py-2 text-base sm:text-sm"
+                    className="mt-1 w-full rounded-md border border-[var(--color-input)] bg-[var(--color-background)] px-3 py-2 text-sm"
                   />
                 </label>
                 <Button type="submit" variant="outline" disabled={!titleMatches || deleting}>

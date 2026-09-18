@@ -229,7 +229,7 @@ export function ContentEditor({
                         rows={Math.min(6, Math.max(2, Math.ceil(row.shipped.length / 80)))}
                         onBlur={(e) => save(row.key, e.target.value, row.override)}
                         className={cn(
-                          'mt-2 w-full rounded-lg border bg-[var(--color-surface)] px-3 py-2 text-base sm:text-sm',
+                          'mt-2 w-full rounded-lg border bg-[var(--color-surface)] px-3 py-2 text-sm',
                           edited ? 'border-[var(--color-primary)]' : 'border-[var(--color-input)]',
                         )}
                       />

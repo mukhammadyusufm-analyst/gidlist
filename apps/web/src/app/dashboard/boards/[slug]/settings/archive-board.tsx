@@ -87,9 +87,7 @@ export function ArchiveBoard({
                 value={confirmName}
                 onChange={(e) => setConfirmName(e.target.value)}
                 autoComplete="off"
-                // text-base on small screens: anything under 16px makes iOS
-                // zoom the page when the field is focused.
-                className="mt-1 w-full rounded-md border border-[var(--color-input)] bg-[var(--color-background)] px-3 py-2 text-base sm:text-sm"
+                className="mt-1 w-full rounded-md border border-[var(--color-input)] bg-[var(--color-background)] px-3 py-2 text-sm"
               />
             </label>
             <Button type="submit" variant="outline" disabled={!nameMatches || deleting}>

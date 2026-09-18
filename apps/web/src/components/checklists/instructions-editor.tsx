@@ -160,7 +160,7 @@ export function InstructionsEditor({
               rows={2}
               placeholder={t('instructions.textPlaceholder')}
               aria-label={t('instructions.textPlaceholder')}
-              className="w-full rounded-md border border-[var(--color-input)] bg-[var(--color-background)] px-3 py-2 text-base sm:text-sm"
+              className="w-full rounded-md border border-[var(--color-input)] bg-[var(--color-background)] px-3 py-2 text-sm"
             />
             <Button
               type="button"

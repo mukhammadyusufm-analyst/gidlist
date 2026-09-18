@@ -248,7 +248,7 @@ export function ScheduleCard({
                   name="email"
                   required
                   defaultValue=""
-                  className="min-h-11 flex-1 rounded-md border border-[var(--color-input)] bg-transparent px-3 py-2 text-base sm:text-sm"
+                  className="min-h-11 flex-1 rounded-md border border-[var(--color-input)] bg-transparent px-3 py-2 text-sm"
                   aria-label={t('schedule.assign')}
                 >
                   <option value="" disabled>

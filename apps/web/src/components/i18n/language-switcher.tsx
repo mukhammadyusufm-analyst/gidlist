@@ -43,7 +43,7 @@ export function LanguageSwitcher({
         // sets — which made it stand a head taller than everything around it.
         // The header is not a gloved-hand surface; the controls that live in it
         // are all 36px on purpose, and consistency there beats the rule.
-        className="h-9 shrink-0 rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] px-2 text-base transition-colors sm:text-sm hover:bg-[var(--color-accent)] focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:outline-none disabled:opacity-50"
+        className="h-9 shrink-0 rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] px-2 text-sm transition-colors hover:bg-[var(--color-accent)] focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:outline-none disabled:opacity-50"
       >
         {/*
           The CODE, not the name — "UZ" rather than "O'zbekcha".

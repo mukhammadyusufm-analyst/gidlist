@@ -283,7 +283,7 @@ function StringRow({
               if (draft.trim() !== current.trim()) onSave(row.key, draft);
             }}
             className={cn(
-              'mt-0.5 w-full rounded-md border bg-transparent px-3 py-2 text-base sm:text-sm',
+              'mt-0.5 w-full rounded-md border bg-transparent px-3 py-2 text-sm',
               current ? 'border-[var(--color-input)]' : 'border-dashed border-[var(--color-warning)]',
             )}
           />

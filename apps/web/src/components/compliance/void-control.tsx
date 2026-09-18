@@ -78,8 +78,7 @@ export function VoidControl({
         autoFocus
         placeholder={t('compliance.voidReasonPlaceholder')}
         aria-label={t('compliance.voidReason')}
-        // text-base below sm, or iOS zooms the page when the field is focused.
-        className="min-w-40 flex-1 rounded-md border border-[var(--color-input)] bg-[var(--color-background)] px-2 py-1 text-base sm:text-xs"
+        className="min-w-40 flex-1 rounded-md border border-[var(--color-input)] bg-[var(--color-background)] px-2 py-1 text-xs"
       />
       <button
         type="submit"

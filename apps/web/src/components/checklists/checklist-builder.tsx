@@ -652,8 +652,7 @@ function ItemTextForm({ item, onDone }: { item: Item; onDone: () => void }) {
         rows={2}
         placeholder={t('checklist.itemDetailsPlaceholder')}
         aria-label={t('checklist.itemDetailsPlaceholder')}
-        // text-base on small screens: anything under 16px makes iOS zoom in.
-        className="w-full rounded-md border border-[var(--color-input)] bg-[var(--color-background)] px-3 py-2 text-base sm:text-sm"
+        className="w-full rounded-md border border-[var(--color-input)] bg-[var(--color-background)] px-3 py-2 text-sm"
       />
       <p className="text-xs text-[var(--color-muted-foreground)]">{t('checklist.itemDetailsHint')}</p>
       {state.fieldErrors?.description?.[0] ? (

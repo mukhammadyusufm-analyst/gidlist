@@ -82,7 +82,7 @@ export function MemberRow({
               key={member.manager_id ?? 'none'}
               defaultValue={member.manager_id ?? ''}
               onChange={(e) => e.currentTarget.form?.requestSubmit()}
-              className="min-h-11 rounded-md border border-[var(--color-input)] bg-transparent px-2 text-base sm:text-sm"
+              className="min-h-11 rounded-md border border-[var(--color-input)] bg-transparent px-2 text-sm"
             >
               <option value="">{t('members.reportsToNobody')}</option>
               {colleagues.map((c) => (
@@ -105,7 +105,7 @@ export function MemberRow({
               // re-rendered from the server afterwards, so a rejected change
               // visibly snaps back rather than lying about having saved.
               onChange={(e) => e.currentTarget.form?.requestSubmit()}
-              className="min-h-11 rounded-md border border-[var(--color-input)] bg-transparent px-2 py-1 text-base sm:text-sm"
+              className="min-h-11 rounded-md border border-[var(--color-input)] bg-transparent px-2 py-1 text-sm"
               aria-label={t('members.roleFor', { name: displayName })}
             >
               <option value="member">{t('members.roleMember')}</option>
