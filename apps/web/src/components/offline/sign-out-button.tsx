@@ -62,7 +62,7 @@ export function SignOutButton({
       </button>
 
       {confirming !== null ? (
-        <p className="mt-1 text-xs text-[var(--color-destructive)]">
+        <p className="mt-1 text-sm text-[var(--color-destructive)]">
           {confirming} unsent {confirming === 1 ? 'change' : 'changes'} will be lost. Press again to
           sign out anyway.
         </p>

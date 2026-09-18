@@ -77,7 +77,7 @@ export function VersionActions({
       </div>
 
       {status === 'draft' && !hasSchedule ? (
-        <p className="max-w-xs text-xs text-[var(--color-muted-foreground)]">
+        <p className="max-w-xs text-sm text-[var(--color-muted-foreground)]">
           {t('checklist.publishNeedsSchedule')}
         </p>
       ) : null}

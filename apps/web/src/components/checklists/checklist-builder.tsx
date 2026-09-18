@@ -500,7 +500,7 @@ function SortableItem({
           would otherwise bury the checklist it belongs to. */}
       {instructions && (editable || itemBlocks.length > 0) ? (
         <details className="px-2 pb-2">
-          <summary className="cursor-pointer py-1 text-xs text-[var(--color-muted-foreground)]">
+          <summary className="cursor-pointer py-1.5 text-sm text-[var(--color-muted-foreground)]">
             {t('instructions.itemTitle')}
             {itemBlocks.length > 0 ? (
               <span className="ml-1.5 text-[var(--color-primary)]">{itemBlocks.length}</span>
@@ -845,7 +845,7 @@ function ItemRequirements({ item }: { item: Item }) {
 
   return (
     <details className="px-2 pb-2">
-      <summary className="cursor-pointer py-1 text-xs text-[var(--color-muted-foreground)]">
+      <summary className="cursor-pointer py-1.5 text-sm text-[var(--color-muted-foreground)]">
         {t('checklist.requirements')}
         {/* Each enabled feature listed, and marked when it is also enforced —
             required and merely recorded are different states, and somebody

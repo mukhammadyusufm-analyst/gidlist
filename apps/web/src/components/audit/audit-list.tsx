@@ -77,7 +77,7 @@ export function AuditList({
                 </>
               ) : null}
               <span aria-hidden="true">·</span>
-              <code className="text-[0.7rem] opacity-70">{entry.action}</code>
+              <code className="text-xs opacity-70">{entry.action}</code>
             </p>
           </div>
         </li>

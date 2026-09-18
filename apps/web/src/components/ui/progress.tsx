@@ -93,7 +93,9 @@ export function ProgressRing({
           )}
         />
       </svg>
-      <span className="absolute text-[0.65rem] font-semibold tabular-nums">
+      {/* 12px, the floor for anything meant to be read. "100" still fits the
+          ring's 36px opening with room to spare. */}
+      <span className="absolute text-xs font-semibold tabular-nums">
         {Math.round(percent * 100)}
       </span>
     </span>

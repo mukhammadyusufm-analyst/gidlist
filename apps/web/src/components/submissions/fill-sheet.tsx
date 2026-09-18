@@ -297,11 +297,11 @@ export function FillSheet({
       {offline && offline.rejected.length > 0 ? (
         <FormNotice kind="error">
           <span className="block">{t('offline.rejected', { count: offline.rejected.length })}</span>
-          <span className="mt-1 block text-xs opacity-90">{offline.rejected[0].rejected}</span>
+          <span className="mt-1 block opacity-90">{offline.rejected[0].rejected}</span>
           <button
             type="button"
             onClick={() => void offline.dismissRejected()}
-            className="mt-1 text-xs underline underline-offset-4"
+            className="mt-1 py-1 underline underline-offset-4"
           >
             {t('common.clear')}
           </button>
@@ -457,7 +457,7 @@ export function FillSheet({
             <input type="hidden" name="slug" value={slug} />
 
             {remaining > 0 ? (
-              <p className="text-xs text-[var(--color-muted-foreground)]">
+              <p className="text-sm text-[var(--color-muted-foreground)]">
                 {t('fill.notTicked', { count: remaining })}
               </p>
             ) : null}
@@ -788,7 +788,7 @@ function ItemRow({
                 enforces the window regardless, but discovering the rule from an
                 error message is discovering it too late to act on. */}
             {item.window_enabled && item.window_start && item.window_end ? (
-              <span className="mt-0.5 block text-xs text-[var(--color-muted-foreground)]">
+              <span className="mt-0.5 block text-sm text-[var(--color-muted-foreground)]">
                 {t(item.window_required ? 'fill.windowRequired' : 'fill.windowExpected', {
                   from: item.window_start.slice(0, 5),
                   to: item.window_end.slice(0, 5),
@@ -802,7 +802,7 @@ function ItemRow({
             the person who knows the job already should still see a checklist. */}
         {itemInstructions.length > 0 ? (
           <details className="ml-7">
-            <summary className="cursor-pointer text-xs text-[var(--color-muted-foreground)]">
+            <summary className="cursor-pointer py-1.5 text-sm text-[var(--color-muted-foreground)]">
               {t('instructions.itemTitle')}
             </summary>
             <div className="mt-2">
@@ -1072,14 +1072,14 @@ function CommentControl({
                 setDraft(saved);
                 setEditing(true);
               }}
-              className="text-xs text-[var(--color-muted-foreground)] underline underline-offset-4 transition-colors hover:text-[var(--color-foreground)]"
+              className="py-1 text-sm text-[var(--color-muted-foreground)] underline underline-offset-4 transition-colors hover:text-[var(--color-foreground)]"
             >
               {t('common.edit')}
             </button>
             <button
               type="button"
               onClick={() => commit('')}
-              className="text-xs text-[var(--color-muted-foreground)] underline underline-offset-4 transition-colors hover:text-[var(--color-destructive)]"
+              className="py-1 text-sm text-[var(--color-muted-foreground)] underline underline-offset-4 transition-colors hover:text-[var(--color-destructive)]"
             >
               {t('common.delete')}
             </button>
@@ -1093,9 +1093,9 @@ function CommentControl({
           setDraft('');
           setEditing(true);
         }}
-        className="inline-flex items-center gap-1.5 text-xs text-[var(--color-muted-foreground)] transition-colors hover:text-[var(--color-foreground)]"
+        className="inline-flex items-center gap-1.5 py-1.5 text-sm text-[var(--color-muted-foreground)] transition-colors hover:text-[var(--color-foreground)]"
       >
-        <MessageSquarePlus className="size-3.5" aria-hidden="true" />
+        <MessageSquarePlus className="size-4" aria-hidden="true" />
         {t('fill.addNote')}
       </button>
     );
@@ -1371,7 +1371,7 @@ function EvidenceControl({
                 href={url}
                 target="_blank"
                 rel="noreferrer"
-                className="text-xs underline underline-offset-4"
+                className="underline underline-offset-4"
               >
                 {t('fill.evidenceOpen')}
               </a>

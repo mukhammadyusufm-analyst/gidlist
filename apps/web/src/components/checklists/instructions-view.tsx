@@ -27,7 +27,10 @@ export function InstructionsView({
       {blocks.map((block, i) => {
         if (block.type === 'text') {
           return (
-            <p key={i} className="text-sm whitespace-pre-wrap">
+            // Read on a phone in the middle of the work, so body size there:
+            // 16px below `sm`, the compact 14px on a desk.
+            <p key={i} className="text-base leading-relaxed whitespace-pre-wrap sm:text-sm">
+
               {block.text}
             </p>
           );

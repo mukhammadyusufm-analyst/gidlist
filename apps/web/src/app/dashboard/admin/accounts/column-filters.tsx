@@ -52,7 +52,7 @@ export function AccountColumnFilters({
 
   const cell = 'px-3 py-2 align-top';
   const control =
-    'w-full min-w-0 rounded-md border border-[var(--color-input)] bg-transparent px-2 py-1 text-xs';
+    'w-full min-w-0 rounded-md border border-[var(--color-input)] bg-transparent px-2 py-1 text-base sm:text-xs';
 
   /** A numeric floor. Blank means no floor, and 0 is the same as blank. */
   function numberFilter(name: string, label: string) {

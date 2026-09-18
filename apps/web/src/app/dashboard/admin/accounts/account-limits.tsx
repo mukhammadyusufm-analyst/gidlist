@@ -190,7 +190,7 @@ export function AccountLimits({
                 type="date"
                 name="expiresAt"
                 defaultValue={agreement?.expiresAt ? agreement.expiresAt.slice(0, 10) : ''}
-                className="w-full rounded-md border border-[var(--color-input)] bg-transparent px-2 py-1 text-xs"
+                className="w-full rounded-md border border-[var(--color-input)] bg-transparent px-2 py-1 text-base sm:text-xs"
               />
             </label>
 
@@ -201,7 +201,7 @@ export function AccountLimits({
                 name="note"
                 defaultValue={agreement?.note ?? ''}
                 placeholder="contract reference"
-                className="w-full rounded-md border border-[var(--color-input)] bg-transparent px-2 py-1 text-xs"
+                className="w-full rounded-md border border-[var(--color-input)] bg-transparent px-2 py-1 text-base sm:text-xs"
               />
             </label>
 
@@ -255,7 +255,7 @@ function Field({
         inputMode="numeric"
         defaultValue={defaultValue ?? ''}
         placeholder={`plan: ${placeholder}`}
-        className="w-full rounded-md border border-[var(--color-input)] bg-transparent px-2 py-1 text-xs tabular-nums"
+        className="w-full rounded-md border border-[var(--color-input)] bg-transparent px-2 py-1 text-base sm:text-xs tabular-nums"
       />
     </label>
   );
