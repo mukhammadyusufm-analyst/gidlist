@@ -166,6 +166,7 @@ export const en = {
   'practice.delete': 'Delete practice space',
 
   'billing.title': 'Plan and billing',
+  'billing.managedOutsideApp': 'Your plan is arranged with Gidlist directly, not through this app. Your account administrator can change it.',
   'billing.intro': 'Your plan covers every space you own. You pay for people, not for spaces.',
   'billing.currentPlan': 'Current plan',
   'billing.perMonth': 'Per month',

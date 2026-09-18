@@ -5,6 +5,7 @@ import { currencyForLocale, formatMoneyWithName, money } from '@app/core';
 
 import { getAccountBilling, listAddons, listPlans } from '@/lib/billing/queries';
 import { isCheckoutAvailable } from '@/lib/billing/provider';
+import { isAndroidApp } from '@/lib/platform/android-app';
 import { getTranslations } from '@/lib/i18n/server';
 import type { Allowance } from '@/lib/billing/queries';
 
@@ -40,6 +41,9 @@ export default async function AccountBillingPage() {
   // in dollars are served by different providers from this same build, so
   // "can we take payment" only has an answer once you say for what.
   const checkoutReady = isCheckoutAvailable(usage.currency);
+  // Inside the Google Play app: the plan and its usage, never a price or a way
+  // to buy — Play's payments policy. See lib/platform/android-app.ts.
+  const inApp = await isAndroidApp();
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -64,6 +68,7 @@ export default async function AccountBillingPage() {
             <p className="mt-1 text-2xl font-semibold tracking-tight">{usage.plan_name}</p>
           </div>
 
+          {inApp ? null : (
           <div className="text-right">
             <p className="text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]">
               {t('billing.perMonth')}
@@ -72,6 +77,7 @@ export default async function AccountBillingPage() {
               {formatMoneyWithName(billing.price, locale)}
             </p>
           </div>
+          )}
         </div>
 
         <div className="mt-5 grid gap-5 border-t border-[var(--color-border)] pt-5 sm:grid-cols-2">
@@ -92,7 +98,7 @@ export default async function AccountBillingPage() {
         {/* Said before it bites. Buying a bigger plan means a conversation with
             whoever holds the card, and that takes days — a warning that arrives
             at the limit is an interruption rather than a warning. */}
-        {billing.members.nearLimit || billing.spaces.nearLimit ? (
+        {!inApp && (billing.members.nearLimit || billing.spaces.nearLimit) ? (
           <p className="mt-5 flex gap-2 rounded-lg bg-[var(--color-accent)] p-3 text-xs text-[var(--color-muted-foreground)]">
             <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
             <span>
@@ -110,6 +116,12 @@ export default async function AccountBillingPage() {
         ) : null}
       </section>
 
+      {inApp ? (
+        <p className="rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] p-5 text-sm text-[var(--color-muted-foreground)]">
+          {t('billing.managedOutsideApp')}
+        </p>
+      ) : (
+      <>
       <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] p-5">
         <h3 className="text-sm font-medium">{t('billing.plansTitle')}</h3>
         <p className="mt-1 text-xs text-[var(--color-muted-foreground)]">
@@ -195,6 +207,8 @@ export default async function AccountBillingPage() {
           {checkoutReady ? t('billing.paymentReady') : t('billing.paymentComingSoon')}
         </p>
       </section>
+      </>
+      )}
     </div>
   );
 }

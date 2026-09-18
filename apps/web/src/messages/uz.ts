@@ -165,6 +165,7 @@ export const uz = {
   'practice.delete': 'Mashq maydonini oʻchirish',
 
   'billing.title': 'Tarif va toʻlov',
+  'billing.managedOutsideApp': 'Tarifingiz ushbu ilova orqali emas, bevosita Gidlist bilan kelishiladi. Uni hisobingiz administratori oʻzgartira oladi.',
   'billing.intro':
     'Tarif sizning barcha maydonlaringizni qamrab oladi. Siz maydon uchun emas, odamlar uchun toʻlaysiz.',
   'billing.currentPlan': 'Joriy tarif',

@@ -10,6 +10,11 @@ import { LOCALE_AUTO_COOKIE, negotiateLocale } from '@/lib/i18n/negotiate';
  */
 const LOCALE_COOKIE_NAME = 'locale';
 
+/** Must equal `ANDROID_APP_COOKIE` in `lib/platform/android-app.ts`. */
+const ANDROID_APP_COOKIE = 'android_app';
+/** The Play package, as set in Bubblewrap and `/.well-known/assetlinks.json`. */
+const ANDROID_PACKAGE = 'com.gidlist.app';
+
 /**
  * Runs before every matched request.
  *
@@ -213,7 +218,38 @@ export async function proxy(request: NextRequest) {
     }
   }
 
+  /*
+   * Opened from the Google Play app?
+   *
+   * Chrome sends `android-app://<package>` as the referrer when a Trusted Web
+   * Activity launches, and `?source=android` covers a start URL that says so
+   * itself. Remembered in a cookie, because only the first request carries the
+   * referrer. Play's payments policy forbids showing prices or a way to buy
+   * outside Google Play inside the app, so pages read this to leave them out.
+   *
+   * The app runs in the phone's Chrome and shares its cookies, so the same
+   * person opening app.gidlist.com in Chrome afterwards also sees no prices.
+   * That errs the right way: prices hidden from a customer, never shown in the
+   * app.
+   */
+  const fromAndroidApp =
+    (request.headers.get('referer') ?? '').startsWith(`android-app://${ANDROID_PACKAGE}`) ||
+    request.nextUrl.searchParams.get('source') === 'android';
+  if (fromAndroidApp && !request.cookies.get(ANDROID_APP_COOKIE)) {
+    const existing = requestHeaders.get('cookie');
+    const added = `${ANDROID_APP_COOKIE}=1`;
+    requestHeaders.set('cookie', existing ? `${existing}; ${added}` : added);
+  }
+
   const rememberGuess = (response: NextResponse) => {
+    if (fromAndroidApp) {
+      response.cookies.set(ANDROID_APP_COOKIE, '1', {
+        path: '/',
+        maxAge: 60 * 60 * 24 * 365,
+        sameSite: 'lax',
+        httpOnly: true,
+      });
+    }
     if (!guessedLocale) return;
     const options = { path: '/', maxAge: 60 * 60 * 24 * 365, sameSite: 'lax' as const, httpOnly: false };
     response.cookies.set(LOCALE_COOKIE_NAME, guessedLocale, options);
@@ -326,6 +362,7 @@ export async function proxy(request: NextRequest) {
       redirectResponse.cookies.set(cookie);
     }
     redirectResponse.headers.set('Content-Security-Policy', csp);
+    rememberGuess(redirectResponse);
     return redirectResponse;
   }
 
