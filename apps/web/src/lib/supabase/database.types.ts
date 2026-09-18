@@ -447,6 +447,7 @@ export type Database = {
           window_required?: boolean;
           window_start?: string | null;
           window_end?: string | null;
+          instructions?: Json;
         };
         Update: {
           title?: string;

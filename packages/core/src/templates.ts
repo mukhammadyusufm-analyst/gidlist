@@ -32,6 +32,17 @@ export type TemplateItem = {
   title: Text;
   description?: Text;
   photo?: 'required' | 'offered';
+  /**
+   * This item's own time window, ENFORCED — the tick is refused outside it.
+   * Overrides the checklist's recorded-only window. Used where the time is the
+   * point, such as arriving at work.
+   */
+  window?: [string, string];
+  /**
+   * How to do it: paragraphs shown under the item as instructions. Pictures,
+   * PDFs and video links are the customer's own to add.
+   */
+  instructions?: Text[];
 };
 
 export type ChecklistTemplate = {
@@ -40,7 +51,16 @@ export type ChecklistTemplate = {
   description: Text;
   /** HH:MM–HH:MM, recorded on every item but not enforced. */
   window?: [string, string];
+  /** Instructions for the checklist as a whole, shown above it. */
+  instructions?: Text[];
   items: TemplateItem[];
+};
+
+/** Said on items whose point is the place, which a template cannot know. */
+const setLocation: Text = {
+  en: 'Set your office location in this item’s Conditions, so it can only be ticked there.',
+  uz: 'Ushbu bandning Shartlarida ofis manzilini belgilang — shunda u faqat oʻsha yerda belgilanadi.',
+  ru: 'Укажите адрес офиса в «Условиях» этого пункта — тогда его можно будет отметить только там.',
 };
 
 const photoOfReading: Text = {
@@ -55,7 +75,7 @@ const noteIfWrong: Text = {
   ru: 'Отметьте после проверки. Если что-то требует внимания, оставьте заметку.',
 };
 
-export const CHECKLIST_TEMPLATES: readonly ChecklistTemplate[] = [
+const SEGMENT_TEMPLATES: readonly ChecklistTemplate[] = [
   {
     key: 'kitchen-opening',
     title: { en: 'Kitchen opening', uz: 'Oshxonani ochish', ru: 'Открытие кухни' },
@@ -275,6 +295,126 @@ export const CHECKLIST_TEMPLATES: readonly ChecklistTemplate[] = [
     ],
   },
 ];
+
+/**
+ * Added 19 Sep 2026 at his request: an office, to show attendance with the
+ * place and the time both enforced, and a factory, to show instructions in
+ * full — a line start-up where every step says how.
+ */
+const EXTRA_TEMPLATES: readonly ChecklistTemplate[] = [
+  {
+    key: 'office-attendance',
+    title: { en: 'Office attendance', uz: 'Ofisga kelib-ketish', ru: 'Учёт присутствия в офисе' },
+    description: {
+      en: 'Offices. Arrival and departure ticked at the office, inside working hours.',
+      uz: 'Ofislar. Kelish va ketish ofisda, ish vaqti ichida belgilanadi.',
+      ru: 'Офисы. Приход и уход отмечаются в офисе, в рабочее время.',
+    },
+    items: [
+      {
+        title: { en: 'Arrived at the office', uz: 'Ofisga keldim', ru: 'Пришёл в офис' },
+        description: setLocation,
+        window: ['08:30', '09:15'],
+      },
+      {
+        title: { en: 'Workplace ready', uz: 'Ish joyi tayyor', ru: 'Рабочее место готово' },
+        description: {
+          en: 'Computer on, mail and tasks checked.',
+          uz: 'Kompyuter yoqilgan, pochta va vazifalar tekshirilgan.',
+          ru: 'Компьютер включён, почта и задачи проверены.',
+        },
+      },
+      {
+        title: { en: 'Left the office', uz: 'Ofisdan ketdim', ru: 'Ушёл из офиса' },
+        description: setLocation,
+        window: ['17:45', '19:00'],
+      },
+    ],
+  },
+  {
+    key: 'line-start-up',
+    title: { en: 'Production line start-up', uz: 'Ishlab chiqarish liniyasini ishga tushirish', ru: 'Запуск производственной линии' },
+    description: {
+      en: 'Manufacturing. A safe start, step by step, with the instructions inside.',
+      uz: 'Ishlab chiqarish. Xavfsiz ishga tushirish — qadam-baqadam, koʻrsatmalar ichida.',
+      ru: 'Производство. Безопасный запуск шаг за шагом, с инструкциями внутри.',
+    },
+    window: ['06:30', '07:30'],
+    instructions: [
+      {
+        en: 'Wear safety glasses, gloves and ear protection before you start. If any step fails, stop, do not start the line, and tell the shift supervisor.',
+        uz: 'Boshlashdan oldin himoya koʻzoynagi, qoʻlqop va quloqchin taqing. Biror qadam bajarilmasa — toʻxtang, liniyani ishga tushirmang va smena boshligʻiga xabar bering.',
+        ru: 'Перед началом наденьте защитные очки, перчатки и наушники. Если какой-то шаг не выполняется — остановитесь, не запускайте линию и сообщите мастеру смены.',
+      },
+    ],
+    items: [
+      {
+        title: { en: 'Lockout tags removed and logged', uz: 'Blokirovka yorliqlari olindi va qayd etildi', ru: 'Блокировочные бирки сняты и записаны' },
+        instructions: [
+          {
+            en: 'Check the lockout board: every tag from the last maintenance must be back on its hook, with the name of whoever removed it written in the log.',
+            uz: 'Blokirovka taxtasini tekshiring: oxirgi taʼmirlashdagi har bir yorliq ilgakda boʻlishi, uni olgan kishining ismi jurnalda yozilgan boʻlishi kerak.',
+            ru: 'Проверьте щит блокировки: каждая бирка после последнего ремонта должна висеть на своём крючке, а в журнале — имя того, кто её снял.',
+          },
+        ],
+      },
+      {
+        title: { en: 'Guards closed, emergency stops tested', uz: 'Himoya toʻsiqlari yopiq, favqulodda toʻxtatish sinaldi', ru: 'Ограждения закрыты, аварийные остановки проверены' },
+        photo: 'offered',
+        instructions: [
+          {
+            en: '1. Close every guard door — the machine must not start with one open.\n2. Press each emergency stop in turn; the panel must show STOP.\n3. Reset each one before moving to the next.',
+            uz: '1. Barcha himoya eshiklarini yoping — bittasi ochiq boʻlsa, stanok ishga tushmasligi kerak.\n2. Har bir favqulodda toʻxtatish tugmasini navbat bilan bosing; panelda STOP chiqishi kerak.\n3. Keyingisiga oʻtishdan oldin har birini qayta tiklang.',
+            ru: '1. Закройте все дверцы ограждений — с открытой станок не должен запускаться.\n2. По очереди нажмите каждую аварийную кнопку; на панели должно появиться STOP.\n3. Сбросьте каждую, прежде чем переходить к следующей.',
+          },
+        ],
+      },
+      {
+        title: { en: 'Air pressure at 6 bar', uz: 'Havo bosimi 6 bar', ru: 'Давление воздуха 6 бар' },
+        description: {
+          en: 'Photograph the gauge so the reading can be seen.',
+          uz: 'Koʻrsatkich koʻrinadigan qilib manometrni suratga oling.',
+          ru: 'Сфотографируйте манометр так, чтобы были видны показания.',
+        },
+        photo: 'required',
+        instructions: [
+          {
+            en: 'The main gauge is at the air inlet by the control cabinet. Between 5.8 and 6.2 bar is correct. Outside that range, do not start — call maintenance.',
+            uz: 'Asosiy manometr boshqaruv shkafi yonidagi havo kirishida. 5,8 dan 6,2 bar gacha — toʻgʻri. Bu oraliqdan tashqarida ishga tushirmang — taʼmirlash xizmatini chaqiring.',
+            ru: 'Главный манометр — на входе воздуха у шкафа управления. Норма — от 5,8 до 6,2 бар. Вне этого диапазона не запускайте — вызовите ремонтную службу.',
+          },
+        ],
+      },
+      {
+        title: { en: 'Lubrication levels checked', uz: 'Moylash darajasi tekshirildi', ru: 'Уровень смазки проверен' },
+        instructions: [
+          {
+            en: 'Each sight glass must show oil between the MIN and MAX marks. Top up only with the oil named on the tank label.',
+            uz: 'Har bir koʻrish oynasida moy MIN va MAX belgilari orasida boʻlishi kerak. Faqat idish yorligʻida koʻrsatilgan moy bilan toʻldiring.',
+            ru: 'В каждом смотровом окне масло должно быть между отметками MIN и MAX. Доливайте только масло, указанное на этикетке бака.',
+          },
+        ],
+      },
+      {
+        title: { en: 'First part measured and within tolerance', uz: 'Birinchi detal oʻlchandi va meʼyorda', ru: 'Первая деталь измерена и в допуске' },
+        photo: 'required',
+        instructions: [
+          {
+            en: 'Run one part, measure it against the drawing with the calibrated gauge, and photograph the part next to the gauge reading. Only then start the batch.',
+            uz: 'Bitta detal chiqaring, uni kalibrlangan asbob bilan chizmaga solishtirib oʻlchang va detalni asbob koʻrsatkichi bilan birga suratga oling. Shundan keyingina partiyani boshlang.',
+            ru: 'Сделайте одну деталь, измерьте её по чертежу поверенным инструментом и сфотографируйте деталь рядом с показанием прибора. Только после этого запускайте партию.',
+          },
+        ],
+      },
+      {
+        title: { en: 'Supervisor approval to start', uz: 'Boshliqning ishga tushirishga ruxsati', ru: 'Разрешение мастера на запуск' },
+        description: noteIfWrong,
+      },
+    ],
+  },
+];
+
+export const CHECKLIST_TEMPLATES: readonly ChecklistTemplate[] = [...SEGMENT_TEMPLATES, ...EXTRA_TEMPLATES];
 
 export function findTemplate(key: string): ChecklistTemplate | undefined {
   return CHECKLIST_TEMPLATES.find((t) => t.key === key);

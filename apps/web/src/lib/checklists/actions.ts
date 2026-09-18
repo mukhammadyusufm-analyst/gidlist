@@ -167,25 +167,40 @@ export async function createChecklistFromTemplate(
     : { data: null };
   const groupId = group?.id;
 
-  const [from, to] = template.window ?? [null, null];
+  // Instructions are stored as blocks; a template's are text only.
+  const asBlocks = (texts?: { en: string; uz: string; ru: string }[]) =>
+    (texts ?? []).map((text) => ({ type: 'text' as const, text: templateText(text, locale) }));
+
   const { error: itemsError } =
     draft && groupId
       ? await supabase.from('checklist_items').insert(
-          template.items.map((item, index) => ({
-            version_id: draft.id,
-            group_id: groupId,
-            title: templateText(item.title, locale),
-            description: item.description ? templateText(item.description, locale) : null,
-            position: (index + 1) * POSITION_STEP,
-            photo_enabled: Boolean(item.photo),
-            photo_required: item.photo === 'required',
-            window_enabled: from !== null,
-            window_required: false,
-            window_start: from,
-            window_end: to,
-          })),
+          template.items.map((item, index) => {
+            // An item's own window is enforced; the checklist's is only recorded.
+            const [from, to] = item.window ?? template.window ?? [null, null];
+            return {
+              version_id: draft.id,
+              group_id: groupId,
+              title: templateText(item.title, locale),
+              description: item.description ? templateText(item.description, locale) : null,
+              position: (index + 1) * POSITION_STEP,
+              photo_enabled: Boolean(item.photo),
+              photo_required: item.photo === 'required',
+              window_enabled: from !== null,
+              window_required: Boolean(item.window),
+              window_start: from,
+              window_end: to,
+              instructions: asBlocks(item.instructions),
+            };
+          }),
         )
       : { error: { message: 'no draft' } };
+
+  if (!itemsError && draft && template.instructions?.length) {
+    await supabase
+      .from('checklist_versions')
+      .update({ instructions: asBlocks(template.instructions) })
+      .eq('id', draft.id);
+  }
 
   if (itemsError) {
     await supabase.from('checklists').delete().eq('id', checklist.id);
