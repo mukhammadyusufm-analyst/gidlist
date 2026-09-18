@@ -23,9 +23,9 @@ const LINK_ERROR_KEYS: Record<string, string> = {
 
 // `searchParams` is a Promise in Next.js 16 — synchronous access was removed.
 export default async function LoginPage(props: {
-  searchParams: Promise<{ next?: string; error?: string }>;
+  searchParams: Promise<{ next?: string; error?: string; deleted?: string }>;
 }) {
-  const { next = '/dashboard', error } = await props.searchParams;
+  const { next = '/dashboard', error, deleted } = await props.searchParams;
   const linkErrorKey = error ? LINK_ERROR_KEYS[error] : undefined;
   const { t } = await getTranslations();
 
@@ -37,6 +37,12 @@ export default async function LoginPage(props: {
           {t('auth.welcomeBack')}
         </p>
       </div>
+
+      {deleted ? (
+        <div className="mb-4">
+          <FormNotice kind="info">{t('account.deleted')}</FormNotice>
+        </div>
+      ) : null}
 
       {linkErrorKey ? (
         <div className="mb-4">

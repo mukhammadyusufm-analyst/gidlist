@@ -24,6 +24,37 @@ const nameSchema = z.object({
     .max(120, { error: 'errors.nameTooLong120' }),
 });
 
+/**
+ * Delete the signed-in person's own account.
+ *
+ * The database decides (`delete_my_account`): an owner of a company space, or
+ * the platform operator, is refused with a sentence that says what to do. On
+ * success the session is ended here, and the caller wipes the phone's offline
+ * copies and leaves — returning rather than redirecting, because a redirect
+ * would stop the browser code that does the wiping from running.
+ */
+export async function deleteMyAccount(
+  _prev: AccountState & { deleted?: boolean },
+  formData: FormData,
+): Promise<AccountState & { deleted?: boolean }> {
+  const { t } = await getTranslations();
+  const user = await getUser();
+  if (!user) return { formError: t('errors.signInToDelete') };
+
+  // Typed, not ticked: deleting an account cannot be undone.
+  if (String(formData.get('confirm') ?? '').trim().toLowerCase() !== (user.email ?? '').toLowerCase()) {
+    return { formError: t('errors.deleteAccountConfirm') };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc('delete_my_account');
+  if (error) return { formError: describeDatabaseError(error.message, t) };
+
+  // The user row is gone; this clears the cookies that still name it.
+  await supabase.auth.signOut().catch(() => undefined);
+  return { deleted: true };
+}
+
 export async function updateProfileName(
   _prev: AccountState,
   formData: FormData,

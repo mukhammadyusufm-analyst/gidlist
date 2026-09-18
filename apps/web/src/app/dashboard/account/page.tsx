@@ -10,6 +10,7 @@ import { getTheme } from '@/lib/theme/server';
 import { ThemeChoice } from '@/components/theme/theme-choice';
 import { AvatarUpload } from '@/components/account/avatar-upload';
 import { EmailForm, NameForm, PasswordForm } from '@/components/account/account-forms';
+import { DeleteAccount } from '@/components/account/delete-account';
 
 // Translated, so the browser tab matches the language the app is being read in.
 // Static `metadata` cannot do this: it is evaluated without a request, so it
@@ -147,6 +148,16 @@ export default async function AccountPage() {
           {t('account.appearanceIntro')}
         </p>
         <ThemeChoice current={theme} />
+      </section>
+
+      {/* Last, and addressable: the Play Store listing links here as the place
+          to delete an account (#delete). */}
+      <section id="delete" className="scroll-mt-20 rounded-xl border border-[var(--color-destructive)]/40 p-4">
+        <h2 className="text-lg font-semibold">{t('account.deleteSection')}</h2>
+        <p className="mt-1 mb-4 text-sm text-[var(--color-muted-foreground)]">
+          {t('account.deleteIntro')}
+        </p>
+        <DeleteAccount email={user.email ?? ''} />
       </section>
 
       {/*

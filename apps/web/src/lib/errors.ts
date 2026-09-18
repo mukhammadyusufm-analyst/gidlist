@@ -121,6 +121,7 @@ const DATABASE_RULES: Rule[] = [
   { match: /only be granted directly in the database/i, key: 'errors.rootCapabilitySqlOnly' },
   { match: /cannot delete the account you are signed in with/i, key: 'errors.cannotDeleteSelf' },
   { match: /owns a space, which holds compliance history/i, key: 'errors.accountOwnsSpace' },
+  { match: /You own a space, which holds your company/i, key: 'errors.deleteAccountOwnsSpace' },
   { match: /holds platform access/i, key: 'errors.accountHasAccess' },
   { match: /access period has already ended/i, key: 'errors.accessPeriodEnded' },
   { match: /Built-in languages cannot be removed/i, key: 'errors.builtinLanguage' },

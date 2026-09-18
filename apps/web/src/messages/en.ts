@@ -458,6 +458,14 @@ export const en = {
 
   // --- account -----------------------------------------------------------
   'account.title': 'Your account',
+  'account.deleteSection': 'Delete account',
+  'account.deleteIntro': 'Removes your sign-in, name and photo for good. What you filled in stays in your company\'s records, under your email address. If you own a space, write to Gidlist support instead — the space has to be handed over or closed first.',
+  'account.deleteConfirmLabel': 'Type {email} to confirm',
+  'account.deleteAction': 'Delete my account',
+  'account.deleted': 'Your account has been deleted.',
+  'errors.deleteAccountConfirm': 'Type your email address exactly to confirm.',
+  'errors.signInToDelete': 'Sign in to delete your account.',
+  'errors.deleteAccountOwnsSpace': 'You own a space, which holds your company\'s records. Write to Gidlist support (Telegram @gidlist_support) and we will hand it over or close it, then delete your account.',
   'account.intro': 'Your personal details and how you sign in.',
   'account.link': 'Account',
   'account.profile': 'Profile',
