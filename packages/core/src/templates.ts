@@ -13,8 +13,9 @@
  *     "photo required" in lower case (shown, not enforced);
  *   - a time window, RECORDED ONLY, where the plan gives one — the first
  *     morning should not refuse a tick because the customer opens at 09:30;
- *   - never a location: that needs the branch's own coordinates, which only
- *     the customer has. The builder's item conditions are where they add it.
+ *   - a location only on items marked `atPlace`, and then the place is asked for
+ *     when the checklist is created — a template cannot know where anybody's
+ *     workplace is, and the database refuses a location rule without one.
  *
  * Data, not translations in the message catalogues: a template is a document
  * written in three languages, created in whichever one the person is reading.
@@ -43,7 +44,17 @@ export type TemplateItem = {
    * PDFs and video links are the customer's own to add.
    */
   instructions?: Text[];
+  /**
+   * Ticked only at the workplace, ENFORCED. The creator picks the place (and a
+   * radius) on a map when making the checklist from this template.
+   */
+  atPlace?: boolean;
 };
+
+/** Whether creating from this template has to ask where the workplace is. */
+export function templateNeedsPlace(template: ChecklistTemplate): boolean {
+  return template.items.some((item) => item.atPlace);
+}
 
 export type ChecklistTemplate = {
   key: string;
@@ -56,11 +67,11 @@ export type ChecklistTemplate = {
   items: TemplateItem[];
 };
 
-/** Said on items whose point is the place, which a template cannot know. */
-const setLocation: Text = {
-  en: 'Set your office location in this item’s Conditions, so it can only be ticked there.',
-  uz: 'Ushbu bandning Shartlarida ofis manzilini belgilang — shunda u faqat oʻsha yerda belgilanadi.',
-  ru: 'Укажите адрес офиса в «Условиях» этого пункта — тогда его можно будет отметить только там.',
+/** Said on items that are held to the workplace and to a time. */
+const hereAndNow: Text = {
+  en: 'Only at the workplace, and only in this time.',
+  uz: 'Faqat ish joyida va faqat shu vaqtda.',
+  ru: 'Только на рабочем месте и только в это время.',
 };
 
 const photoOfReading: Text = {
@@ -313,8 +324,9 @@ const EXTRA_TEMPLATES: readonly ChecklistTemplate[] = [
     items: [
       {
         title: { en: 'Arrived at the office', uz: 'Ofisga keldim', ru: 'Пришёл в офис' },
-        description: setLocation,
+        description: hereAndNow,
         window: ['08:30', '09:15'],
+        atPlace: true,
       },
       {
         title: { en: 'Workplace ready', uz: 'Ish joyi tayyor', ru: 'Рабочее место готово' },
@@ -326,8 +338,36 @@ const EXTRA_TEMPLATES: readonly ChecklistTemplate[] = [
       },
       {
         title: { en: 'Left the office', uz: 'Ofisdan ketdim', ru: 'Ушёл из офиса' },
-        description: setLocation,
+        description: hereAndNow,
         window: ['17:45', '19:00'],
+        atPlace: true,
+      },
+    ],
+  },
+  {
+    key: 'worker-attendance',
+    title: {
+      en: 'Worker attendance: check in and check out',
+      uz: 'Ishchilar davomati: kelish va ketish',
+      ru: 'Учёт явки: приход и уход',
+    },
+    description: {
+      en: 'Shifts on site. Check in and check out only at the workplace, and only inside the shift times.',
+      uz: 'Obyektdagi smenalar. Kelish va ketish faqat ish joyida va faqat smena vaqti ichida belgilanadi.',
+      ru: 'Смены на объекте. Приход и уход отмечаются только на рабочем месте и только в часы смены.',
+    },
+    items: [
+      {
+        title: { en: 'Check in', uz: 'Ishga keldim', ru: 'Пришёл на смену' },
+        description: hereAndNow,
+        window: ['07:30', '08:30'],
+        atPlace: true,
+      },
+      {
+        title: { en: 'Check out', uz: 'Ishdan ketdim', ru: 'Ушёл со смены' },
+        description: hereAndNow,
+        window: ['17:00', '19:00'],
+        atPlace: true,
       },
     ],
   },

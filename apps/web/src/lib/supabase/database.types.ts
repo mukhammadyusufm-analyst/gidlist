@@ -448,6 +448,11 @@ export type Database = {
           window_start?: string | null;
           window_end?: string | null;
           instructions?: Json;
+          location_enabled?: boolean;
+          location_required?: boolean;
+          location_lat?: number | null;
+          location_lng?: number | null;
+          location_radius_m?: number | null;
         };
         Update: {
           title?: string;

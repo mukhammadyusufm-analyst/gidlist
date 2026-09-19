@@ -7,6 +7,7 @@ import {
   addItemSchema,
   createChecklistSchema,
   findTemplate,
+  templateNeedsPlace,
   templateText,
   updateChecklistSchema,
   parseInstructions,
@@ -132,6 +133,23 @@ export async function createChecklistFromTemplate(
   const slug = String(formData.get('slug') ?? '');
   if (!template || !boardId) return { formError: t('errors.couldNotCreateChecklist') };
 
+  // The workplace, for templates whose items are held to it. Checked before
+  // anything is created, so a missing place leaves nothing half-made behind.
+  const place = {
+    lat: Number(formData.get('placeLat')),
+    lng: Number(formData.get('placeLng')),
+    radius: Math.round(Number(formData.get('placeRadius')) || 150),
+  };
+  const hasPlace =
+    formData.get('placeLat') !== null &&
+    Math.abs(place.lat) <= 90 &&
+    Math.abs(place.lng) <= 180 &&
+    place.radius >= 25 &&
+    place.radius <= 5000;
+  if (templateNeedsPlace(template) && !hasPlace) {
+    return { formError: t('errors.templateNeedsPlace') };
+  }
+
   const supabase = await createClient();
   const user = await getUser();
   if (!user) redirect('/login');
@@ -190,6 +208,15 @@ export async function createChecklistFromTemplate(
               window_start: from,
               window_end: to,
               instructions: asBlocks(item.instructions),
+              ...(item.atPlace
+                ? {
+                    location_enabled: true,
+                    location_required: true,
+                    location_lat: place.lat,
+                    location_lng: place.lng,
+                    location_radius_m: place.radius,
+                  }
+                : {}),
             };
           }),
         )
