@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { addDays, fromIsoDate } from '@app/core/dates';
+import { formatDate } from '@app/core/format-date';
 
 import { DateField } from '@/components/ui/date-field';
 import { Button } from '@/components/ui/button';
@@ -42,7 +43,7 @@ export function DatePicker({
 
   // Formatted from local calendar parts. Round-tripping through UTC shifted
   // every date back a day east of Greenwich.
-  const label = fromIsoDate(value).toLocaleDateString(locale, {
+  const label = formatDate(fromIsoDate(value), locale, {
     weekday: 'long',
     day: 'numeric',
     month: 'long',

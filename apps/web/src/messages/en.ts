@@ -92,7 +92,7 @@ export const en = {
   'auth.chooseLanguage': 'Choose your language',
   'auth.chooseLanguageHint':
     'Gidlist and your first practice checklist will be in this language. You can change it at any time.',
-  'auth.pitchTitle': 'Checklists that prove they were done.',
+  'auth.pitchTitle': 'Checklists to help you get things done.',
   'auth.pitchBody':
     'Build a procedure once, put it on a schedule, and keep a record of who completed what — across every site, shift and language your team works in.',
   'auth.pitchPointSchedule': 'Recurring checks, assigned to the right people automatically',

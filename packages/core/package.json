@@ -10,6 +10,7 @@
     "./appearance": "./src/appearance.ts",
     "./constants": "./src/constants.ts",
     "./dates": "./src/dates.ts",
+    "./format-date": "./src/format-date.ts",
     "./i18n": "./src/i18n.ts",
     "./media": "./src/media.ts",
     "./money": "./src/money.ts",

@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { AlertTriangle, TrendingUp, Users } from 'lucide-react';
 import { formatMoney, money } from '@app/core';
+import { formatDate } from '@app/core/format-date';
 
 import { hasCapability } from '@/lib/platform/access';
 import { AccountLimits, type AccountAgreement } from './account-limits';
@@ -65,11 +66,7 @@ function StateBadge({ state }: { state: AccountState }) {
 
 /** A date, no time. The hour an account registered has never mattered here. */
 function formatDay(iso: string, locale: string): string {
-  return new Intl.DateTimeFormat(locale, {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  }).format(new Date(iso));
+  return formatDate(new Date(iso), locale, { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 /**

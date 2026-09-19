@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { Check, FileText, MessageSquare } from 'lucide-react';
+import { formatDate } from '@app/core/format-date';
 
 import { getBoardBySlug } from '@/lib/boards/queries';
 import {
@@ -66,11 +67,10 @@ export default async function ComplianceReportPage({
   );
 
   const time = (iso: string | null | undefined) =>
-    iso ? new Date(iso).toLocaleString(locale, { timeZone, dateStyle: 'medium', timeStyle: 'short' }) : '';
+    iso ? formatDate(new Date(iso), locale, { timeZone, dateStyle: 'medium', timeStyle: 'short' }) : '';
   const clock = (iso: string | null | undefined) =>
-    iso ? new Date(iso).toLocaleTimeString(locale, { timeZone, hour: '2-digit', minute: '2-digit' }) : '';
-  const day = (iso: string) =>
-    new Date(`${iso}T00:00:00`).toLocaleDateString(locale, { dateStyle: 'long' });
+    iso ? formatDate(new Date(iso), locale, { timeZone, hour: '2-digit', minute: '2-digit' }) : '';
+  const day = (iso: string) => formatDate(new Date(`${iso}T00:00:00`), locale, { dateStyle: 'long' });
 
   const back = `/dashboard/boards/${slug}/compliance?${new URLSearchParams(
     Object.entries(sp).filter((e): e is [string, string] => typeof e[1] === 'string'),

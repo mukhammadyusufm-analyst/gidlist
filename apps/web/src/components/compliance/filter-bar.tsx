@@ -5,6 +5,7 @@ import { toIsoDate } from '@app/core/dates';
 import { DateField } from '@/components/ui/date-field';
 import { Button } from '@/components/ui/button';
 import { SCHEDULE_DELETED } from '@/lib/compliance/filters';
+import { formatDate } from '@app/core/format-date';
 import { useComplianceFilters } from '@/components/compliance/use-filters';
 import { useT } from '@/components/i18n/provider';
 
@@ -66,9 +67,11 @@ export function FilterBar({
   };
 
   const scheduleLabel = (s: { checklist_id: string; kind: string; start_date: string }) =>
-    `${titles.get(s.checklist_id) ?? ''} · ${t(KIND_KEYS[s.kind] ?? 'compliance.schedule')} · ${new Date(
-      `${s.start_date}T00:00:00`,
-    ).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })}`;
+    `${titles.get(s.checklist_id) ?? ''} · ${t(KIND_KEYS[s.kind] ?? 'compliance.schedule')} · ${formatDate(
+      new Date(`${s.start_date}T00:00:00`),
+      locale,
+      { day: 'numeric', month: 'short', year: 'numeric' },
+    )}`;
 
   // Only the schedules of the checklist being looked at, when one is chosen.
   const shown = checklistId ? schedules.filter((s) => s.checklist_id === checklistId) : schedules;

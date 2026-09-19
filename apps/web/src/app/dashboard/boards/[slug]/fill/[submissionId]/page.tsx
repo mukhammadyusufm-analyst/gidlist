@@ -10,6 +10,7 @@ import { RestartOnNewVersion } from '@/components/submissions/restart-on-new-ver
 import { InstructionsView } from '@/components/checklists/instructions-view';
 import { signInstructionUrls } from '@/lib/checklists/instructions';
 import { parseInstructions, type InstructionBlock } from '@app/core';
+import { formatDate } from '@app/core/format-date';
 import { StatusBadge } from '@/components/submissions/status-badge';
 import { FillSheet } from '@/components/submissions/fill-sheet';
 import { SnapshotRecorder } from '@/components/offline/snapshot-recorder';
@@ -93,7 +94,7 @@ export default async function FillPage({
 
   // Dates are formatted in the reader's own language, so a Russian speaker sees
   // "10 августа 2026" rather than an English month name in a Russian sentence.
-  const dueDate = new Date(`${submission.due_date}T00:00:00`).toLocaleDateString(locale, {
+  const dueDate = formatDate(new Date(`${submission.due_date}T00:00:00`), locale, {
     weekday: 'long',
     day: 'numeric',
     month: 'long',

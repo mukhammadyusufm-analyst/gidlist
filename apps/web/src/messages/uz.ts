@@ -93,7 +93,7 @@ export const uz = {
   'auth.chooseLanguage': 'Tilni tanlang',
   'auth.chooseLanguageHint':
     'Gidlist va birinchi mashq roʻyxatingiz shu tilda boʻladi. Uni istalgan vaqtda oʻzgartirishingiz mumkin.',
-  'auth.pitchTitle': 'Bajarilganini isbotlaydigan roʻyxatlar.',
+  'auth.pitchTitle': 'Ishlaringizni oxiriga yetkazadigan roʻyxatlar.',
   'auth.pitchBody':
     'Tartibni bir marta tuzing, jadvalga qoʻying va kim nimani bajarganini yozib boring — jamoangiz ishlaydigan barcha obyekt, smena va tillarda.',
   'auth.pitchPointSchedule': 'Muntazam tekshiruvlar kerakli odamlarga avtomatik biriktiriladi',

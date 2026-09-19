@@ -1,4 +1,5 @@
 import { History } from 'lucide-react';
+import { formatDate } from '@app/core/format-date';
 
 export type AuditEntry = {
   id: number;
@@ -46,7 +47,7 @@ export function AuditList({
     );
   }
 
-  const when = new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' });
+  const when = { format: (d: Date) => formatDate(d, locale, { dateStyle: 'medium', timeStyle: 'short' }) };
 
   return (
     <ul className="divide-y divide-[var(--color-border)] rounded-xl border border-[var(--color-border)] bg-[var(--color-card)]">

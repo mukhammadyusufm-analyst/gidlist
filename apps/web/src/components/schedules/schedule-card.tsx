@@ -2,6 +2,7 @@
 
 import { useActionState, useRef, useState } from 'react';
 import { describeSchedule } from '@app/core/schedule-display';
+import { formatDate as formatIn } from '@app/core/format-date';
 
 import {
   addAssignee,
@@ -66,7 +67,7 @@ export function ScheduleCard({
   const notice = inviteState.notice ?? assignState.notice ?? modeState.notice;
 
   const formatDate = (iso: string) =>
-    new Date(`${iso}T00:00:00`).toLocaleDateString(locale, {
+    formatIn(new Date(`${iso}T00:00:00`), locale, {
       day: 'numeric',
       month: 'short',
       year: 'numeric',

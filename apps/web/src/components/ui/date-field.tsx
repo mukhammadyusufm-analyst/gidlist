@@ -6,6 +6,7 @@ import { fromIsoDate, toIsoDate, isIsoDate } from '@app/core/dates';
 
 import { Button } from '@/components/ui/button';
 import { useT } from '@/components/i18n/provider';
+import { formatDate } from '@app/core/format-date';
 import { cn } from '@/lib/utils';
 
 /**
@@ -16,7 +17,7 @@ import { cn } from '@/lib/utils';
  * on an English-language phone gets an English calendar and there is no API to
  * change it. The only fix is to draw the calendar ourselves.
  *
- * Month and weekday names come from `Intl`, not from the message catalogue —
+ * Month and weekday names come from `Intl` (Uzbek by hand, see `formatDate`), not from the message catalogue —
  * the same decision as `describeSchedule`. Every locale already knows them in
  * the right form, and putting nineteen names per language into the catalogue
  * would be work that has to be redone every time an administrator adds a
@@ -117,27 +118,24 @@ export function DateField({
    * local formatting.
    */
   const monthLabel = useMemo(
-    () => new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(
-      fromIsoDate(cursor),
-    ),
+    () => formatDate(fromIsoDate(cursor), locale, { month: 'long', year: 'numeric' }),
     [cursor, locale],
   );
 
   /** Mon–Sun, named by the locale. 2024-01-01 was a Monday, which anchors this. */
-  const weekdayNames = useMemo(() => {
-    const fmt = new Intl.DateTimeFormat(locale, { weekday: 'short', timeZone: 'UTC' });
-    return Array.from({ length: 7 }, (_, i) => fmt.format(new Date(Date.UTC(2024, 0, 1 + i))));
-  }, [locale]);
+  const weekdayNames = useMemo(
+    () =>
+      Array.from({ length: 7 }, (_, i) =>
+        formatDate(new Date(Date.UTC(2024, 0, 1 + i)), locale, { weekday: 'short', timeZone: 'UTC' }),
+      ),
+    [locale],
+  );
 
   const days = useMemo(() => buildMonthGrid(cursor), [cursor]);
 
   // Local Date, local formatting — see the note on monthLabel above.
   const display = value
-    ? new Intl.DateTimeFormat(locale, {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      }).format(fromIsoDate(value))
+    ? formatDate(fromIsoDate(value), locale, { day: 'numeric', month: 'long', year: 'numeric' })
     : '';
 
   // The caller's answer wins — see the `today` prop. Falling back to the

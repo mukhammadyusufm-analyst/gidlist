@@ -12,6 +12,8 @@
  * schema belongs next door.
  */
 
+import { formatDate } from './format-date';
+
 export const WEEKDAYS = [
   { value: 1, short: 'Mon', label: 'Monday' },
   { value: 2, short: 'Tue', label: 'Tuesday' },
@@ -88,12 +90,12 @@ type Translator = (key: string, values?: Record<string, string | number>) => str
  */
 function weekdayName(locale: string, isoWeekday: number): string {
   const date = new Date(Date.UTC(2024, 0, isoWeekday));
-  return new Intl.DateTimeFormat(locale, { weekday: 'short', timeZone: 'UTC' }).format(date);
+  return formatDate(date, locale, { weekday: 'short', timeZone: 'UTC' });
 }
 
 function monthName(locale: string, month: number): string {
   const date = new Date(Date.UTC(2024, month - 1, 1));
-  return new Intl.DateTimeFormat(locale, { month: 'long', timeZone: 'UTC' }).format(date);
+  return formatDate(date, locale, { month: 'long', timeZone: 'UTC' });
 }
 
 /**

@@ -19,7 +19,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'Gidlist',
     short_name: 'Gidlist',
-    description: 'Checklists that prove they were done.',
+    description: 'Checklists to help you get things done.',
 
     /**
      * Straight to the spaces list, not `/`.

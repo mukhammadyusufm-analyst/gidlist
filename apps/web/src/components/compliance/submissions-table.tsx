@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { CloudOff, Paperclip } from 'lucide-react';
 
 import { FILLED_BY_NOBODY } from '@/lib/compliance/filters';
+import { formatDate as formatIn } from '@app/core/format-date';
 import type { ComplianceRow } from '@/lib/compliance/queries';
 import { StatusBadge } from '@/components/submissions/status-badge';
 import { VoidControl } from '@/components/compliance/void-control';
@@ -79,7 +80,7 @@ export function SubmissionsTable({
   const { update } = useComplianceFilters(slug);
 
   const formatDate = (iso: string) =>
-    new Date(`${iso}T00:00:00`).toLocaleDateString(locale, {
+    formatIn(new Date(`${iso}T00:00:00`), locale, {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
@@ -88,7 +89,7 @@ export function SubmissionsTable({
   // Date as well as time: an offline submission can cross midnight, and "23:40
   // → 06:15" without the days is a puzzle rather than a record.
   const formatTime = (iso: string) =>
-    new Date(iso).toLocaleString(locale, {
+    formatIn(new Date(iso), locale, {
       day: 'numeric',
       month: 'short',
       hour: '2-digit',

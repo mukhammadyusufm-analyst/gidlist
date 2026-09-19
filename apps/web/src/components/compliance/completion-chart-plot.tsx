@@ -3,6 +3,7 @@
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 import { useT } from '@/components/i18n/provider';
+import { formatDate } from '@app/core/format-date';
 
 type Point = { date: string; rate: number; done: number; total: number };
 
@@ -26,7 +27,7 @@ export function CompletionChartPlot({ data }: { data: Point[] }) {
   const { locale } = useT();
 
   const shortDate = (iso: string) =>
-    new Date(`${iso}T00:00:00`).toLocaleDateString(locale, { day: 'numeric', month: 'short' });
+    formatDate(new Date(`${iso}T00:00:00`), locale, { day: 'numeric', month: 'short' });
 
   return (
     <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] p-4 shadow-e1">

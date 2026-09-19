@@ -11,6 +11,7 @@ import {
   useTransition,
 } from 'react';
 import { parseInstructions } from '@app/core';
+import { formatDate } from '@app/core/format-date';
 import { Check, Lock, MessageSquarePlus, Paperclip, Send } from 'lucide-react';
 
 import {
@@ -1430,7 +1431,7 @@ function EvidenceControl({
            compliance record is for. */
         <p className="text-sm text-[var(--color-muted-foreground)]">
           {t('fill.evidenceExpired', {
-            date: new Date(expiredAt).toLocaleDateString(locale),
+            date: formatDate(new Date(expiredAt), locale),
           })}
         </p>
       ) : readOnly ? (

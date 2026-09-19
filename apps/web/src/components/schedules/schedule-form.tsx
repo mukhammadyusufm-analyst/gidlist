@@ -21,6 +21,7 @@ import { FieldError, FormNotice } from '@/components/ui/field-error';
 import { SubmitButton } from '@/components/ui/submit-button';
 import { Button } from '@/components/ui/button';
 import { useT } from '@/components/i18n/provider';
+import { formatDate as formatIn } from '@app/core/format-date';
 
 const initialState: ActionState = {};
 
@@ -38,16 +39,12 @@ const selectClass =
 
 /** Weekday names in the app language. 2024-01-01 was a Monday, anchoring this. */
 function weekdayName(locale: string, isoWeekday: number): string {
-  return new Intl.DateTimeFormat(locale, { weekday: 'short', timeZone: 'UTC' }).format(
-    new Date(Date.UTC(2024, 0, isoWeekday)),
-  );
+  return formatIn(new Date(Date.UTC(2024, 0, isoWeekday)), locale, { weekday: 'short', timeZone: 'UTC' });
 }
 
 /** Month names in the app language. 2024 is arbitrary; only the month matters. */
 function monthName(locale: string, month: number): string {
-  return new Intl.DateTimeFormat(locale, { month: 'long', timeZone: 'UTC' }).format(
-    new Date(Date.UTC(2024, month - 1, 1)),
-  );
+  return formatIn(new Date(Date.UTC(2024, month - 1, 1)), locale, { month: 'long', timeZone: 'UTC' });
 }
 
 /** Kept beside the modes so a new one cannot be added without its wording. */
@@ -106,12 +103,12 @@ export function ScheduleForm({
 
   /** ISO to something readable, in the reader's own language. */
   const formatDate = (iso: string) =>
-    new Intl.DateTimeFormat(locale, {
+    formatIn(new Date(`${iso}T00:00:00Z`), locale, {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
       timeZone: 'UTC',
-    }).format(new Date(`${iso}T00:00:00Z`));
+    });
 
   return (
     <form action={formAction} className="space-y-4" noValidate>
