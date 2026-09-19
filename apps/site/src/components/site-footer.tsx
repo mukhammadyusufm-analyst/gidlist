@@ -129,6 +129,9 @@ export function SiteFooter({ locale, m }: { locale: BuiltinLocale; m: SiteMessag
             <Link href={`/${locale}/terms`} className={linkClass}>
               {LEGAL[locale].terms.title}
             </Link>
+            <Link href={`/${locale}/refunds`} className={linkClass}>
+              {LEGAL[locale].refunds.title}
+            </Link>
           </Column>
         </div>
 

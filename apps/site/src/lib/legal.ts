@@ -49,24 +49,24 @@ export const COMPANY_ADDRESS_UNPUBLISHED =
   'Andijon viloyati, Jalaquduq tumani, Soʻfiqishloq MFY, Oʻzbekiston koʻchasi, 56-uy, Oʻzbekiston';
 
 /** ISO date of the last substantive change. Update it whenever the text changes. */
-export const LEGAL_UPDATED = '2026-08-29';
+export const LEGAL_UPDATED = '2026-09-19';
 
 export type LegalSection = { heading: string; body: string[] };
 
 export type LegalDoc = {
   title: string;
-  /** Rendered above the text, e.g. "Last updated: 29 August 2026". */
+  /** Rendered above the text, e.g. "Last updated: 19 September 2026". */
   updated: string;
   intro: string[];
   sections: LegalSection[];
 };
 
-export type LegalDocs = { privacy: LegalDoc; terms: LegalDoc };
+export type LegalDocs = { privacy: LegalDoc; terms: LegalDoc; refunds: LegalDoc };
 
 const en: LegalDocs = {
   privacy: {
     title: 'Privacy Policy',
-    updated: 'Last updated: 29 August 2026',
+    updated: 'Last updated: 19 September 2026',
     intro: [
       `${COMPANY_NAME}, a company registered in ${COMPANY_COUNTRY_EN}, operates Gidlist. This policy explains what we collect, why, how long we keep it, and what you can ask us to do about it.`,
       `For anything in this policy, write to ${LEGAL_CONTACT_EMAIL}. Our registered address is available on request to that address.`,
@@ -119,6 +119,7 @@ const en: LegalDocs = {
           'Vercel — hosting for the website and application.',
           'Resend — sending transactional email such as invitations.',
           'Google — only if you choose to sign in with a Google account.',
+          'Lemon Squeezy — our reseller and Merchant of Record for purchases paid in US dollars. Card details go to Lemon Squeezy directly; we never see or store them. We receive what we need to run your plan: the buyer’s name and email, country, the plan bought and the payment status.',
           'These providers operate infrastructure outside Uzbekistan, which means your data may be stored and processed abroad. If your organisation has obligations about where data is held, contact us before storing regulated records in Gidlist.',
         ],
       },
@@ -153,7 +154,7 @@ const en: LegalDocs = {
   },
   terms: {
     title: 'Terms of Service',
-    updated: 'Last updated: 29 August 2026',
+    updated: 'Last updated: 19 September 2026',
     intro: [
       `These terms govern your use of Gidlist, operated by ${COMPANY_NAME}, a company registered in ${COMPANY_COUNTRY_EN}. Our registered address is available on request to ${LEGAL_CONTACT_EMAIL}.`,
       'By creating an account or using the service you accept these terms. If you are accepting on behalf of an organisation, you confirm you are authorised to do so.',
@@ -193,6 +194,9 @@ const en: LegalDocs = {
         heading: 'Plans and payment',
         body: [
           'A free plan is available. Paid plans are billed in advance for the period shown at the time of purchase, and prices are shown before you commit.',
+          'Purchases paid in US dollars are processed by Lemon Squeezy, our online reseller and Merchant of Record. Lemon Squeezy sells you the subscription, charges your card, issues the receipt and handles tax, billing questions and refunds; its buyer terms apply to the payment. Payments in Uzbek so’m, where offered, are processed by the payment provider named at checkout.',
+          'Subscriptions renew automatically at the end of each billing period until cancelled. You can cancel at any time through the link in your receipt or by writing to us; your plan stays active until the end of the period already paid for, and it is not renewed after that.',
+          'Refunds are covered by our Refund Policy, which forms part of these terms.',
           'Applicable taxes are added where required by law.',
           'If you downgrade or stop paying, your records are not deleted immediately, but features tied to a higher plan — including longer attachment retention — stop applying.',
         ],
@@ -244,12 +248,70 @@ const en: LegalDocs = {
       },
     ],
   },
+  refunds: {
+    title: 'Refund Policy',
+    updated: 'Last updated: 19 September 2026',
+    intro: [
+      `This policy covers paid Gidlist plans and add-ons, sold by ${COMPANY_NAME}. It forms part of our Terms of Service.`,
+      'Gidlist has a free plan, so you can try the product with your own team before paying anything.',
+    ],
+    sections: [
+      {
+        heading: 'Who processes your payment',
+        body: [
+          'Purchases paid in US dollars are processed by Lemon Squeezy, our online reseller and Merchant of Record. Your receipt comes from Lemon Squeezy, and approved refunds are issued by Lemon Squeezy to the original payment method.',
+          'Payments in Uzbek so’m, where offered, are processed by the payment provider named at checkout, and refunds go back through that same provider.',
+        ],
+      },
+      {
+        heading: '14-day money-back guarantee',
+        body: [
+          'If Gidlist is not right for you, ask for a full refund within 14 days of your first payment for a paid plan. No reason is needed.',
+          'The guarantee applies once per organisation, to the first payment of its first paid subscription.',
+        ],
+      },
+      {
+        heading: 'Renewals and cancellation',
+        body: [
+          'Subscriptions renew automatically until cancelled. You can cancel at any time; the plan stays active until the end of the period already paid for, and you are not charged again.',
+          'Renewal payments are not refunded, and we do not refund part of a period that has started — except in the cases below.',
+        ],
+      },
+      {
+        heading: 'When we always refund',
+        body: [
+          'You were charged twice, or charged the wrong amount.',
+          'You were charged after cancelling.',
+          'Gidlist was unavailable for a significant part of a paid period through our fault. In that case we refund the affected part of the period.',
+        ],
+      },
+      {
+        heading: 'How to ask for a refund',
+        body: [
+          `Write to ${LEGAL_CONTACT_EMAIL} from the email address on your account, with the order number from your receipt. You can also use the link in the Lemon Squeezy receipt.`,
+          'We answer within 5 business days. Once a refund is approved, your bank may take a further 5–10 business days to show it.',
+        ],
+      },
+      {
+        heading: 'After a refund',
+        body: [
+          'The organisation returns to the free plan. Your checklists and records are not deleted, but features tied to the paid plan stop applying — including the longer attachment retention described in our Privacy Policy.',
+        ],
+      },
+      {
+        heading: 'Your legal rights',
+        body: [
+          'Nothing in this policy limits rights you have under the consumer protection law that applies to you, including the law of the Republic of Uzbekistan and of the country where you live.',
+        ],
+      },
+    ],
+  },
 };
 
 const uz: LegalDocs = {
   privacy: {
     title: 'Maxfiylik siyosati',
-    updated: 'Oxirgi yangilanish: 2026-yil 29-avgust',
+    updated: 'Oxirgi yangilanish: 2026-yil 19-sentabr',
     intro: [
       `Gidlist xizmatini Oʻzbekiston Respublikasida roʻyxatdan oʻtgan ${COMPANY_NAME} yuritadi. Ushbu siyosat biz qanday maʼlumot toʻplashimizni, nima uchun toʻplashimizni, uni qancha saqlashimizni va siz nimani talab qilishingiz mumkinligini tushuntiradi.`,
       `Ushbu siyosatga oid har qanday savol boʻyicha ${LEGAL_CONTACT_EMAIL} manziliga yozing. Roʻyxatdan oʻtgan manzilimizni shu elektron pochta orqali soʻrab olishingiz mumkin.`,
@@ -302,6 +364,7 @@ const uz: LegalDocs = {
           'Vercel — vebsayt va ilova uchun hosting.',
           'Resend — taklifnoma kabi tranzaksion xatlarni yuborish.',
           'Google — faqat siz Google hisobi orqali kirishni tanlasangiz.',
+          'Lemon Squeezy — AQSh dollarida toʻlanadigan xaridlar boʻyicha qayta sotuvchimiz va savdo operatori (Merchant of Record). Karta maʼlumotlari toʻgʻridan-toʻgʻri Lemon Squeezyga boradi — biz ularni koʻrmaymiz va saqlamaymiz. Tarifingizni yuritish uchun zarur boʻlgan maʼlumotlarni olamiz: xaridorning ismi va elektron pochtasi, mamlakati, sotib olingan tarif va toʻlov holati.',
           'Bu provayderlar infratuzilmasi Oʻzbekistondan tashqarida ishlaydi, yaʼni maʼlumotlaringiz chet elda saqlanishi va qayta ishlanishi mumkin. Agar tashkilotingizda maʼlumot qayerda saqlanishiga oid talablar boʻlsa, tartibga solinadigan yozuvlarni Gidlistda saqlashdan oldin biz bilan bogʻlaning.',
         ],
       },
@@ -336,7 +399,7 @@ const uz: LegalDocs = {
   },
   terms: {
     title: 'Foydalanish shartlari',
-    updated: 'Oxirgi yangilanish: 2026-yil 29-avgust',
+    updated: 'Oxirgi yangilanish: 2026-yil 19-sentabr',
     intro: [
       `Ushbu shartlar Oʻzbekiston Respublikasida roʻyxatdan oʻtgan ${COMPANY_NAME} tomonidan yuritiladigan Gidlist xizmatidan foydalanishingizni tartibga soladi. Roʻyxatdan oʻtgan manzilimizni ${LEGAL_CONTACT_EMAIL} orqali soʻrab olishingiz mumkin.`,
       'Hisob yaratish yoki xizmatdan foydalanish orqali siz ushbu shartlarni qabul qilasiz. Agar tashkilot nomidan qabul qilayotgan boʻlsangiz, bunga vakolatingiz borligini tasdiqlaysiz.',
@@ -376,6 +439,9 @@ const uz: LegalDocs = {
         heading: 'Tariflar va toʻlov',
         body: [
           'Bepul tarif mavjud. Pullik tariflar xarid vaqtida koʻrsatilgan davr uchun oldindan hisoblanadi va narxlar siz rozilik bildirishdan oldin koʻrsatiladi.',
+          'AQSh dollarida toʻlanadigan xaridlarni onlayn qayta sotuvchimiz va savdo operatori (Merchant of Record) boʻlgan Lemon Squeezy amalga oshiradi. Lemon Squeezy sizga obunani sotadi, kartangizdan pul yechadi, chek beradi hamda soliq, hisob-kitob savollari va pulni qaytarish bilan shugʻullanadi; toʻlovga uning xaridorlar uchun shartlari qoʻllanadi. Oʻzbek soʻmidagi toʻlovlar, agar taklif etilsa, toʻlov sahifasida koʻrsatilgan toʻlov provayderi orqali amalga oshiriladi.',
+          'Obunalar bekor qilinmaguncha har bir hisob davri oxirida avtomatik yangilanadi. Istalgan vaqtda chekdagi havola orqali yoki bizga yozib bekor qilishingiz mumkin; tarif allaqachon toʻlangan davr oxirigacha amal qiladi va shundan keyin yangilanmaydi.',
+          'Toʻlangan pulni qaytarish tartibi «Pulni qaytarish siyosati»da belgilangan — u ushbu shartlarning bir qismidir.',
           'Qonun talab qilgan hollarda tegishli soliqlar qoʻshiladi.',
           'Tarifni pasaytirsangiz yoki toʻlovni toʻxtatsangiz, yozuvlaringiz darhol oʻchirilmaydi, biroq yuqori tarifga bogʻliq imkoniyatlar — jumladan ilovalarning uzoqroq saqlanishi — qoʻllanishdan toʻxtaydi.',
         ],
@@ -427,12 +493,70 @@ const uz: LegalDocs = {
       },
     ],
   },
+  refunds: {
+    title: 'Pulni qaytarish siyosati',
+    updated: 'Oxirgi yangilanish: 2026-yil 19-sentabr',
+    intro: [
+      `Ushbu siyosat ${COMPANY_NAME} sotadigan Gidlist pullik tariflari va qoʻshimchalariga taalluqli. U Foydalanish shartlarimizning bir qismidir.`,
+      'Gidlistda bepul tarif bor — toʻlashdan oldin mahsulotni oʻz jamoangiz bilan sinab koʻrishingiz mumkin.',
+    ],
+    sections: [
+      {
+        heading: 'Toʻlovingizni kim amalga oshiradi',
+        body: [
+          'AQSh dollarida toʻlanadigan xaridlarni onlayn qayta sotuvchimiz va savdo operatori (Merchant of Record) boʻlgan Lemon Squeezy amalga oshiradi. Chekni Lemon Squeezy yuboradi, maʼqullangan qaytarishlarni ham Lemon Squeezy asl toʻlov usuliga qaytaradi.',
+          'Oʻzbek soʻmidagi toʻlovlar, agar taklif etilsa, toʻlov sahifasida koʻrsatilgan provayder orqali amalga oshiriladi va pul oʻsha provayder orqali qaytariladi.',
+        ],
+      },
+      {
+        heading: '14 kunlik pulni qaytarish kafolati',
+        body: [
+          'Agar Gidlist sizga toʻgʻri kelmasa, pullik tarif uchun birinchi toʻlovdan keyin 14 kun ichida toʻliq qaytarishni soʻrang. Sabab koʻrsatish shart emas.',
+          'Kafolat har bir tashkilot uchun bir marta — uning birinchi pullik obunasining birinchi toʻlovi uchun qoʻllanadi.',
+        ],
+      },
+      {
+        heading: 'Yangilanish va bekor qilish',
+        body: [
+          'Obunalar bekor qilinmaguncha avtomatik yangilanadi. Istalgan vaqtda bekor qilishingiz mumkin; tarif toʻlangan davr oxirigacha amal qiladi va sizdan boshqa pul yechilmaydi.',
+          'Yangilanish toʻlovlari qaytarilmaydi va boshlangan davrning bir qismi uchun pul qaytarilmaydi — quyidagi hollar bundan mustasno.',
+        ],
+      },
+      {
+        heading: 'Pul har doim qaytariladigan hollar',
+        body: [
+          'Sizdan ikki marta yoki notoʻgʻri summa yechilgan boʻlsa.',
+          'Bekor qilganingizdan keyin pul yechilgan boʻlsa.',
+          'Gidlist bizning aybimiz bilan toʻlangan davrning sezilarli qismida ishlamagan boʻlsa. Bunda davrning taʼsirlangan qismi uchun pul qaytariladi.',
+        ],
+      },
+      {
+        heading: 'Qaytarishni qanday soʻrash mumkin',
+        body: [
+          `Hisobingizdagi elektron pochtadan ${LEGAL_CONTACT_EMAIL} manziliga chekdagi buyurtma raqami bilan yozing. Lemon Squeezy chekidagi havoladan ham foydalanishingiz mumkin.`,
+          'Biz 5 ish kuni ichida javob beramiz. Qaytarish maʼqullangach, bank uni koʻrsatishi uchun yana 5–10 ish kuni ketishi mumkin.',
+        ],
+      },
+      {
+        heading: 'Qaytarishdan keyin',
+        body: [
+          'Tashkilot bepul tarifga qaytadi. Nazorat roʻyxatlari va yozuvlaringiz oʻchirilmaydi, biroq pullik tarifga bogʻliq imkoniyatlar — jumladan Maxfiylik siyosatida tavsiflangan ilovalarning uzoqroq saqlanishi — qoʻllanishdan toʻxtaydi.',
+        ],
+      },
+      {
+        heading: 'Qonuniy huquqlaringiz',
+        body: [
+          'Ushbu siyosatdagi hech narsa sizga nisbatan qoʻllanadigan isteʼmolchilar huquqlarini himoya qilish qonunchiligi, jumladan Oʻzbekiston Respublikasi va siz yashaydigan mamlakat qonunchiligi bergan huquqlarni cheklamaydi.',
+        ],
+      },
+    ],
+  },
 };
 
 const ru: LegalDocs = {
   privacy: {
     title: 'Политика конфиденциальности',
-    updated: 'Последнее обновление: 29 августа 2026 г.',
+    updated: 'Последнее обновление: 19 сентября 2026 г.',
     intro: [
       `Сервис Gidlist предоставляет ${COMPANY_NAME} — компания, зарегистрированная в Республике Узбекистан. Эта политика объясняет, какие данные мы собираем, зачем, как долго храним и о чём вы можете нас попросить.`,
       `По любым вопросам, связанным с этой политикой, пишите на ${LEGAL_CONTACT_EMAIL}. Адрес регистрации предоставляется по запросу на этот же адрес.`,
@@ -485,6 +609,7 @@ const ru: LegalDocs = {
           'Vercel — хостинг сайта и приложения.',
           'Resend — отправка транзакционных писем, например приглашений.',
           'Google — только если вы выбираете вход через аккаунт Google.',
+          'Lemon Squeezy — наш реселлер и продавец (Merchant of Record) для покупок в долларах США. Данные карты передаются напрямую Lemon Squeezy — мы их не видим и не храним. Мы получаем то, что нужно для работы тарифа: имя и адрес электронной почты покупателя, страну, купленный тариф и статус оплаты.',
           'Инфраструктура этих поставщиков расположена за пределами Узбекистана, то есть ваши данные могут храниться и обрабатываться за рубежом. Если у вашей организации есть требования к месту хранения данных, свяжитесь с нами до того, как размещать в Gidlist регулируемые записи.',
         ],
       },
@@ -519,7 +644,7 @@ const ru: LegalDocs = {
   },
   terms: {
     title: 'Условия использования',
-    updated: 'Последнее обновление: 29 августа 2026 г.',
+    updated: 'Последнее обновление: 19 сентября 2026 г.',
     intro: [
       `Эти условия регулируют использование Gidlist — сервиса, который предоставляет ${COMPANY_NAME}, компания, зарегистрированная в Республике Узбекистан. Адрес регистрации предоставляется по запросу на ${LEGAL_CONTACT_EMAIL}.`,
       'Создавая учётную запись или используя сервис, вы принимаете эти условия. Если вы принимаете их от имени организации, вы подтверждаете, что уполномочены на это.',
@@ -559,6 +684,9 @@ const ru: LegalDocs = {
         heading: 'Тарифы и оплата',
         body: [
           'Доступен бесплатный тариф. Платные тарифы оплачиваются авансом за период, указанный при покупке, и цены показываются до подтверждения.',
+          'Покупки в долларах США обрабатывает Lemon Squeezy — наш онлайн-реселлер и продавец (Merchant of Record). Lemon Squeezy продаёт вам подписку, списывает оплату с карты, выдаёт чек и отвечает за налоги, вопросы по оплате и возвраты; к платежу применяются его условия для покупателей. Платежи в узбекских сумах, если они доступны, обрабатывает платёжный провайдер, указанный при оформлении.',
+          'Подписки продлеваются автоматически в конце каждого расчётного периода, пока вы их не отмените. Отменить можно в любой момент по ссылке в чеке или написав нам; тариф действует до конца уже оплаченного периода и после этого не продлевается.',
+          'Возвраты регулируются нашей Политикой возврата средств, которая является частью этих условий.',
           'Применимые налоги добавляются в случаях, предусмотренных законом.',
           'При переходе на более низкий тариф или прекращении оплаты ваши записи не удаляются немедленно, но возможности, привязанные к более высокому тарифу, — включая более длительный срок хранения вложений — перестают действовать.',
         ],
@@ -607,6 +735,64 @@ const ru: LegalDocs = {
       {
         heading: 'Контакты',
         body: [`Вопросы по этим условиям: ${LEGAL_CONTACT_EMAIL}.`],
+      },
+    ],
+  },
+  refunds: {
+    title: 'Политика возврата средств',
+    updated: 'Последнее обновление: 19 сентября 2026 г.',
+    intro: [
+      `Эта политика распространяется на платные тарифы и дополнения Gidlist, которые продаёт ${COMPANY_NAME}. Она является частью наших Условий использования.`,
+      'В Gidlist есть бесплатный тариф — продукт можно попробовать со своей командой до оплаты.',
+    ],
+    sections: [
+      {
+        heading: 'Кто обрабатывает платёж',
+        body: [
+          'Покупки в долларах США обрабатывает Lemon Squeezy — наш онлайн-реселлер и продавец (Merchant of Record). Чек приходит от Lemon Squeezy, и одобренные возвраты Lemon Squeezy перечисляет на исходный способ оплаты.',
+          'Платежи в узбекских сумах, если они доступны, обрабатывает платёжный провайдер, указанный при оформлении, и возврат проходит через него же.',
+        ],
+      },
+      {
+        heading: '14-дневная гарантия возврата',
+        body: [
+          'Если Gidlist вам не подошёл, запросите полный возврат в течение 14 дней после первого платежа за платный тариф. Указывать причину не нужно.',
+          'Гарантия действует один раз для каждой организации — на первый платёж её первой платной подписки.',
+        ],
+      },
+      {
+        heading: 'Продление и отмена',
+        body: [
+          'Подписки продлеваются автоматически, пока вы их не отмените. Отменить можно в любой момент; тариф действует до конца оплаченного периода, и повторного списания не будет.',
+          'Платежи за продление не возвращаются, и часть начавшегося периода не компенсируется — за исключением случаев ниже.',
+        ],
+      },
+      {
+        heading: 'Когда мы возвращаем деньги всегда',
+        body: [
+          'С вас списали оплату дважды или не ту сумму.',
+          'С вас списали оплату после отмены.',
+          'Gidlist не работал значительную часть оплаченного периода по нашей вине. В этом случае мы возвращаем стоимость затронутой части периода.',
+        ],
+      },
+      {
+        heading: 'Как запросить возврат',
+        body: [
+          `Напишите на ${LEGAL_CONTACT_EMAIL} с адреса вашей учётной записи и укажите номер заказа из чека. Можно также воспользоваться ссылкой в чеке Lemon Squeezy.`,
+          'Мы отвечаем в течение 5 рабочих дней. После одобрения банку может понадобиться ещё 5–10 рабочих дней, чтобы деньги поступили.',
+        ],
+      },
+      {
+        heading: 'После возврата',
+        body: [
+          'Организация переходит на бесплатный тариф. Чек-листы и записи не удаляются, но возможности платного тарифа — включая более длительное хранение вложений, описанное в Политике конфиденциальности, — перестают действовать.',
+        ],
+      },
+      {
+        heading: 'Ваши законные права',
+        body: [
+          'Ничто в этой политике не ограничивает права, которые дают вам применимые законы о защите прав потребителей, включая законодательство Республики Узбекистан и страны, где вы живёте.',
+        ],
       },
     ],
   },

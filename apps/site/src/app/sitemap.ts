@@ -29,7 +29,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const market = marketForHost(h.get('x-forwarded-host') ?? h.get('host'));
   const base = MARKET_CONFIG[market].url;
 
-  const paths = ['', '/privacy', '/terms'];
+  const paths = ['', '/privacy', '/terms', '/refunds'];
 
   return SITE_LOCALES.flatMap((locale) =>
     paths.map((path) => ({
